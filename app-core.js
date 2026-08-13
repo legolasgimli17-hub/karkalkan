@@ -129,3 +129,21 @@ validate=function(v){
  for(const k of ['salePrice','productCost','shippingCost','packagingCost','otherFixedCost','returnExtraCost','returnNonRefundedFee'])if(Number.isFinite(v[k])&&v[k]>KK_MAX_MONEY)errors.push(`${k} güvenli hesaplama sınırını aşıyor.`);
  return [...new Set(errors)];
 };
+
+// Product funnel analytics. No prices, product names or uploaded file contents are sent.
+(()=>{
+ const PREFIX='kk_funnel_v1_';
+ const track=(name,data)=>{try{if(typeof window.va==='function')window.va('event',{name,data:data||{}})}catch(_){}};
+ const once=(key,name,data)=>{try{const k=PREFIX+key;if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(_){}track(name,data)};
+ const motor=$('motor');
+ if(motor){const started=e=>{if(e.target&&e.target.matches('input,select'))once('profit_started','ProfitAnalysisStarted')};motor.addEventListener('input',started,{passive:true});motor.addEventListener('change',started,{passive:true})}
+ const campaign=$('kampanya');
+ if(campaign){const started=e=>{if(e.target&&e.target.matches('input,select'))once('campaign_started','CampaignAnalysisStarted')};campaign.addEventListener('input',started,{passive:true});campaign.addEventListener('change',started,{passive:true})}
+ document.querySelectorAll('a[href="#motor"],a[href="/#motor"]').forEach(a=>a.addEventListener('click',()=>once('cta_motor','HeroCtaClicked',{target:'motor'}),{passive:true}));
+ const demo=$('demoBtn');if(demo)demo.addEventListener('click',()=>once('demo_loaded','DemoLoaded'),{passive:true});
+ const bulk=$('bulkFile');if(bulk)bulk.addEventListener('change',()=>{const f=bulk.files&&bulk.files[0];if(!f)return;const ext=(f.name.split('.').pop()||'').toLowerCase();once('bulk_selected','BulkFileSelected',{format:ext==='xlsx'?'xlsx':'csv'})},{passive:true});
+ const body=$('bulkBody');if(body){const detect=()=>{const rows=[...body.querySelectorAll('tr')];if(rows.some(r=>!r.querySelector('.empty')&&r.querySelectorAll('td').length>=8))once('bulk_completed','BulkAnalysisCompleted')};new MutationObserver(detect).observe(body,{childList:true,subtree:true});detect()}
+ const exp=$('exportBtn');if(exp)exp.addEventListener('click',()=>{if(!exp.disabled)track('BulkResultsExported')},{passive:true});
+ const profile=$('saveProfileBtn');if(profile)profile.addEventListener('click',()=>track('ProfileSaveAttempted'),{passive:true});
+ const scenario=$('saveScenarioBtn');if(scenario)scenario.addEventListener('click',()=>track('ScenarioSaveAttempted'),{passive:true});
+})();
