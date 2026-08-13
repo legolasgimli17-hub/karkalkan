@@ -110,3 +110,22 @@ function drawPriceChart(){
 }
 
 const PROFILE_KEY='karkalkan_v3_profiles',SCENARIO_KEY='karkalkan_v3_scenarios';
+
+// Reject malformed numeric input instead of silently converting it to zero.
+const KK_MAX_ABS_NUMBER=1e12,KK_MAX_MONEY=1e9;
+const kkLegacyParseTRNumber=parseTRNumber;
+parseTRNumber=function(value){
+ if(typeof value==='number')return Number.isFinite(value)&&Math.abs(value)<=KK_MAX_ABS_NUMBER?value:NaN;
+ const raw=String(value??'').trim();if(!raw)return NaN;
+ const cleaned=raw.replace(/\s/g,'').replace(/₺|TL|TRY/gi,'').replace(/[()]/g,'');
+ if(!/[0-9]/.test(cleaned)||/[^0-9+\-.,]/.test(cleaned))return NaN;
+ const n=kkLegacyParseTRNumber(value);return Number.isFinite(n)&&Math.abs(n)<=KK_MAX_ABS_NUMBER?n:NaN;
+};
+val=function(id,fallback=0){const raw=$(id).value;if(String(raw??'').trim()==='')return fallback;const n=parseTRNumber(raw);return Number.isFinite(n)?n:NaN};
+const kkLegacyValidate=validate;
+validate=function(v){
+ const errors=kkLegacyValidate(v),numeric=['salePrice','saleVatRate','productCost','purchaseVatRate','commissionRate','serviceRate','otherPercentRate','shippingCost','packagingCost','adRate','otherFixedCost','minMargin','targetMargin','returnRate','returnExtraCost','returnProductLossRate','returnNonRefundedFee'];
+ for(const k of numeric)if(!Number.isFinite(v[k]))errors.push(`${k} geçerli bir sayı olmalı.`);
+ for(const k of ['salePrice','productCost','shippingCost','packagingCost','otherFixedCost','returnExtraCost','returnNonRefundedFee'])if(Number.isFinite(v[k])&&v[k]>KK_MAX_MONEY)errors.push(`${k} güvenli hesaplama sınırını aşıyor.`);
+ return [...new Set(errors)];
+};
