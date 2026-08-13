@@ -19,8 +19,35 @@ function canonicalKey(h){const n=normalizeHeader(h);for(const [k,arr] of Object.
 function detectDelimiter(line){let comma=0,semi=0,quoted=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(quoted&&line[i+1]==='"'){i++;continue}quoted=!quoted}else if(!quoted){if(c===',')comma++;if(c===';')semi++}}return semi>=comma?';':','}
 function parseCSV(text){text=text.replace(/^\uFEFF/,'');const delim=detectDelimiter(text.split(/\r?\n/,1)[0]);const rows=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else{if(c==='"')quoted=true;else if(c===delim){row.push(field);field=''}else if(c==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}else field+=c}}if(field.length||row.length){row.push(field);rows.push(row)}return rows.filter(r=>r.some(x=>String(x).trim()!==''))}
 
-async function unzipEntry(buf,entry){const data=new Uint8Array(buf,entry.dataStart,entry.compressedSize);if(entry.method===0)return data;if(entry.method!==8)throw new Error('XLSX içinde desteklenmeyen sıkıştırma yöntemi.');if(typeof DecompressionStream==='undefined')throw new Error('Bu tarayıcı XLSX açmak için gerekli yerel sıkıştırma API’sini desteklemiyor. CSV kullanabilirsin.');const ds=new DecompressionStream('deflate-raw');const stream=new Blob([data]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer())}
-function zipEntries(buf){const dv=new DataView(buf);let eocd=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}if(eocd<0)throw new Error('Geçerli XLSX/ZIP yapısı bulunamadı.');const count=dv.getUint16(eocd+10,true),offset=dv.getUint32(eocd+16,true),dec=new TextDecoder();let p=offset;const out={};for(let n=0;n<count;n++){if(dv.getUint32(p,true)!==0x02014b50)break;const method=dv.getUint16(p+10,true),comp=dv.getUint32(p+20,true),uncomp=dv.getUint32(p+24,true),fn=dv.getUint16(p+28,true),ex=dv.getUint16(p+30,true),co=dv.getUint16(p+32,true),local=dv.getUint32(p+42,true);const name=dec.decode(new Uint8Array(buf,p+46,fn));const lfn=dv.getUint16(local+26,true),lex=dv.getUint16(local+28,true);out[name]={method,compressedSize:comp,uncompressedSize:uncomp,dataStart:local+30+lfn+lex};p+=46+fn+ex+co}return out}
+async function unzipEntry(buf,entry){
+ const limit=typeof KK_SECURITY_LIMITS!=='undefined'?KK_SECURITY_LIMITS.maxZipEntryUncompressed:16*1024*1024;
+ if(!(buf instanceof ArrayBuffer)||!entry||!Number.isFinite(entry.dataStart)||!Number.isFinite(entry.compressedSize))throw new Error('XLSX ZIP girdisi geçersiz.');
+ if(entry.dataStart<0||entry.compressedSize<0||entry.dataStart+entry.compressedSize>buf.byteLength)throw new Error('XLSX ZIP veri aralığı geçersiz.');
+ const data=new Uint8Array(buf,entry.dataStart,entry.compressedSize);
+ if(entry.method===0){if(data.byteLength>limit)throw new Error('XLSX girdisi güvenli açma sınırını aşıyor.');return data}
+ if(entry.method!==8)throw new Error('XLSX içinde desteklenmeyen sıkıştırma yöntemi.');
+ if(typeof DecompressionStream==='undefined')throw new Error('Bu tarayıcı XLSX açmak için gerekli yerel sıkıştırma API’sini desteklemiyor. CSV kullanabilirsin.');
+ const ds=new DecompressionStream('deflate-raw'),reader=new Blob([data]).stream().pipeThrough(ds).getReader(),chunks=[];let total=0;
+ try{for(;;){const {done,value}=await reader.read();if(done)break;total+=value.byteLength;if(total>limit){await reader.cancel();throw new Error('XLSX açılırken güvenli veri sınırı aşıldı.')}chunks.push(value)}}finally{reader.releaseLock()}
+ const out=new Uint8Array(total);let pos=0;for(const chunk of chunks){out.set(chunk,pos);pos+=chunk.byteLength}return out
+}
+function zipEntries(buf){
+ if(!(buf instanceof ArrayBuffer)||buf.byteLength<22)throw new Error('Geçerli XLSX/ZIP yapısı bulunamadı.');
+ const dv=new DataView(buf);let eocd=-1;for(let i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-65557);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}
+ if(eocd<0||eocd+22>buf.byteLength)throw new Error('Geçerli XLSX/ZIP yapısı bulunamadı.');
+ const count=dv.getUint16(eocd+10,true),offset=dv.getUint32(eocd+16,true),maxEntries=typeof KK_SECURITY_LIMITS!=='undefined'?KK_SECURITY_LIMITS.maxZipEntries:500,dec=new TextDecoder();
+ if(count>maxEntries)throw new Error('XLSX içinde olağandışı sayıda ZIP girdisi var.');
+ if(count&&offset>buf.byteLength-46)throw new Error('XLSX merkezi dizin konumu geçersiz.');
+ let p=offset;const out={};for(let n=0;n<count;n++){
+  if(p<0||p+46>buf.byteLength||dv.getUint32(p,true)!==0x02014b50)throw new Error('XLSX merkezi dizini bozuk.');
+  const method=dv.getUint16(p+10,true),comp=dv.getUint32(p+20,true),uncomp=dv.getUint32(p+24,true),fn=dv.getUint16(p+28,true),ex=dv.getUint16(p+30,true),co=dv.getUint16(p+32,true),local=dv.getUint32(p+42,true),next=p+46+fn+ex+co;
+  if(next>buf.byteLength||local+30>buf.byteLength||dv.getUint32(local,true)!==0x04034b50)throw new Error('XLSX ZIP başlığı geçersiz.');
+  const name=dec.decode(new Uint8Array(buf,p+46,fn));if(!name||Object.prototype.hasOwnProperty.call(out,name))throw new Error('XLSX içinde geçersiz veya yinelenen ZIP girdisi var.');
+  const lfn=dv.getUint16(local+26,true),lex=dv.getUint16(local+28,true),dataStart=local+30+lfn+lex;if(dataStart>buf.byteLength||dataStart+comp>buf.byteLength)throw new Error('XLSX ZIP veri aralığı geçersiz.');
+  out[name]={method,compressedSize:comp,uncompressedSize:uncomp,dataStart};p=next
+ }
+ return out
+}
 function colIndex(ref){const m=String(ref).match(/^([A-Z]+)/i);if(!m)return 0;let n=0;for(const ch of m[1].toUpperCase())n=n*26+ch.charCodeAt(0)-64;return n-1}
 function xmlEls(node,name){return [...node.getElementsByTagNameNS('*',name)]}
 async function parseXLSX(file){const buf=await file.arrayBuffer(),entries=zipEntries(buf),dec=new TextDecoder('utf-8');let shared=[];if(entries['xl/sharedStrings.xml']){const xml=dec.decode(await unzipEntry(buf,entries['xl/sharedStrings.xml'])),doc=new DOMParser().parseFromString(xml,'application/xml');if(xmlEls(doc,'parsererror').length)throw new Error('XLSX sharedStrings XML okunamadı.');shared=xmlEls(doc,'si').map(si=>xmlEls(si,'t').map(t=>t.textContent||'').join(''))}
