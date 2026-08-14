@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="KârKalkan v4 private beta pazaryeri kârlılık konsolu.">
+  <title>KârKalkan v4 — Private Beta</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="v4.css">
+</head>
+<body>
+<header class="header">
+  <div class="wrap nav">
+    <a class="brand" href="/v4.html">KârKalkan <small>v4 beta</small></a>
+    <nav class="v4-nav"><a href="/">v3 motor</a><a href="#connections">Bağlantılar</a><a href="#dashboard">Dashboard</a></nav>
+  </div>
+</header>
+
+<main class="wrap v4-main">
+  <section class="v4-hero">
+    <div>
+      <p class="eyebrow">PRIVATE BETA · TRENDYOL CORE</p>
+      <h1>Gerçek veriyi kâra çevir.</h1>
+      <p class="v4-lead">Pazaryeri bağlantısı, güvenli kimlik doğrulama, senkron sağlık durumu, 7/30 günlük finansal özet ve ürün maliyet kapsaması tek konsolda.</p>
+    </div>
+    <div class="beta-badge">Backend: Supabase · Sync: Trendyol sale/return core</div>
+  </section>
+
+  <section id="authPanel" class="panel auth-panel">
+    <div class="section-head compact">
+      <div><p class="eyebrow">ACCESS</p><h2>Beta girişi</h2><p>Email + şifre ile giriş yap. Yeni hesapta email doğrulaması istenebilir.</p></div>
+    </div>
+    <form id="authForm" class="auth-grid">
+      <div class="field"><label for="authEmail">Email</label><input class="input" id="authEmail" type="email" autocomplete="email" required maxlength="254"></div>
+      <div class="field"><label for="authPassword">Şifre</label><input class="input" id="authPassword" type="password" autocomplete="current-password" required minlength="8" maxlength="128"></div>
+      <button class="btn primary" id="signInBtn" type="submit">Giriş yap</button>
+      <button class="btn secondary" id="signUpBtn" type="button">Hesap oluştur</button>
+    </form>
+    <div id="authMessage" class="notice" role="status"></div>
+  </section>
+
+  <section id="appPanel" class="hide">
+    <div class="session-bar panel">
+      <div><span class="muted">Oturum</span><strong id="userEmail">—</strong></div>
+      <div class="row-actions"><button class="btn ghost" id="refreshAllBtn">Yenile</button><button class="btn ghost" id="signOutBtn">Çıkış</button></div>
+    </div>
+
+    <section class="section" id="connections">
+      <div class="section-head"><div><p class="eyebrow">01 · CONNECTIONS</p><h2>Pazaryeri bağlantısı</h2><p>Private beta’da gerçek senkron yalnızca Trendyol için açık.</p></div></div>
+      <div class="grid2 v4-grid">
+        <div class="panel">
+          <div class="subhead">Yeni Trendyol bağlantısı</div>
+          <div class="field-grid">
+            <div class="field"><label for="connectionName">Bağlantı adı</label><input class="input" id="connectionName" maxlength="120" placeholder="Örn. Ana mağaza"></div>
+            <div class="field"><label for="sellerId">Satıcı ID</label><input class="input" id="sellerId" inputmode="numeric" maxlength="20" placeholder="123456"></div>
+          </div>
+          <button class="btn primary top-gap" id="createConnectionBtn">Bağlantı oluştur</button>
+          <div id="connectionMessage" class="notice" role="status"></div>
+        </div>
+        <div class="panel">
+          <div class="subhead">Aktif bağlantı</div>
+          <div class="field"><label for="connectionSelect">Mağaza</label><select id="connectionSelect"><option value="">Bağlantı seç</option></select></div>
+          <div id="connectionMeta" class="connection-meta muted">Henüz bağlantı seçilmedi.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="credentials">
+      <div class="section-head"><div><p class="eyebrow">02 · CREDENTIALS</p><h2>Trendyol API erişimi</h2><p>Anahtarlar tarayıcıda tutulmaz; backend tarafında Vault’a yazılır.</p></div></div>
+      <div class="panel">
+        <div class="credential-status"><span>Durum</span><strong id="credentialState">Bağlantı seç</strong></div>
+        <div class="field-grid">
+          <div class="field"><label for="apiKey">API Key</label><input class="input" id="apiKey" type="password" autocomplete="off" maxlength="220"></div>
+          <div class="field"><label for="apiSecret">API Secret</label><input class="input" id="apiSecret" type="password" autocomplete="off" maxlength="320"></div>
+        </div>
+        <div class="row-actions top-gap"><button class="btn primary" id="saveCredentialsBtn">Güvenli kaydet</button></div>
+        <div id="credentialMessage" class="notice" role="status"></div>
+      </div>
+    </section>
+
+    <section class="section" id="dashboard">
+      <div class="section-head"><div><p class="eyebrow">03 · LIVE DASHBOARD</p><h2>Finansal özet</h2><p>Trendyol sale/return çekirdeği ile senkronlanan gerçek veriler.</p></div><div class="row-actions"><select id="rangeDays"><option value="7">Son 7 gün</option><option value="30" selected>Son 30 gün</option></select><button class="btn secondary" id="syncBtn">Şimdi senkronla</button></div></div>
+      <div id="syncMessage" class="notice" role="status"></div>
+      <div class="health-grid">
+        <div class="panel"><span class="muted">Bağlantı sağlığı</span><strong id="healthState">—</strong><small id="healthMeta">—</small></div>
+        <div class="panel"><span class="muted">Veri güveni</span><strong id="confidenceState">—</strong><small id="coverageMeta">—</small></div>
+      </div>
+      <div class="kpi-grid v4-kpis">
+        <div class="kpi"><span>Brüt satış</span><strong id="grossSales">—</strong></div>
+        <div class="kpi"><span>İadeler</span><strong id="grossReturns">—</strong></div>
+        <div class="kpi"><span>Komisyon</span><strong id="commissionCost">—</strong></div>
+        <div class="kpi"><span>Satıcı geliri</span><strong id="sellerRevenue">—</strong></div>
+        <div class="kpi"><span>İşlem</span><strong id="transactions">—</strong></div>
+      </div>
+      <div class="panel top-gap">
+        <div class="subhead">En kritik ürünler</div>
+        <div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Satıcı geliri</th><th>Tahmini kâr</th><th>Marj</th><th>Güven</th><th>Durum</th></tr></thead><tbody id="worstProducts"><tr><td colspan="7" class="empty">Veri bekleniyor.</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="section" id="costs">
+      <div class="section-head"><div><p class="eyebrow">04 · COST ENRICHMENT</p><h2>Ürün maliyetleri</h2><p>Maliyet girildikçe dashboard platform verisinden gerçek kâra yaklaşır.</p></div></div>
+      <div class="panel">
+        <div class="field-grid three">
+          <div class="field"><label for="costProductId">Trendyol ürün ID</label><input class="input" id="costProductId" maxlength="180"></div>
+          <div class="field"><label for="costAmount">Maliyet (₺)</label><input class="input" id="costAmount" inputmode="decimal"></div>
+          <div class="field"><label for="costVat">Alış KDV (%)</label><input class="input" id="costVat" inputmode="decimal" value="20"></div>
+        </div>
+        <div class="row-actions top-gap"><button class="btn primary" id="saveCostBtn">Maliyet ekle</button></div>
+        <div id="costMessage" class="notice" role="status"></div>
+      </div>
+    </section>
+
+    <section class="section" id="history">
+      <div class="section-head"><div><p class="eyebrow">05 · SYNC HISTORY</p><h2>Senkron geçmişi</h2></div></div>
+      <div class="panel"><div class="table-wrap"><table><thead><tr><th>Başlangıç</th><th>Durum</th><th>İçe aktarılan</th><th>Hata kodu</th><th>Bitiş</th></tr></thead><tbody id="historyBody"><tr><td colspan="5" class="empty">Geçmiş bekleniyor.</td></tr></tbody></table></div></div>
+    </section>
+  </section>
+</main>
+<footer class="wrap foot">KârKalkan v4 private beta. Finansal sonuçlar karar desteğidir; resmi muhasebe/vergi beyanı değildir.</footer>
+<script src="v4.js"></script>
+</body>
+</html>
