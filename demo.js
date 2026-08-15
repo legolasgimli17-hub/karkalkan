@@ -48,10 +48,53 @@ function render(range){
   renderProducts(d.products);
   renderRisks(d.risks);
   document.querySelectorAll('[data-range]').forEach(btn=>btn.classList.toggle('active',btn.dataset.range===String(range)));
-  if(window.va)window.va('event','demo_range_change',{range_days:Number(range)});
+  track('demo_range_change',{range_days:Number(range)});
+}
+
+function getAttribution(){
+  const params=new URLSearchParams(window.location.search);
+  const saved={};
+  try{Object.assign(saved,JSON.parse(sessionStorage.getItem('karkalkan_attribution')||'{}'));}catch(_){/* ignore */}
+  const gclid=params.get('gclid')||saved.gclid||'';
+  const source=params.get('utm_source')||saved.utm_source||(gclid?'google_ads':'');
+  const medium=params.get('utm_medium')||saved.utm_medium||(gclid?'cpc':'');
+  const campaign=params.get('utm_campaign')||saved.utm_campaign||'';
+  const term=params.get('utm_term')||saved.utm_term||'';
+  const next={gclid,utm_source:source,utm_medium:medium,utm_campaign:campaign,utm_term:term};
+  if(gclid||source||campaign||term){
+    try{sessionStorage.setItem('karkalkan_attribution',JSON.stringify(next));}catch(_){/* ignore */}
+  }
+  return next;
+}
+
+function track(name,props={}){
+  if(!window.va)return;
+  const a=getAttribution();
+  window.va('event',name,{
+    ...props,
+    traffic_source:a.utm_source||'direct',
+    traffic_medium:a.utm_medium||'',
+    campaign:a.utm_campaign||'',
+    keyword:a.utm_term||'',
+    google_ad_click:Boolean(a.gclid)
+  });
+}
+
+function setupFunnelTracking(){
+  document.querySelectorAll('a[href="/hesapla"],a[href="/hesapla.html"]').forEach(link=>{
+    link.addEventListener('click',()=>track('calculator_cta_click',{cta_text:(link.textContent||'').trim()}));
+  });
+  document.querySelectorAll('a[href="/v4.html"]').forEach(link=>{
+    link.addEventListener('click',()=>track('store_connect_cta_click',{cta_text:(link.textContent||'').trim()}));
+  });
+  document.querySelectorAll('a[href="#ozet"]').forEach(link=>{
+    link.addEventListener('click',()=>track('demo_summary_cta_click'));
+  });
+  track('demo_view');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-range]').forEach(btn=>btn.addEventListener('click',()=>render(Number(btn.dataset.range))));
+  setupFunnelTracking();
   render(30);
 });
