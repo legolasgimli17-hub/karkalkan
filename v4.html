@@ -49,7 +49,7 @@
   <section id="authPanel" class="auth-stage">
     <div class="auth-copy">
       <p class="eyebrow">KÂRKALKAN V4</p>
-      <h2>Satışı değil, gerçekte ne kazandığını gör.</h2>
+      <h2>Satıştan sana ne kaldığını daha doğru gör.</h2>
       <p>Mağaza verisini güvenli biçimde bağla; iadeyi, komisyonu ve ürün maliyetini aynı finansal görünümde izle.</p>
       <div class="trust-grid">
         <div><strong>01</strong><span>API anahtarları Vault'ta</span></div>
@@ -80,7 +80,7 @@
       <div><span>1</span><p><strong>Mağazayı ekle</strong><small>Seller ID ile bağlantıyı oluştur.</small></p></div><i></i>
       <div><span>2</span><p><strong>API'yi bağla</strong><small>Anahtarlar sadece Vault'a gider.</small></p></div><i></i>
       <div><span>3</span><p><strong>Senkronla</strong><small>Gerçek satış/iade verisini çek.</small></p></div><i></i>
-      <div><span>4</span><p><strong>Maliyeti zenginleştir</strong><small>Ürün kârını netleştir.</small></p></div>
+      <div><span>4</span><p><strong>Maliyeti zenginleştir</strong><small>Ürün katkı kârını netleştir.</small></p></div>
     </section>
 
     <section class="section dashboard-first" id="dashboard">
@@ -104,16 +104,16 @@
       </div>
 
       <div class="profit-grid top-gap">
-        <article class="profit-card profit-card-primary"><div><span>Maliyeti bilinen ürünlerde kâr</span><strong id="coveredProfit">—</strong><small id="profitScopeMeta">Kapsam bekleniyor.</small></div><div class="profit-side"><span>Net marj</span><strong id="coveredMargin">—</strong></div></article>
+        <article class="profit-card profit-card-primary"><div><span>Maliyeti bilinen ürünlerde katkı kârı</span><strong id="coveredProfit">—</strong><small id="profitScopeMeta">Kapsam bekleniyor.</small></div><div class="profit-side"><span>Katkı marjı</span><strong id="coveredMargin">—</strong></div></article>
         <article class="coverage-card"><div class="coverage-head"><div><span>Maliyet kapsaması</span><strong id="costCoverageValue">—</strong></div><small id="costCoverageCount">—</small></div><progress id="costCoverageProgress" max="100" value="0">0%</progress><div class="coverage-foot"><span id="salesCoverageMeta">Satış hacmi kapsaması —</span><button class="btn ghost compact-btn" id="jumpToMissingCostsBtn" type="button">Eksikleri tamamla</button></div></article>
       </div>
 
       <div class="dashboard-split top-gap">
         <div class="panel data-panel"><div class="panel-title-row"><div><p class="eyebrow">ACTION QUEUE</p><h3>Önce maliyet gir</h3></div><span class="muted">Maliyeti olmayan ürünler satış hacmine göre sıralanır.</span></div><div class="table-wrap"><table><thead><tr><th>Ürün / Barkod</th><th>Adet</th><th>Brüt satış</th><th>Satıcı geliri</th><th></th></tr></thead><tbody id="needsCostBody"><tr><td colspan="5" class="empty">Veri bekleniyor.</td></tr></tbody></table></div></div>
-        <div class="panel data-panel"><div class="panel-title-row"><div><p class="eyebrow">RISK RADAR</p><h3>En kritik ürünler</h3></div><span class="muted">Maliyeti bilinen ürünler kâra göre sıralanır.</span></div><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Satıcı geliri</th><th>Tahmini kâr</th><th>Marj</th><th>Durum</th></tr></thead><tbody id="advancedWorstProducts"><tr><td colspan="6" class="empty">Veri bekleniyor.</td></tr></tbody></table></div></div>
+        <div class="panel data-panel"><div class="panel-title-row"><div><p class="eyebrow">RISK RADAR</p><h3>En kritik ürünler</h3></div><span class="muted">Maliyeti bilinen ürünler katkı kârına göre sıralanır.</span></div><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Satıcı geliri</th><th>Tahmini katkı kârı</th><th>Katkı marjı</th><th>Durum</th></tr></thead><tbody id="advancedWorstProducts"><tr><td colspan="6" class="empty">Veri bekleniyor.</td></tr></tbody></table></div></div>
       </div>
 
-      <details class="legacy-table-wrap top-gap"><summary>Teknik ürün görünümü</summary><div class="panel data-panel"><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Satıcı geliri</th><th>Tahmini kâr</th><th>Marj</th><th>Güven</th><th>Durum</th></tr></thead><tbody id="worstProducts"><tr><td colspan="7" class="empty">Veri bekleniyor.</td></tr></tbody></table></div></div></details>
+      <details class="legacy-table-wrap top-gap"><summary>Teknik ürün görünümü</summary><div class="panel data-panel"><div class="table-wrap"><table><thead><tr><th>Ürün</th><th>Adet</th><th>Satıcı geliri</th><th>Tahmini katkı kârı</th><th>Katkı marjı</th><th>Güven</th><th>Durum</th></tr></thead><tbody id="worstProducts"><tr><td colspan="7" class="empty">Veri bekleniyor.</td></tr></tbody></table></div></div></details>
     </section>
 
     <section class="section" id="connections">
@@ -130,8 +130,8 @@
     </section>
 
     <section class="section" id="costs">
-      <div class="section-head"><div><p class="eyebrow">04 · COST ENRICHMENT</p><h2>Ürün maliyetlerini tamamla</h2><p>Barkod/ürün ID bazında maliyet ekledikçe ürün kârı ve marjı otomatik yeniden hesaplanır.</p></div></div>
-      <div class="panel cost-panel"><div class="cost-explainer"><strong>Neden gerekli?</strong><span>Pazaryeri yalnızca satış tarafını bilir. Kârın doğruya yaklaşması için senin ürün maliyetin gerekir.</span></div><div class="field-grid three"><div class="field"><label for="costProductId">Trendyol ürün ID / Barkod</label><input class="input" id="costProductId" maxlength="180" placeholder="Ürün anahtarı"></div><div class="field"><label for="costAmount">Maliyet (₺)</label><input class="input" id="costAmount" inputmode="decimal" placeholder="0,00"></div><div class="field"><label for="costVat">Alış KDV (%)</label><input class="input" id="costVat" inputmode="decimal" value="20"></div></div><div class="row-actions top-gap"><button class="btn primary" id="saveCostBtn">Maliyeti kaydet</button></div><div id="costMessage" class="notice" role="status"></div></div>
+      <div class="section-head"><div><p class="eyebrow">04 · COST ENRICHMENT</p><h2>Ürün maliyetlerini tamamla</h2><p>Barkod/ürün ID bazında maliyet ekledikçe ürün katkı kârı ve katkı marjı otomatik yeniden hesaplanır.</p></div></div>
+      <div class="panel cost-panel"><div class="cost-explainer"><strong>Neden gerekli?</strong><span>Pazaryeri yalnızca satış tarafını bilir. Katkı kârının doğruya yaklaşması için senin ürün maliyetin gerekir.</span></div><div class="field-grid three"><div class="field"><label for="costProductId">Trendyol ürün ID / Barkod</label><input class="input" id="costProductId" maxlength="180" placeholder="Ürün anahtarı"></div><div class="field"><label for="costAmount">Maliyet (₺)</label><input class="input" id="costAmount" inputmode="decimal" placeholder="0,00"></div><div class="field"><label for="costVat">Alış KDV (%)</label><input class="input" id="costVat" inputmode="decimal" value="20"></div></div><p class="muted top-gap">Alış KDV oranı kayıt altına alınır; satıcının vergi statüsü bilinmeden katkı kârı hesabına uygulanmaz.</p><div class="row-actions top-gap"><button class="btn primary" id="saveCostBtn">Maliyeti kaydet</button></div><div id="costMessage" class="notice" role="status"></div></div>
       <div class="panel data-panel top-gap"><div class="panel-title-row"><div><p class="eyebrow">COST LEDGER</p><h3>Kayıtlı maliyetler</h3></div><span class="muted">Son 500 maliyet sürümü.</span></div><div class="table-wrap"><table><thead><tr><th>Ürün / Barkod</th><th>Maliyet</th><th>Alış KDV</th><th>Geçerlilik</th><th></th></tr></thead><tbody id="costLedgerBody"><tr><td colspan="5" class="empty">Maliyet kayıtları bekleniyor.</td></tr></tbody></table></div></div>
     </section>
 
@@ -141,7 +141,7 @@
     </section>
   </section>
 
-  <footer class="v4-foot"><strong>KârKalkan v4</strong><span>Private beta · Finansal sonuçlar karar desteğidir; resmi muhasebe veya vergi beyanı değildir.</span></footer>
+  <footer class="v4-foot"><strong>KârKalkan v4</strong><span>Private beta · Katkı kârı resmi net kâr değildir; finansal sonuçlar karar desteğidir, resmi muhasebe veya vergi beyanı değildir.</span></footer>
 </main>
 <script src="v4.js"></script>
 <script src="v4-enhance.js"></script>
