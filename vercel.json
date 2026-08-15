@@ -4,6 +4,10 @@
     {
       "source": "/hesapla",
       "destination": "/hesapla.html"
+    },
+    {
+      "source": "/demo",
+      "destination": "/demo.html"
     }
   ],
   "headers": [
