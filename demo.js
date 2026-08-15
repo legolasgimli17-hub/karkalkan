@@ -30,8 +30,6 @@ const demoData={
 };
 
 const ids=['grossSales','returns','returnMeta','commission','commissionMeta','sellerRevenue','profit','margin','cogs','cargo','stoppage'];
-const moneyLike=new Set(['grossSales','returns','commission','sellerRevenue','profit','cogs','cargo','stoppage']);
-
 function statusClass(kind){return `status-pill status-${kind}`}
 function renderProducts(items){
   const body=document.getElementById('productRows');
@@ -45,12 +43,12 @@ function render(range){
   const d=demoData[range];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d[id]});
   document.getElementById('coverage').textContent=`%${d.coverage}`;
-  document.getElementById('coverageBar').style.width=`${d.coverage}%`;
+  document.getElementById('coverageBar').className=`coverage-${d.coverage}`;
   document.getElementById('coverageText').textContent=`Satış hacminin %${d.coverage}'sında ürün maliyeti biliniyor. Kapsama dışında kalan ürünlerde katkı kârı hesaplanmaz.`;
   renderProducts(d.products);
   renderRisks(d.risks);
   document.querySelectorAll('[data-range]').forEach(btn=>btn.classList.toggle('active',btn.dataset.range===String(range)));
-  if(window.va)window.va('event',{name:'demo_range_change',data:{range_days:Number(range)}});
+  if(window.va)window.va('event','demo_range_change',{range_days:Number(range)});
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
