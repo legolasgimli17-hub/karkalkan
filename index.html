@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#070b14">
   <meta name="robots" content="index,follow">
   <meta name="google-site-verification" content="bTpUowh7OLmLsQP85fdwwyaBuCFm04iDu1pKbADVFgE">
-  <meta name="description" content="KârKalkan'ı Trendyol hesabı bağlamadan ve API anahtarı vermeden örnek mağaza verileriyle hemen deneyin.">
+  <meta name="description" content="Trendyol satışlarından sana ne kaldığını gör. Satış, iade, komisyon, kargo ve ürün maliyetlerini tek ekranda incele.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="tr_TR">
-  <meta property="og:title" content="KârKalkan — API vermeden Trendyol kârlılık demosu">
-  <meta property="og:description" content="Satış, iade, komisyon, kargo, stopaj ve ürün katkı kârını örnek mağazada hemen görün.">
+  <meta property="og:title" content="KârKalkan — Trendyol satışlarından sana ne kalıyor?">
+  <meta property="og:description" content="Hangi ürün para kazandırıyor, hangisi zarar ettiriyor? Örnek mağazada hemen gör.">
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="https://karkalkan.vercel.app/">
-  <title>KârKalkan — API Vermeden Hemen Dene</title>
+  <title>KârKalkan — Trendyol'da Sana Ne Kalıyor?</title>
   <link rel="stylesheet" href="landing.css">
   <link rel="stylesheet" href="demo.css">
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
@@ -25,14 +25,14 @@
   <div class="wrap nav">
     <a class="brand" href="/"><span class="mark">K</span><span>KârKalkan</span></a>
     <nav class="navlinks" aria-label="Ana navigasyon">
-      <a href="#ozet">Finansal özet</a>
+      <a href="#ozet">Mağaza özeti</a>
       <a href="#urunler">Ürünler</a>
-      <a href="#riskler">Riskler</a>
-      <a href="/hesapla">Ücretsiz hesaplayıcı</a>
+      <a href="#riskler">Dikkat gerekenler</a>
+      <a href="/hesapla">Ücretsiz hesapla</a>
     </nav>
     <div class="actions">
       <a class="btn ghost" href="/hesapla">Kendi rakamımla hesapla</a>
-      <a class="btn primary" href="/v4.html">Gerçek mağazaya geç</a>
+      <a class="btn primary" href="/v4.html">Mağazamı bağla</a>
     </div>
   </div>
 </header>
@@ -40,24 +40,24 @@
 <main>
   <section class="demo-hero wrap">
     <div>
-      <p class="eyebrow">HEMEN DENE · HESAP YOK · SELLER ID YOK · API KEY YOK</p>
-      <h1>KârKalkan açılır açılmaz ürünü gör.</h1>
-      <p class="lead">Bu sayfa doğrudan çalışan demodur. Hiçbir Trendyol hesabına bağlanmaz ve hassas bilgi istemez. Satış, iade, komisyon, kargo, stopaj ve ürün maliyetlerinin nasıl birleştiğini aşağıdaki örnek mağazada hemen incele.</p>
+      <p class="eyebrow">TRENDYOL SATICILARI İÇİN BASİT KÂR TAKİBİ</p>
+      <h1>Satış yaptın. Peki sana ne kaldı?</h1>
+      <p class="lead">KârKalkan; satışlarını, iadeleri, Trendyol komisyonunu, kargoyu ve ürün maliyetini bir araya getirir. Hangi ürünün para kazandırdığını, hangisinin kazancını erittiğini tek ekranda gösterir.</p>
       <div class="hero-actions">
-        <a class="btn primary" href="#ozet">Finansal özeti gör</a>
-        <a class="btn ghost" href="/hesapla">Kendi rakamlarımla hesapla</a>
+        <a class="btn primary" href="#ozet">Örnek mağazayı incele</a>
+        <a class="btn ghost" href="/hesapla">Kendi ürünümü hesapla</a>
       </div>
-      <div class="trust-banner"><strong>Giriş yapmak zorunda değilsin.</strong><span>Demo için e-posta, Seller ID, API Key, API Secret veya Trendyol şifresi istenmez.</span></div>
+      <div class="trust-banner"><strong>Bakmak için hiçbir bilgi vermen gerekmiyor.</strong><span>Bu örnek ekran hiçbir gerçek Trendyol mağazasına bağlı değildir. Giriş yapmadan hemen inceleyebilirsin.</span></div>
     </div>
     <aside class="demo-proof">
       <span class="demo-label">ÖRNEK MAĞAZA</span>
-      <h2>ModaSepeti Demo</h2>
-      <p>KârKalkan'ın gerçek mağaza bağlantısından sonra sunduğu finansal görünümün sentetik örneği.</p>
+      <h2>ModaSepeti</h2>
+      <p>Aşağıdaki rakamlar sadece KârKalkan'ın ne gösterdiğini anlatmak için hazırlanmış örnek verilerdir.</p>
       <ul>
-        <li>Satış + iade birlikte</li>
-        <li>Komisyon ve kesintiler ayrı</li>
-        <li>Ürün maliyeti kapsamı görünür</li>
-        <li>Kargo ve stopaj ayrı finansal katmanlar</li>
+        <li>Toplam satış ve iadeler</li>
+        <li>Trendyol komisyonu ve kesintiler</li>
+        <li>Ürün maliyetleri</li>
+        <li>Kargo ve kesilen vergi</li>
       </ul>
     </aside>
   </section>
@@ -66,9 +66,9 @@
     <div class="wrap">
       <div class="demo-toolbar">
         <div>
-          <p class="eyebrow">SENTETİK ÖRNEK VERİLER</p>
-          <h2>Finansal kontrol merkezi</h2>
-          <p>Rakamlar demo için üretilmiştir; hiçbir gerçek satıcıya ait değildir.</p>
+          <p class="eyebrow">ÖRNEK MAĞAZA RAKAMLARI</p>
+          <h2>Mağazanın 30 günlük özeti</h2>
+          <p>Bir bakışta satışını, kesintilerini ve sana kalan tutarı gör.</p>
         </div>
         <div class="range-switch" role="group" aria-label="Tarih aralığı">
           <button type="button" data-range="7">7 gün</button>
@@ -77,32 +77,32 @@
       </div>
 
       <div class="demo-grid kpi-row">
-        <article class="demo-card"><span>Brüt satış</span><strong id="grossSales">₺184.250</strong><small>Platform satış hacmi</small></article>
+        <article class="demo-card"><span>Toplam satış</span><strong id="grossSales">₺184.250</strong><small>İade öncesi satış tutarı</small></article>
         <article class="demo-card"><span>İadeler</span><strong id="returns">₺16.480</strong><small id="returnMeta">%8,9 iade oranı</small></article>
-        <article class="demo-card"><span>Komisyon</span><strong id="commission">₺31.725</strong><small id="commissionMeta">Brüt satışın %17,2'si</small></article>
-        <article class="demo-card featured"><span>Satıcı geliri</span><strong id="sellerRevenue">₺132.900</strong><small>Settlement sonrası örnek gelir</small></article>
+        <article class="demo-card"><span>Trendyol komisyonu</span><strong id="commission">₺31.725</strong><small id="commissionMeta">Satışların %17,2'si</small></article>
+        <article class="demo-card featured"><span>Satışlardan kalan</span><strong id="sellerRevenue">₺132.900</strong><small>Satış ve kesinti hareketlerinden sonra görünen tutar</small></article>
       </div>
 
       <div class="demo-grid profit-row">
         <article class="profit-demo-card">
           <div>
-            <span>Maliyeti bilinen ürünlerde katkı kârı</span>
+            <span>Maliyeti bilinen ürünlerden kalan</span>
             <strong id="profit">₺27.840</strong>
-            <small id="profitMeta">Ürün maliyeti ve tahsis edilen kargo sonrası</small>
+            <small id="profitMeta">Ürün maliyeti ve ürüne düşen kargo çıkarıldıktan sonra</small>
           </div>
-          <div class="profit-side-demo"><span>Katkı marjı</span><strong id="margin">%20,9</strong></div>
+          <div class="profit-side-demo"><span>Kalan oranı</span><strong id="margin">%20,9</strong></div>
         </article>
         <article class="breakdown-card">
-          <div><span>Bilinen ürün maliyeti</span><strong id="cogs">₺92.220</strong></div>
-          <div><span>Tahsis edilen kargo</span><strong id="cargo">₺12.840</strong></div>
-          <div><span>Stopaj</span><strong id="stoppage">₺4.820</strong><small>Nakit kesintisi; katkı kârından ayrı izlenir.</small></div>
+          <div><span>Ürünlerin toplam maliyeti</span><strong id="cogs">₺92.220</strong></div>
+          <div><span>Ürünlere düşen kargo</span><strong id="cargo">₺12.840</strong></div>
+          <div><span>Kesilen vergi (stopaj)</span><strong id="stoppage">₺4.820</strong><small>Ödeme sırasında kesilen tutar; burada ayrı gösterilir.</small></div>
         </article>
       </div>
 
       <div class="coverage-card-demo">
-        <div><span>Maliyet kapsaması</span><strong id="coverage">%86</strong></div>
+        <div><span>Maliyeti girilmiş satışlar</span><strong id="coverage">%86</strong></div>
         <div class="coverage-track"><i id="coverageBar" class="coverage-86"></i></div>
-        <p id="coverageText">Satış hacminin %86'sında ürün maliyeti biliniyor. Kapsama dışında kalan ürünlerde katkı kârı hesaplanmaz.</p>
+        <p id="coverageText">Satışların %86'sında ürün maliyeti girilmiş. Diğer ürünlerde ne kadar kaldığını hesaplamak için maliyet bilgisi gerekiyor.</p>
       </div>
     </div>
   </section>
@@ -110,14 +110,14 @@
   <section class="section" id="urunler">
     <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">ÜRÜN BAZINDA</p>
-        <h2>Hangi ürünün katkı sağladığını gör.</h2>
-        <p>Demo tablo, maliyeti bilinen ürünlerde katkı kârı ve marjı; maliyeti eksik ürünlerde ise eksik veri durumunu açıkça gösterir.</p>
+        <p class="eyebrow">ÜRÜN ÜRÜN BAK</p>
+        <h2>Hangi üründen ne kadar kaldığını gör.</h2>
+        <p>Maliyeti girilen ürünlerde sana kalan tutarı gösterir. Maliyeti eksikse de bunu açıkça söyler; tahmin uydurmaz.</p>
       </div>
       <div class="table-card">
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Ürün</th><th>Net adet</th><th>Satıcı geliri</th><th>Katkı kârı</th><th>Marj</th><th>Durum</th></tr></thead>
+            <thead><tr><th>Ürün</th><th>Adet</th><th>Satıştan kalan</th><th>Üründen kalan</th><th>Kalan oranı</th><th>Durum</th></tr></thead>
             <tbody id="productRows"></tbody>
           </table>
         </div>
@@ -128,9 +128,9 @@
   <section class="section" id="riskler">
     <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">RISK RADAR</p>
-        <h2>Bakman gereken yeri öne çıkar.</h2>
-        <p>Uyarılar yapay zekâ tahmini değil; açık finansal eşiklere dayanan karar destek sinyalleridir.</p>
+        <p class="eyebrow">DİKKAT ETMEN GEREKENLER</p>
+        <h2>Sorunlu ürünü tek tek aramak zorunda kalma.</h2>
+        <p>KârKalkan; az kazandıran, zarar ettiren veya maliyeti eksik olan ürünleri öne çıkarır.</p>
       </div>
       <div class="grid3" id="riskCards"></div>
     </div>
@@ -139,21 +139,21 @@
   <section class="cta">
     <div class="wrap cta-box">
       <div>
-        <p class="eyebrow">SONRAKİ ADIM SENİN</p>
-        <h2>Önce ürünü gör. İstersen sonra mağazanı bağla.</h2>
-        <p>Gerçek mağaza bağlantısı ayrı ve isteğe bağlıdır. Kendi rakamlarını ücretsiz hesaplayabilir veya hazır olduğunda gerçek mağaza konsoluna geçebilirsin.</p>
+        <p class="eyebrow">İSTERSEN BİR SONRAKİ ADIMA GEÇ</p>
+        <h2>Kendi rakamlarını hesapla veya mağazanı bağla.</h2>
+        <p>Önce ücretsiz hesaplayıcıyla tek bir ürünü deneyebilirsin. KârKalkan işine yararsa daha sonra Trendyol mağazanı bağlayıp gerçek verilerini görebilirsin.</p>
       </div>
       <div class="hero-actions">
-        <a class="btn primary" href="/hesapla">Kendi rakamlarımla hesapla</a>
-        <a class="btn ghost" href="/v4.html">Gerçek mağazaya geç</a>
+        <a class="btn primary" href="/hesapla">Kendi ürünümü hesapla</a>
+        <a class="btn ghost" href="/v4.html">Mağazamı bağla</a>
       </div>
     </div>
   </section>
 </main>
 
 <footer class="foot">
-  <div class="wrap foot-inner"><span>© 2026 KârKalkan · Demo modu</span><div class="foot-links"><a href="/hesapla">Ücretsiz hesaplayıcı</a><a href="/v4.html">Gerçek mağaza / Giriş</a></div></div>
-  <div class="wrap note">Demo verileri sentetiktir. Katkı kârı resmi net kâr değildir. KârKalkan karar desteği sağlar; resmi muhasebe, vergi beyanı veya mali müşavir hizmeti değildir.</div>
+  <div class="wrap foot-inner"><span>© 2026 KârKalkan</span><div class="foot-links"><a href="/hesapla">Ücretsiz hesapla</a><a href="/v4.html">Mağaza girişi</a></div></div>
+  <div class="wrap note">Gösterilen “kalan” tutarlar resmi net kâr değildir. KârKalkan karar vermene yardımcı olur; resmi muhasebe veya vergi hesabının yerine geçmez.</div>
 </footer>
 </body>
 </html>
