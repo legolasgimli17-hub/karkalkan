@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#070b14">
   <meta name="robots" content="index,follow">
   <meta name="google-site-verification" content="bTpUowh7OLmLsQP85fdwwyaBuCFm04iDu1pKbADVFgE">
-  <meta name="description" content="KârKalkan, Trendyol satıcılarının satış, iade, komisyon, kargo, stopaj ve ürün maliyetlerini tek finansal görünümde takip etmesine yardımcı olur.">
+  <meta name="description" content="KârKalkan, Trendyol satıcılarının satış, iade, komisyon, kargo, stopaj ve ürün maliyetlerini tek finansal görünümde takip etmesine yardımcı olur. API vermeden demoyu deneyin.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="tr_TR">
   <meta property="og:title" content="KârKalkan — Trendyol kârlılık ve finansal kontrol merkezi">
-  <meta property="og:description" content="Zarar eden ürünleri bul, gerçek kesintileri gör, katkı kârını takip et.">
+  <meta property="og:description" content="Önce API vermeden dene; zarar eden ürünleri, kesintileri ve katkı kârını örnek mağazada gör.">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="KârKalkan — Trendyol kârlılık ve finansal kontrol merkezi">
-  <meta name="twitter:description" content="Zarar eden ürünleri bul, gerçek kesintileri gör, katkı kârını takip et.">
+  <meta name="twitter:description" content="Önce API vermeden dene; zarar eden ürünleri, kesintileri ve katkı kârını örnek mağazada gör.">
   <link rel="canonical" href="https://karkalkan.vercel.app/">
   <title>KârKalkan — Trendyol Kârlılık ve Finansal Kontrol</title>
   <link rel="stylesheet" href="landing.css">
@@ -25,6 +25,7 @@
   <div class="wrap nav">
     <a class="brand" href="/"><span class="mark">K</span><span>KârKalkan</span></a>
     <nav class="navlinks" aria-label="Ana navigasyon">
+      <a href="/demo">Demo</a>
       <a href="#ozellikler">Özellikler</a>
       <a href="#nasil">Nasıl çalışır?</a>
       <a href="#guvenlik">Güvenlik</a>
@@ -32,7 +33,7 @@
     </nav>
     <div class="actions">
       <a class="btn ghost" href="/v4.html">Giriş yap</a>
-      <a class="btn primary" href="/v4.html">Ücretsiz hesap oluştur</a>
+      <a class="btn primary" href="/demo">API vermeden dene</a>
     </div>
   </div>
 </header>
@@ -42,16 +43,16 @@
   <div>
     <p class="eyebrow">TRENDYOL SATICILARI İÇİN FİNANSAL KONTROL</p>
     <h1>Satış var. Peki sana gerçekten ne kalıyor?</h1>
-    <p class="lead">KârKalkan; satış, iade, komisyon, platform kesintileri, kargo faturaları, stopaj ve ürün maliyetlerini aynı görünümde birleştirir. Hangi ürünün para kazandırdığını, hangisinin marjını erittiğini daha hızlı gör.</p>
+    <p class="lead">KârKalkan; satış, iade, komisyon, platform kesintileri, kargo faturaları, stopaj ve ürün maliyetlerini aynı görünümde birleştirir. Önce örnek mağazada dene; hesabını veya API anahtarını vermen gerekmez.</p>
     <div class="hero-actions">
-      <a class="btn primary" href="/v4.html">Ücretsiz hesap oluştur</a>
-      <a class="btn ghost" href="/hesapla">Önce ücretsiz hesapla</a>
+      <a class="btn primary" href="/demo">API vermeden demoyu aç</a>
+      <a class="btn ghost" href="/hesapla">Kendi rakamlarımla hesapla</a>
     </div>
-    <p class="micro">Private Beta · Kredi kartı gerekmez · Finansal sonuçlar karar desteğidir, resmi muhasebe veya vergi beyanı değildir.</p>
+    <p class="micro">Demo için hesap, Seller ID, API Key veya API Secret gerekmez · Demo verileri sentetiktir · Finansal sonuçlar karar desteğidir.</p>
   </div>
 
   <div class="console" aria-label="KârKalkan örnek finansal görünümü">
-    <div class="console-top"><span>Finansal özet · Örnek veriler</span><span class="live"><i class="dot"></i> Trendyol Core</span></div>
+    <div class="console-top"><span>Finansal özet · Örnek veriler</span><span class="live"><i class="dot"></i> Demo modu</span></div>
     <div class="metrics">
       <div class="metric"><span>Brüt satış</span><strong>₺184.250</strong><small>Son 30 gün</small></div>
       <div class="metric"><span>İadeler</span><strong>₺16.480</strong><small>%8,9 iade oranı</small></div>
@@ -86,15 +87,15 @@
 <section class="section" id="nasil">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">4 ADIMDA</p>
-      <h2>Mağazanı bağla, finansal görünümü oluştur.</h2>
-      <p>Karmaşık bir kurulum yok. Trendyol satıcı bilgilerinle bağlantıyı kurup veriyi senkronlarsın.</p>
+      <p class="eyebrow">ÖNCE DENE, SONRA BAĞLA</p>
+      <h2>Hassas bilgi vermeden KârKalkan'ın ne yaptığını gör.</h2>
+      <p>Mağaza bağlantısını ilk adım olmaktan çıkardık. Önce ürünü gör, sonra değerli bulursan gerçek mağaza entegrasyonuna geç.</p>
     </div>
     <div class="steps">
-      <div class="step"><strong>1. Hesap oluştur</strong><span>E-posta ve şifrenle KârKalkan hesabını aç.</span></div>
-      <div class="step"><strong>2. Mağazanı ekle</strong><span>Trendyol Seller ID ile mağaza bağlantısını oluştur.</span></div>
-      <div class="step"><strong>3. API erişimini bağla</strong><span>API bilgilerin sunucu tarafında güvenli Vault yapısına kaydedilir.</span></div>
-      <div class="step"><strong>4. Senkronla ve maliyet gir</strong><span>Satış/iade verisini çek, ürün maliyetlerini tamamla ve katkı kârını gör.</span></div>
+      <div class="step"><strong>1. Demoyu aç</strong><span>Hesap açmadan örnek mağaza finansallarında gez.</span></div>
+      <div class="step"><strong>2. Kendi rakamını dene</strong><span>Ücretsiz hesaplayıcıda satış, maliyet ve komisyonla senaryo kur.</span></div>
+      <div class="step"><strong>3. İstersen hesap oluştur</strong><span>KârKalkan konsoluna ancak ürünü gördükten sonra geç.</span></div>
+      <div class="step"><strong>4. Hazır olduğunda bağla</strong><span>Gerçek senkron için Trendyol erişimini ayrı ve isteğe bağlı adımda ekle.</span></div>
     </div>
   </div>
 </section>
@@ -103,12 +104,12 @@
   <div class="wrap truth">
     <div class="truth-copy">
       <p class="eyebrow">GÜVENLİK VE ŞEFFAFLIK</p>
-      <h3>API anahtarın uygulamanın içinde açıkta tutulmaz.</h3>
-      <p>KârKalkan kullanıcı verisini kullanıcı bazlı erişim kontrolleriyle ayırır. Trendyol API bilgileri tarayıcı depolamasına yazılmak yerine sunucu tarafındaki güvenli Vault katmanına gönderilir.</p>
-      <div class="security"><span>Vault korumalı erişim</span><span>Kullanıcı bazlı veri izolasyonu</span><span>RLS kontrollü tablolar</span></div>
+      <h3>KârKalkan'ı denemek için API anahtarı vermen gerekmez.</h3>
+      <p>Demo modu hiçbir Trendyol hesabına bağlanmaz. Gerçek mağaza entegrasyonuna geçersen API bilgileri tarayıcı depolamasında tutulmaz; sunucu tarafındaki Vault katmanına gönderilir.</p>
+      <div class="security"><span>API'siz demo modu</span><span>Vault korumalı gerçek bağlantı</span><span>Kullanıcı bazlı veri izolasyonu</span><span>RLS kontrollü tablolar</span></div>
     </div>
     <div class="truth-panel">
-      <div class="truth-item"><i class="check">✓</i><div><b>Satış + iade aynı finansal görünümde</b><span>Core settlement verisi ile gelir ve iadeler birlikte değerlendirilir.</span></div></div>
+      <div class="truth-item"><i class="check">✓</i><div><b>Demo tamamen sentetik</b><span>Örnek rakamlar hiçbir gerçek Trendyol satıcısına ait değildir.</span></div></div>
       <div class="truth-item"><i class="check">✓</i><div><b>Maliyet bilinmiyorsa sistem bunu gizlemez</b><span>Ürün maliyeti eksik olduğunda katkı kârı kapsamı açıkça gösterilir.</span></div></div>
       <div class="truth-item"><i class="check">✓</i><div><b>Kurallar AI tahmini gibi sunulmaz</b><span>Risk uyarıları açık eşiklere dayanır; “kesin zarar” veya “kesin vergi sonucu” iddiası yapılmaz.</span></div></div>
       <div class="truth-item"><i class="check">✓</i><div><b>Resmi muhasebe yerine geçmez</b><span>Gösterilen katkı kârı ve nakit görünümü karar desteğidir.</span></div></div>
@@ -118,8 +119,8 @@
 
 <section class="cta">
   <div class="wrap cta-box">
-    <div><p class="eyebrow">PRIVATE BETA</p><h2>Mağazanın gerçek finansal görünümünü oluştur.</h2><p>Hesabını oluştur, Trendyol mağazanı bağla ve satıştan sana kalan katkıyı daha doğru görmeye başla.</p></div>
-    <div class="hero-actions"><a class="btn primary" href="/v4.html">Ücretsiz hesap oluştur</a><a class="btn ghost" href="/hesapla">Hesaplayıcıyı dene</a></div>
+    <div><p class="eyebrow">SIFIR GÜVEN BORCUYLA BAŞLA</p><h2>Önce gör. Beğenirsen mağazanı bağla.</h2><p>Demoda hesap açılmaz ve Trendyol erişim bilgisi istenmez. Ürünü gerçek mağaza verisiyle kullanmak istediğinde bağlantı adımına sen karar verirsin.</p></div>
+    <div class="hero-actions"><a class="btn primary" href="/demo">API vermeden dene</a><a class="btn ghost" href="/v4.html">Giriş / Kayıt</a></div>
   </div>
 </section>
 </main>
@@ -127,7 +128,7 @@
 <footer class="foot">
   <div class="wrap foot-inner">
     <span>© 2026 KârKalkan · Private Beta</span>
-    <div class="foot-links"><a href="/v4.html">Giriş / Kayıt</a><a href="/hesapla">Ücretsiz hesaplayıcı</a></div>
+    <div class="foot-links"><a href="/demo">API'siz demo</a><a href="/v4.html">Giriş / Kayıt</a><a href="/hesapla">Ücretsiz hesaplayıcı</a></div>
   </div>
   <div class="wrap note">Katkı kârı resmi net kâr değildir. KârKalkan karar desteği sağlar; resmi muhasebe, vergi beyanı veya mali müşavir hizmeti değildir.</div>
 </footer>
