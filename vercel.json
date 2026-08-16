@@ -12,6 +12,10 @@
     {
       "source": "/uygulama",
       "destination": "/v4.html"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/health.json"
     }
   ],
   "redirects": [
@@ -22,6 +26,12 @@
     }
   ],
   "headers": [
+    {
+      "source": "/api/health",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
