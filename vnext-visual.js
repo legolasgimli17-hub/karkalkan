@@ -90,7 +90,10 @@ function kkVisualEvidence(){
   const score=scoreMatch?Math.max(0,Math.min(100,Number(scoreMatch[1]))):(applicable.length?Math.round(applicable.reduce((a,b)=>a+b,0)/applicable.length):null);
   const ring=document.getElementById('kkConfidenceRing');
   const number=document.getElementById('kkConfidenceNumber');
-  if(ring&&ring.dataset.score!==String(score??0)){ring.dataset.score=String(score??0);ring.style.setProperty('--kk-score',String(score??0))}
+  if(ring&&ring.dataset.score!==String(score??0)){
+    ring.dataset.score=String(score??0);
+    ring.style.setProperty('--kk-score-pct',`${score??0}%`);
+  }
   if(number&&number.textContent!==(score==null?'—':String(score)))number.textContent=score==null?'—':String(score);
   kkVisualRadar(values);
 }
