@@ -4,8 +4,10 @@ This file records the runtime dependencies that should be reviewed during acquis
 
 ## Browser
 
-- `@supabase/supabase-js` — pinned to `2.57.4` in `v4.html`, currently delivered through `cdn.jsdelivr.net`.
-- Vercel Web Analytics client — served from the project's `/_vercel/insights/script.js` route.
+- Vercel Web Analytics client — served from the project's own `/_vercel/insights/script.js` route.
+- Have I Been Pwned — Pwned Passwords range API, used only when a user attempts to create a new account. KârKalkan computes SHA-1 locally and sends only the first five hash characters for the k-anonymity range lookup; the plaintext password and full hash are not transmitted. No HIBP API key is stored by KârKalkan.
+
+The authenticated seller panel does not depend on a remotely loaded `@supabase/supabase-js` browser bundle; its Supabase Auth and Edge Function requests use the project's own JavaScript and `fetch`.
 
 ## Supabase Edge Functions
 
@@ -18,11 +20,12 @@ Individual function source files are the source of truth for their imports.
 
 ## Upgrade policy
 
-Before upgrading a third-party runtime dependency:
+Before upgrading or replacing a third-party runtime dependency:
 
-1. Review upstream release notes and license terms.
+1. Review upstream release notes, security guidance and license/usage terms.
 2. Test authentication, database access and marketplace sync in a preview/test environment.
-3. If a browser script origin or delivery method changes, update and re-test Content Security Policy.
-4. Keep dependency versions pinned rather than relying on an unbounded major-version URL.
+3. If a browser network origin or delivery method changes, update and re-test Content Security Policy.
+4. Keep package versions pinned where packages are imported by version.
+5. For security services, fail safely and avoid transmitting secrets beyond what the documented protocol requires.
 
-This inventory is not a substitute for the upstream license files or terms. A buyer should perform their own dependency/license review as part of due diligence.
+This inventory is not a substitute for upstream terms. A buyer should perform their own dependency/license review as part of due diligence.
