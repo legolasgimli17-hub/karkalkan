@@ -217,3 +217,15 @@ resetDashboardOnly = function resetWithAlerts() {
   alertReset();
 };
 if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts().catch(() => {});
+
+/* vNext is layered after the stable authenticated core so it can be removed or upgraded independently. */
+(function loadKarkalkanVNext(){
+  if(!document.querySelector('link[data-karkalkan-vnext]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';link.href='/vnext.css';link.dataset.karkalkanVnext='1';document.head.append(link);
+  }
+  if(!document.querySelector('script[data-karkalkan-vnext]')){
+    const script=document.createElement('script');
+    script.src='/vnext.js';script.dataset.karkalkanVnext='1';document.body.append(script);
+  }
+})();

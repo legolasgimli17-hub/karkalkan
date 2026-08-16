@@ -10,33 +10,56 @@ The production Supabase project currently contains the following Edge Functions.
 | `dashboard-summary` | JWT required | Dashboard financial summary | Yes |
 | `product-costs` | JWT required | Product cost CRUD | Yes |
 | `trendyol-credentials` | JWT required | Secure Trendyol credential handling | Yes |
-| `trendyol-sync` | JWT required | Core Trendyol synchronization | Yes |
+| `trendyol-sync` | JWT required | Core Trendyol reconciliation/synchronization | Yes |
 | `sync-history` | JWT required | Sync history | Yes |
 | `connection-health` | JWT required | Connection health/status | Yes |
 | `product-costs-bulk` | JWT required | Bulk product cost operations | Yes |
 | `trendyol-otherfinancials-sync` | JWT required | Other financial movements, stoppage, cargo and allocation sync | Yes |
 | `trendyol-cargo-sync` | JWT required | Cargo financial data sync | Yes |
 | `risk-alerts` | JWT required | Seller risk/attention signals | Yes |
+| `webhook-manager` | JWT required | User-authorized Trendyol webhook registration/status | Yes |
+| `order-events` | Platform JWT disabled; per-connection `x-api-key` SHA-256 verification in function | External order-event callback receiver | Yes |
+| `live-overview` | JWT required | Tenant-isolated live order signal summary | Yes |
+| `decision-center` | JWT required | Explainable store score and money-leak evidence radar | Yes |
 | `v4-auth` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 | `v4-beta` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 
 ## Source completeness
 
-All 13 currently deployed Edge Function sources are checked into `supabase/functions/`.
+All 17 currently deployed Edge Function sources are checked into `supabase/functions/`.
 
-Per-function JWT verification settings are recorded in `supabase/config.toml`. The production project currently has `marketplace-connections` with platform `verify_jwt = false`; the function performs its own bearer-token validation. All other listed functions have platform JWT verification enabled.
+Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; it accepts a callback only when the supplied `x-api-key` hashes to the per-connection secret hash stored server-side. All other active application functions require a valid Supabase JWT.
+
+## Live order signal model
+
+KârKalkan does not treat a webhook event as final financial truth. The live layer is deliberately split into two stages:
+
+1. `webhook-manager` creates the seller-authorized webhook subscription using credentials already stored in Vault and generates a unique callback secret.
+2. `order-events` authenticates the incoming callback, deduplicates retries with an event fingerprint and stores a PII-minimized order signal.
+3. `live-overview` exposes only the authenticated user's own recent signal state.
+4. Existing settlement/order/claim/cargo synchronizers remain the source of later financial reconciliation.
+
+The related database objects are version controlled in `20260816180000_add_live_order_signal_layer.sql`. The three live-signal tables have RLS enabled, owner policies, composite ownership foreign keys, no anonymous table privileges, and authenticated browser access limited to `SELECT`.
+
+The callback storage intentionally excludes customer name, telephone and address fields. Only the minimum order/package/product summary required for the live seller signal is retained.
+
+## Explainable decision model
+
+`decision-center` is intentionally not an opaque AI score. Its store score is composed from visible, weighted inputs: sales evidence, return evidence, cost coverage, cargo allocation coverage, settlement-classification coverage and data freshness. The same endpoint produces a money-leak radar for evidence gaps such as missing product cost, unallocated cargo, unclassified settlement adjustments and stale reconciliation.
+
+The radar never labels an unknown amount as proven financial loss. It reports the affected data/amount basis separately and explains why the signal needs review.
 
 ## Transfer requirement
 
 During handover, the buyer should deploy the repository functions into a buyer-controlled Supabase project, apply the migrations, configure buyer-generated secrets, and run the acceptance checklist in `TRANSFER.md`.
 
-Do not transfer seller API secrets, user sessions, personal access tokens or personal infrastructure accounts.
+A transferred project must create its own marketplace webhook subscriptions. Never transfer the current callback secret, seller API secrets, user sessions, personal access tokens or personal infrastructure accounts.
 
 ## Security review snapshot
 
 The current Supabase organization is on the Free plan. Supabase Security Advisor reports that the platform-level leaked-password-protection feature is disabled; that built-in feature is not available on the current plan.
 
-KârKalkan's normal new-account flow now compensates at the application layer by requiring a stronger password policy and checking the completed password against the Have I Been Pwned Pwned Passwords range API using k-anonymity before the signup request is sent to Supabase. The browser sends only a five-character SHA-1 prefix for that range lookup; it does not send the plaintext password or full hash. Existing-account login remains backward compatible with credentials created under the earlier password-length rule.
+KârKalkan's normal new-account flow compensates at the application layer by requiring a stronger password policy and checking the completed password against the Have I Been Pwned Pwned Passwords range API using k-anonymity before the signup request is sent to Supabase. The browser sends only a five-character SHA-1 prefix for that range lookup; it does not send the plaintext password or full hash. Existing-account login remains backward compatible with credentials created under the earlier password-length rule.
 
 This application-layer control must not be described as Supabase's Pro leaked-password-protection feature being enabled. A future buyer moving the project to a plan that includes the platform feature should enable it as defense in depth.
 
