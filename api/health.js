@@ -5,7 +5,7 @@ module.exports = function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.status(200).json({
     ok: true,
-    service: 'karkalkan-v4',
-    mode: 'read-only-foundation'
+    service: 'karkalkan',
+    mode: 'seller-profitability'
   });
 };
