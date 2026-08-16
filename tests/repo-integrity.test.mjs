@@ -16,16 +16,18 @@ const foundationalMigrations = [
   'supabase/migrations/20260813183547_replace_cost_overlap_extension_with_trigger.sql'
 ];
 const liveSignalMigration = 'supabase/migrations/20260816180000_add_live_order_signal_layer.sql';
+const operatingExpenseMigration = 'supabase/migrations/20260816183000_add_operating_expense_ledger.sql';
 
 const edgeFunctions = [
   'connection-health','dashboard-summary','marketplace-connections','product-costs','product-costs-bulk','risk-alerts','sync-history',
   'trendyol-cargo-sync','trendyol-credentials','trendyol-otherfinancials-sync','trendyol-sync','v4-auth','v4-beta',
-  'webhook-manager','order-events','live-overview','decision-center'
+  'webhook-manager','order-events','live-overview','decision-center','operating-expenses','portfolio-summary'
 ];
 
 test('foundational Supabase migrations are version controlled', async () => {
   for (const migration of foundationalMigrations) await access(join(root, migration));
   await access(join(root, liveSignalMigration));
+  await access(join(root, operatingExpenseMigration));
 });
 
 test('core financial tables are created with RLS and owner policies', async () => {
@@ -61,6 +63,18 @@ test('live order signal tables use owner isolation and least-privilege browser g
   assert.match(sql,/using \(\(select auth\.uid\(\)\)=user_id\)/i);
 });
 
+test('operating expense ledger is owner isolated and browser read-only', async () => {
+  const sql=await read(operatingExpenseMigration);
+  assert.match(sql,/create table if not exists public\.marketplace_operating_expenses/i);
+  assert.match(sql,/marketplace_operating_expenses_connection_owner_fkey/i);
+  assert.match(sql,/foreign key \(connection_id,user_id\) references public\.marketplace_connections\(id,user_id\)/i);
+  assert.match(sql,/alter table public\.marketplace_operating_expenses enable row level security/i);
+  assert.match(sql,/revoke all on table public\.marketplace_operating_expenses from anon, authenticated/i);
+  assert.match(sql,/grant select on table public\.marketplace_operating_expenses to authenticated/i);
+  assert.match(sql,/marketplace_operating_expenses_select_own/i);
+  assert.match(sql,/using \(\(select auth\.uid\(\)\)=user_id\)/i);
+});
+
 test('ownership integrity and database guards are reproducible', async () => {
   const ownership=await read(foundationalMigrations[3]),reconciliation=await read(foundationalMigrations[4]),overlap=await read(foundationalMigrations[6]);
   assert.match(ownership,/unique \(id, user_id\)/i);
@@ -71,7 +85,7 @@ test('ownership integrity and database guards are reproducible', async () => {
 
 test('all deployed Edge Function sources are present in the repository', async () => {
   for(const name of edgeFunctions)await access(join(root,'supabase','functions',name,'index.ts'));
-  assert.equal(edgeFunctions.length,17);
+  assert.equal(edgeFunctions.length,19);
 });
 
 test('external order callback is authenticated independently of Supabase JWT', async () => {
@@ -91,21 +105,39 @@ test('decision center is explainable rather than an opaque score', async () => {
   assert.match(ui,/Şeffaf mağaza skoru/);assert.match(ui,/Para kaçağı radarı/);assert.match(ui,/Skor ağırlığı/);
 });
 
+test('portfolio allocates operating expenses explicitly and avoids accounting net-profit claims', async () => {
+  const portfolio=await read('supabase/functions/portfolio-summary/index.ts');
+  const expenses=await read('supabase/functions/operating-expenses/index.ts');
+  const config=await read('supabase/config.toml');
+  const ui=await read('vnext-ops.js');
+  assert.match(portfolio,/function overlapShare\(/);
+  assert.match(portfolio,/afterOperatingExpenses/);
+  assert.match(portfolio,/muhasebe net kârı değildir/i);
+  assert.match(expenses,/marketplace_operating_expenses/);
+  assert.match(expenses,/connection_id=\$\{connectionId\}::uuid and user_id=\$\{user\.id\}::uuid/);
+  assert.match(config,/\[functions\.operating-expenses\][\s\S]*?verify_jwt = true/);
+  assert.match(config,/\[functions\.portfolio-summary\][\s\S]*?verify_jwt = true/);
+  assert.match(ui,/İşletme Giderleri/);
+  assert.match(ui,/Mağaza Portföyü/);
+  assert.match(ui,/İşletme sonrası görünüm/);
+});
+
 test('Trendyol sync preserves audit visibility for unclassified adjustments', async () => {
   const sync=await read('supabase/functions/trendyol-sync/index.ts'),alerts=await read('v4-alerts.js');
   assert.match(sync,/function adjustmentType\(/);assert.match(sync,/unclassifiedAdjustmentRows/);assert.match(sync,/result_summary/);
   assert.match(alerts,/unclassifiedAdjustmentRows/);assert.match(alerts,/sınıflandırılamadı/);
 });
 
-test('vNext is a distinct evidence-first layer loaded after the stable core', async () => {
-  const loader=await read('v4-alerts.js'),next=await read('vnext.js'),css=await read('vnext.css');
-  assert.match(loader,/\/vnext\.css/);assert.match(loader,/\/vnext\.js/);
+test('vNext distinct layers load after the stable core', async () => {
+  const loader=await read('v4-alerts.js'),next=await read('vnext.js'),css=await read('vnext.css'),ops=await read('vnext-ops.js'),opsCss=await read('vnext-ops.css');
+  assert.match(loader,/\/vnext\.css/);assert.match(loader,/\/vnext\.js/);assert.match(loader,/\/vnext-ops\.css/);assert.match(loader,/\/vnext-ops\.js/);
   assert.match(next,/Hızlı sipariş sinyali, sonradan doğrulanan finans gerçeği/);assert.match(next,/Rakamın dayanağı|Şeffaf mağaza skoru/);assert.match(next,/Para köprüsü/);assert.match(next,/Canlı Siparişler/);
   assert.match(css,/--kk-copper:#f2a65a/);assert.match(css,/--kk-ice:#79c7ff/);
+  assert.match(ops,/İşletme Giderleri/);assert.match(ops,/Mağaza Portföyü/);assert.match(opsCss,/\.kk-ops-grid/);
 });
 
 test('public browser code does not contain privileged Supabase secrets', async () => {
-  const browserFiles=['app-core.js','app-data.js','app-bulk.js','demo.js','v4.js','v4-security.js','v4-enhance.js','v4-alerts.js','vnext.js'];
+  const browserFiles=['app-core.js','app-data.js','app-bulk.js','demo.js','v4.js','v4-security.js','v4-enhance.js','v4-alerts.js','vnext.js','vnext-ops.js'];
   const forbidden=[/SUPABASE_SERVICE_ROLE_KEY/,/service_role/i,/SUPABASE_DB_URL/,/api_secret\s*[:=]\s*['"][^'"]+/i];
   for(const file of browserFiles){const source=await read(file);for(const pattern of forbidden)assert.doesNotMatch(source,pattern,`${file} contains a privileged secret marker`)}
 });
