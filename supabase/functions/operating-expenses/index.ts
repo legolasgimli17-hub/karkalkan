@@ -1,0 +1,45 @@
+import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
+import postgres from 'npm:postgres@3.4.7'
+
+const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
+const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
+const DB_URL=Deno.env.get('SUPABASE_DB_URL')||''
+const sql=DB_URL?postgres(DB_URL,{prepare:false,max:1,idle_timeout:5,max_lifetime:120}):null
+const CATEGORIES=new Set(['ads','packaging','rent','payroll','software','other'])
+function allowedOrigin(o:string|null){if(!o)return true;if(o==='https://karkalkan.vercel.app'||o===PROJECT_ORIGIN)return true;try{const u=new URL(o);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
+function headers(o:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(o&&allowedOrigin(o)){h['Access-Control-Allow-Origin']=o;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, POST, OPTIONS'}return h}
+function json(s:number,b:unknown,o:string|null){return new Response(JSON.stringify(b),{status:s,headers:headers(o)})}
+function validUuid(v:string){return /^[0-9a-f-]{36}$/i.test(v)}
+function clean(v:unknown,max:number){return String(v??'').trim().slice(0,max)}
+function validDate(v:string){return /^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(new Date(`${v}T00:00:00Z`).getTime())}
+function n(v:unknown){const x=Number(v);return Number.isFinite(x)?x:NaN}
+
+Deno.serve(async(req:Request)=>{
+ const origin=req.headers.get('Origin');if(!allowedOrigin(origin))return json(403,{error:'ORIGIN_NOT_ALLOWED'},origin)
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers:headers(origin)})
+ if(!['GET','POST'].includes(req.method))return json(405,{error:'METHOD_NOT_ALLOWED'},origin)
+ const auth=req.headers.get('Authorization')||'';if(!auth.startsWith('Bearer '))return json(401,{error:'UNAUTHORIZED'},origin)
+ const pub=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default;if(!PROJECT_URL||!pub||!sql)return json(503,{error:'SERVER_CONFIG'},origin)
+ const sb=createClient(PROJECT_URL,pub,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}}),{data:ud,error:ue}=await sb.auth.getUser(auth.slice(7)),user=ud?.user;if(ue||!user)return json(401,{error:'UNAUTHORIZED'},origin)
+ const u=new URL(req.url);let connectionId=u.searchParams.get('connection_id')||'',body:any={}
+ if(req.method==='POST'){try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}connectionId=String(body?.connection_id||connectionId)}
+ if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
+ const {data:conn,error:ce}=await sb.from('marketplace_connections').select('id').eq('id',connectionId).maybeSingle();if(ce)return json(500,{error:'DB_ERROR'},origin);if(!conn)return json(404,{error:'NOT_FOUND'},origin)
+ if(req.method==='GET'){
+   const {data,error}=await sb.from('marketplace_operating_expenses').select('id,category,label,amount,period_start,period_end,created_at').eq('connection_id',connectionId).order('period_start',{ascending:false}).limit(200)
+   if(error)return json(500,{error:'DB_ERROR'},origin)
+   return json(200,{expenses:data||[]},origin)
+ }
+ const action=String(body?.action||'create')
+ if(action==='delete'){
+   const id=String(body?.id||'');if(!validUuid(id))return json(400,{error:'INVALID_EXPENSE'},origin)
+   const rows=await sql`delete from public.marketplace_operating_expenses where id=${id}::uuid and connection_id=${connectionId}::uuid and user_id=${user.id}::uuid returning id`
+   if(!rows.length)return json(404,{error:'NOT_FOUND'},origin)
+   return json(200,{ok:true,deleted:id},origin)
+ }
+ if(action!=='create')return json(400,{error:'INVALID_ACTION'},origin)
+ const category=clean(body?.category,30),label=clean(body?.label,120),amount=n(body?.amount),periodStart=clean(body?.period_start,10),periodEnd=clean(body?.period_end,10)
+ if(!CATEGORIES.has(category)||!label||!Number.isFinite(amount)||amount<0||amount>100000000||!validDate(periodStart)||!validDate(periodEnd)||periodEnd<periodStart)return json(400,{error:'INVALID_EXPENSE'},origin)
+ const rows=await sql`insert into public.marketplace_operating_expenses(connection_id,user_id,category,label,amount,period_start,period_end,updated_at) values(${connectionId}::uuid,${user.id}::uuid,${category},${label},${amount},${periodStart}::date,${periodEnd}::date,now()) returning id,category,label,amount,period_start,period_end,created_at`
+ return json(200,{ok:true,expense:rows[0]},origin)
+})
