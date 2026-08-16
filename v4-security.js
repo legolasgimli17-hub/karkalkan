@@ -11,6 +11,14 @@
 
   const coreAuthRequest = authRequest;
   const coreHumanError = humanError;
+  const passwordInput = document.getElementById('authPassword');
+
+  // Existing accounts may have been created under the previous 8-char rule.
+  // Keep sign-in backward compatible; stronger rules apply only to new signup.
+  if (passwordInput) {
+    passwordInput.minLength = 8;
+    passwordInput.placeholder = 'Şifren';
+  }
 
   function strongEnough(password) {
     return password.length >= 12 &&
@@ -33,15 +41,20 @@
     const hash = await sha1Hex(password);
     const prefix = hash.slice(0, 5);
     const suffix = hash.slice(5);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
     let response;
     try {
       response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
         method: 'GET',
         cache: 'no-store',
-        referrerPolicy: 'no-referrer'
+        referrerPolicy: 'no-referrer',
+        signal: controller.signal
       });
     } catch {
       throw new Error('PASSWORD_CHECK_UNAVAILABLE');
+    } finally {
+      clearTimeout(timeout);
     }
     if (!response.ok) throw new Error('PASSWORD_CHECK_UNAVAILABLE');
     const rows = (await response.text()).split(/\r?\n/);
