@@ -53,3 +53,9 @@ verify_jwt = true
 
 [functions.decision-center]
 verify_jwt = true
+
+[functions.operating-expenses]
+verify_jwt = true
+
+[functions.portfolio-summary]
+verify_jwt = true
