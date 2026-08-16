@@ -1,0 +1,1 @@
+Review scope: financial semantics, webhook provider reconciliation, browser privileges, large-dataset correctness, evidence-score applicability, portfolio cost coverage, operating-expense limits, CI regression coverage.
