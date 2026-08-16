@@ -15,6 +15,8 @@
 
 Hosts the public web application and `/api/health`. `vercel.json` defines clean routes and security headers.
 
+The canonical Vercel project is **`karkalkan`** (`prj_Sh2w9BUjZFHh01GI6j5bo5NNORWN`). It is the only Vercel project that should remain connected to this GitHub repository. Duplicate or test projects must not be connected to the same branch because they create redundant builds and can consume Hobby deployment quotas without adding a separate production surface.
+
 ### Supabase
 
 Provides authentication, Postgres data storage, migrations, server-side functions and secret-management capabilities used by the marketplace integration.
