@@ -1,5 +1,7 @@
 -- Tighten browser-facing privileges and add covering indexes for composite owner FKs.
 -- Server-side sync functions continue to write through trusted database/service credentials.
+-- Hosted Supabase default ACLs are platform-managed for this project; explicit object grants
+-- are therefore reviewed in migrations/CI instead of altering another role's default privileges.
 
 -- Cargo, order mapping and allocation rows are synchronization artifacts. Browsers only need read access.
 revoke all on table public.marketplace_cargo_invoice_items from anon, authenticated;
@@ -24,18 +26,3 @@ create index if not exists marketplace_live_orders_connection_owner_idx
   on public.marketplace_live_orders(connection_id, user_id);
 create index if not exists marketplace_operating_expenses_connection_owner_idx
   on public.marketplace_operating_expenses(connection_id, user_id);
-
--- Future public objects must opt browser roles in explicitly instead of inheriting broad grants.
-alter default privileges for role postgres in schema public
-  revoke all on tables from anon, authenticated;
-alter default privileges for role postgres in schema public
-  revoke all on sequences from anon, authenticated;
-alter default privileges for role postgres in schema public
-  revoke execute on functions from public, anon, authenticated;
-
-alter default privileges for role supabase_admin in schema public
-  revoke all on tables from anon, authenticated;
-alter default privileges for role supabase_admin in schema public
-  revoke all on sequences from anon, authenticated;
-alter default privileges for role supabase_admin in schema public
-  revoke execute on functions from public, anon, authenticated;
