@@ -25,6 +25,9 @@ jobs:
       - name: Repository integrity tests
         run: node --test tests/repo-integrity.test.mjs
 
+      - name: Finance semantics tests
+        run: node --test tests/finance-semantics.test.mjs
+
       - name: Browser JavaScript syntax
         run: |
           node --check app-core.js
@@ -35,3 +38,5 @@ jobs:
           node --check v4-security.js
           node --check v4-enhance.js
           node --check v4-alerts.js
+          node --check vnext.js
+          node --check vnext-ops.js
