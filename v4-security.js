@@ -87,3 +87,47 @@
     return coreHumanError(error);
   };
 })();
+
+// Dynamic dashboard modules are created by later scripts. Rewrite only their
+// seller-facing labels after those scripts have initialized; internal financial
+// field names remain unchanged so calculations and API contracts are untouched.
+setTimeout(() => {
+  const setText = (selector, text) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = text;
+  };
+
+  setText('#trendPanel .eyebrow', 'GÜNLÜK HAREKET');
+  setText('#trendPanel h3', 'Günlük satış hareketi');
+  setText('#trendPanel .trend-head .muted', 'Satışlarını, sana kalan tutarı ve iadeleri seçtiğin dönemde karşılaştır.');
+
+  setText('#financeTruthPanel .eyebrow', 'KESİNTİLER VE HAKEDİŞ');
+  setText('#financeTruthPanel h3', 'Bilinen platform kesintileri');
+  setText('#financeTruthPanel .panel-title-row > .muted', 'Bu görünüm resmi net kâr değildir; bilinen kesintileri ayrı ayrı gösterir.');
+
+  const labelMap = new Map([
+    ['Settlement sonrası hakediş', 'Düzeltmeler sonrası kalan'],
+    ['Platform hizmet bedeli', 'Platform hizmet bedeli'],
+    ['Bilinen ücretler sonrası hakediş', 'Bilinen kesintiler sonrası kalan'],
+    ['Adet veri güveni', 'Ürün adedi veri durumu']
+  ]);
+  document.querySelectorAll('#financeTruthPanel .kpi > span').forEach((node) => {
+    const replacement = labelMap.get(node.textContent.trim());
+    if (replacement) node.textContent = replacement;
+  });
+
+  setText('#ruleAlertPanel .eyebrow', 'DİKKAT ETMEN GEREKENLER');
+  setText('#ruleAlertPanel h3', 'Kesintiler ve uyarılar');
+  setText('#ruleAlertPanel .panel-title-row > .muted', 'Mağaza verindeki önemli değişiklikleri ve eksikleri öne çıkarır.');
+
+  const alertMap = new Map([
+    ['Stopaj', 'Kesilen vergi (stopaj)'],
+    ['Cargo invoice', 'Kargo faturası'],
+    ['Allocated cargo', 'Ürünlere dağıtılan kargo'],
+    ['Known cash after fees', 'Bilinen kesintiler sonrası kalan']
+  ]);
+  document.querySelectorAll('#ruleAlertPanel span, #ruleAlertPanel strong').forEach((node) => {
+    const replacement = alertMap.get(node.textContent.trim());
+    if (replacement) node.textContent = replacement;
+  });
+}, 0);
