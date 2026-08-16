@@ -39,3 +39,14 @@ verify_jwt = true
 
 [functions.risk-alerts]
 verify_jwt = true
+
+[functions.webhook-manager]
+verify_jwt = true
+
+# External Trendyol callbacks do not carry a Supabase JWT.
+# This function authenticates each callback with the per-connection x-api-key hash.
+[functions.order-events]
+verify_jwt = false
+
+[functions.live-overview]
+verify_jwt = true
