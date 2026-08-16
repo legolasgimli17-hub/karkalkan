@@ -1,0 +1,41 @@
+# KârKalkan Supabase function configuration
+# Source of truth for per-function JWT verification during handover/redeploy.
+
+[functions.marketplace-connections]
+verify_jwt = false
+
+[functions.v4-auth]
+verify_jwt = true
+
+[functions.v4-beta]
+verify_jwt = true
+
+[functions.dashboard-summary]
+verify_jwt = true
+
+[functions.product-costs]
+verify_jwt = true
+
+[functions.trendyol-credentials]
+verify_jwt = true
+
+[functions.trendyol-sync]
+verify_jwt = true
+
+[functions.sync-history]
+verify_jwt = true
+
+[functions.connection-health]
+verify_jwt = true
+
+[functions.product-costs-bulk]
+verify_jwt = true
+
+[functions.trendyol-otherfinancials-sync]
+verify_jwt = true
+
+[functions.trendyol-cargo-sync]
+verify_jwt = true
+
+[functions.risk-alerts]
+verify_jwt = true
