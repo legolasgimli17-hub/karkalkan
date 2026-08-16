@@ -27,13 +27,13 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - `SETUP.md` — clean buyer-owned setup/deployment procedure
 - `TRANSFER.md` — asset-transfer and acceptance checklist
 - `KNOWN_LIMITATIONS.md` — due-diligence disclosures and outstanding validation
-- `SUPABASE_INVENTORY.md` — deployed backend-function inventory and remaining source-export blocker
+- `SUPABASE_INVENTORY.md` — deployed backend-function inventory and source-export status
 
 ## Important status
 
 The product is pre-revenue unless later evidence is documented. Do not claim a complete real-store Trendyol production validation until the end-to-end test described in `KNOWN_LIMITATIONS.md` has actually been completed.
 
-The deployed Supabase backend exists and is active, but a complete checked-in source copy of every deployed Edge Function is still required before a clean acquisition handover. See `SUPABASE_INVENTORY.md`.
+Most deployed Supabase Edge Function source is now checked into the repository. Two large production workers remain to be exported verbatim before a final acquisition handover: `trendyol-sync` and `trendyol-otherfinancials-sync`. They are active in production; see `SUPABASE_INVENTORY.md`.
 
 ## Security
 
