@@ -6,28 +6,31 @@ The production Supabase project currently contains the following Edge Functions.
 
 | Function | Auth expectation | Purpose / status | Source in repo |
 |---|---|---|---|
-| `marketplace-connections` | Performs custom bearer-token validation in function body | Store connection CRUD | Yes |
+| `marketplace-connections` | Custom bearer-token validation in function body; platform JWT check disabled | Store connection CRUD | Yes |
 | `dashboard-summary` | JWT required | Dashboard financial summary | Yes |
 | `product-costs` | JWT required | Product cost CRUD | Yes |
 | `trendyol-credentials` | JWT required | Secure Trendyol credential handling | Yes |
-| `trendyol-sync` | JWT required | Core Trendyol synchronization | **Pending export** |
+| `trendyol-sync` | JWT required | Core Trendyol synchronization | Yes |
 | `sync-history` | JWT required | Sync history | Yes |
 | `connection-health` | JWT required | Connection health/status | Yes |
 | `product-costs-bulk` | JWT required | Bulk product cost operations | Yes |
-| `trendyol-otherfinancials-sync` | JWT required | Other financial movements sync | **Pending export** |
+| `trendyol-otherfinancials-sync` | JWT required | Other financial movements, stoppage, cargo and allocation sync | Yes |
 | `trendyol-cargo-sync` | JWT required | Cargo financial data sync | Yes |
 | `risk-alerts` | JWT required | Seller risk/attention signals | Yes |
 | `v4-auth` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 | `v4-beta` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 
+## Source completeness
+
+All 13 currently deployed Edge Function sources are checked into `supabase/functions/`.
+
+Per-function JWT verification settings are recorded in `supabase/config.toml`. The production project currently has `marketplace-connections` with platform `verify_jwt = false`; the function performs its own bearer-token validation. All other listed functions have platform JWT verification enabled.
+
 ## Transfer requirement
 
-Most deployed function source has now been checked into `supabase/functions/`. Two large production functions still need a verbatim source export before final acquisition handover:
+During handover, the buyer should deploy the repository functions into a buyer-controlled Supabase project, apply the migrations, configure buyer-generated secrets, and run the acceptance checklist in `TRANSFER.md`.
 
-- `trendyol-sync`
-- `trendyol-otherfinancials-sync`
-
-These are explicitly tracked as the remaining backend-source handover blocker. They exist and are active in the production Supabase project; they are not missing from production.
+Do not transfer seller API secrets, user sessions, personal access tokens or personal infrastructure accounts.
 
 ## Security review snapshot
 
