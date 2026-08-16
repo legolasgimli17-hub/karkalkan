@@ -34,6 +34,10 @@ Do not transfer seller API secrets, user sessions, personal access tokens or per
 
 ## Security review snapshot
 
-Supabase security advisor currently reports one warning: leaked-password protection is disabled in Auth. This is a hardening recommendation rather than evidence of a breach. Enable this feature when the chosen Supabase plan/configuration supports the desired setting, or disclose the setting during due diligence.
+The current Supabase organization is on the Free plan. Supabase Security Advisor reports that the platform-level leaked-password-protection feature is disabled; that built-in feature is not available on the current plan.
+
+KârKalkan's normal new-account flow now compensates at the application layer by requiring a stronger password policy and checking the completed password against the Have I Been Pwned Pwned Passwords range API using k-anonymity before the signup request is sent to Supabase. The browser sends only a five-character SHA-1 prefix for that range lookup; it does not send the plaintext password or full hash. Existing-account login remains backward compatible with credentials created under the earlier password-length rule.
+
+This application-layer control must not be described as Supabase's Pro leaked-password-protection feature being enabled. A future buyer moving the project to a plan that includes the platform feature should enable it as defense in depth.
 
 Performance advisor currently reports multiple indexes as unused. Because the product is new/pre-revenue and has little representative production workload, unused-index telemetry is not sufficient evidence that those indexes should be deleted. Re-evaluate with real traffic before removing indexes.
