@@ -218,14 +218,15 @@ resetDashboardOnly = function resetWithAlerts() {
 };
 if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts().catch(() => {});
 
-/* vNext is layered after the stable authenticated core so it can be removed or upgraded independently. */
+/* vNext layers are loaded after the stable authenticated core. */
 (function loadKarkalkanVNext(){
-  if(!document.querySelector('link[data-karkalkan-vnext]')){
-    const link=document.createElement('link');
-    link.rel='stylesheet';link.href='/vnext.css';link.dataset.karkalkanVnext='1';document.head.append(link);
-  }
-  if(!document.querySelector('script[data-karkalkan-vnext]')){
-    const script=document.createElement('script');
-    script.src='/vnext.js';script.dataset.karkalkanVnext='1';document.body.append(script);
-  }
+  const addStyle=(href,key)=>{if(document.querySelector(`link[data-${key}]`))return;const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset[key]='1';document.head.append(link)};
+  const loadOps=()=>{
+    addStyle('/vnext-ops.css','karkalkanVnextOps');
+    if(!document.querySelector('script[data-karkalkan-vnext-ops]')){const ops=document.createElement('script');ops.src='/vnext-ops.js';ops.dataset.karkalkanVnextOps='1';document.body.append(ops)}
+  };
+  addStyle('/vnext.css','karkalkanVnext');
+  const existing=document.querySelector('script[data-karkalkan-vnext]');
+  if(existing){loadOps();return}
+  const script=document.createElement('script');script.src='/vnext.js';script.dataset.karkalkanVnext='1';script.addEventListener('load',loadOps,{once:true});document.body.append(script);
 })();
