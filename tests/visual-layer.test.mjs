@@ -19,7 +19,7 @@ test('visual layer does not own finance or authentication behavior',async()=>{
   for(const forbidden of [/functionRequest\s*=/,/refreshConnectionData\s*=/,/renderDashboard\s*=/,/SUPABASE_SERVICE_ROLE_KEY/,/service_role/i,/api_secret/i]){
     assert.doesNotMatch(source,forbidden);
   }
-  assert.match(source,/already-rendered, real dashboard\s+data/i);
+  assert.match(source,/already-rendered, real dashboard[\s\S]*?data into a clearer visual hierarchy/i);
   assert.match(source,/MutationObserver/);
 });
 
