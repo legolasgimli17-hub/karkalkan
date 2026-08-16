@@ -20,12 +20,13 @@ The production Supabase project currently contains the following Edge Functions.
 | `webhook-manager` | JWT required | User-authorized Trendyol webhook registration/status | Yes |
 | `order-events` | Platform JWT disabled; per-connection `x-api-key` SHA-256 verification in function | External order-event callback receiver | Yes |
 | `live-overview` | JWT required | Tenant-isolated live order signal summary | Yes |
+| `decision-center` | JWT required | Explainable store score and money-leak evidence radar | Yes |
 | `v4-auth` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 | `v4-beta` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 
 ## Source completeness
 
-All 16 currently deployed Edge Function sources are checked into `supabase/functions/`.
+All 17 currently deployed Edge Function sources are checked into `supabase/functions/`.
 
 Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; it accepts a callback only when the supplied `x-api-key` hashes to the per-connection secret hash stored server-side. All other active application functions require a valid Supabase JWT.
 
@@ -41,6 +42,12 @@ KârKalkan does not treat a webhook event as final financial truth. The live lay
 The related database objects are version controlled in `20260816180000_add_live_order_signal_layer.sql`. The three live-signal tables have RLS enabled, owner policies, composite ownership foreign keys, no anonymous table privileges, and authenticated browser access limited to `SELECT`.
 
 The callback storage intentionally excludes customer name, telephone and address fields. Only the minimum order/package/product summary required for the live seller signal is retained.
+
+## Explainable decision model
+
+`decision-center` is intentionally not an opaque AI score. Its store score is composed from visible, weighted inputs: sales evidence, return evidence, cost coverage, cargo allocation coverage, settlement-classification coverage and data freshness. The same endpoint produces a money-leak radar for evidence gaps such as missing product cost, unallocated cargo, unclassified settlement adjustments and stale reconciliation.
+
+The radar never labels an unknown amount as proven financial loss. It reports the affected data/amount basis separately and explains why the signal needs review.
 
 ## Transfer requirement
 
