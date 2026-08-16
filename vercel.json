@@ -8,6 +8,17 @@
     {
       "source": "/demo",
       "destination": "/demo.html"
+    },
+    {
+      "source": "/uygulama",
+      "destination": "/v4.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/v4.html",
+      "destination": "/uygulama",
+      "permanent": true
     }
   ],
   "headers": [
