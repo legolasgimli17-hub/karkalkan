@@ -46,7 +46,7 @@
 .kk-leak-rings>i{position:absolute;left:50%;top:50%;translate:-50% -50%;border-radius:50%;border:1px solid rgba(121,199,255,.09)}.kk-leak-rings>i:nth-child(1){width:44px;height:44px}.kk-leak-rings>i:nth-child(2){width:82px;height:82px}.kk-leak-rings>i:nth-child(3){width:118px;height:118px}.kk-leak-rings>b{position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:.72rem;color:var(--kk-copper-2)}
 .kk-sweep{position:absolute;left:50%;top:50%;width:50%;height:1px;transform-origin:left center;background:linear-gradient(90deg,rgba(242,166,90,.65),transparent);animation:kkSweep 4s linear infinite}
 @keyframes kkSweep{to{transform:rotate(360deg)}}
-.kk-leak-dot{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--kk-warn);box-shadow:0 0 12px rgba(255,209,102,.55);left:calc(22% + (var(--i)*11%));top:calc(27% + ((var(--i)*17)% 45%))}
+.kk-leak-dot{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--kk-warn);box-shadow:0 0 12px rgba(255,209,102,.55);left:calc(22% + var(--i)*9%);top:calc(25% + var(--i)*6%)}
 .kk-leak-dot:nth-of-type(even){background:var(--kk-danger);box-shadow:0 0 12px rgba(255,122,122,.45)}
 .kk-leak-summary strong{display:block;font-size:1rem}.kk-leak-summary small{display:block;color:#707b8a;font-size:.62rem;line-height:1.55;margin-top:5px;max-width:390px}
 
