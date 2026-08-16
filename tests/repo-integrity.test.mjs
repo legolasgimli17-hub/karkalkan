@@ -16,6 +16,8 @@ const foundationalMigrations = [
   'supabase/migrations/20260813183547_replace_cost_overlap_extension_with_trigger.sql'
 ];
 
+const liveSignalMigration = 'supabase/migrations/20260816180000_add_live_order_signal_layer.sql';
+
 const edgeFunctions = [
   'connection-health',
   'dashboard-summary',
@@ -29,11 +31,15 @@ const edgeFunctions = [
   'trendyol-otherfinancials-sync',
   'trendyol-sync',
   'v4-auth',
-  'v4-beta'
+  'v4-beta',
+  'webhook-manager',
+  'order-events',
+  'live-overview'
 ];
 
 test('foundational Supabase migrations are version controlled', async () => {
   for (const migration of foundationalMigrations) await access(join(root, migration));
+  await access(join(root, liveSignalMigration));
 });
 
 test('core financial tables are created with RLS and owner policies', async () => {
@@ -59,6 +65,19 @@ test('core financial tables are created with RLS and owner policies', async () =
   }
 });
 
+test('live order signal tables use owner isolation and least-privilege browser grants', async () => {
+  const sql = await read(liveSignalMigration);
+  for (const table of ['marketplace_webhooks', 'marketplace_order_events', 'marketplace_live_orders']) {
+    assert.match(sql, new RegExp(`create table if not exists public\\.${table}\\b`, 'i'));
+    assert.match(sql, new RegExp(`alter table public\\.${table} enable row level security`, 'i'));
+    assert.match(sql, new RegExp(`${table}_select_own`, 'i'));
+    assert.match(sql, new RegExp(`revoke all on table public\\.${table} from anon, authenticated`, 'i'));
+    assert.match(sql, new RegExp(`grant select on table public\\.${table} to authenticated`, 'i'));
+  }
+  assert.match(sql, /foreign key \(connection_id,user_id\) references public\.marketplace_connections\(id,user_id\)/i);
+  assert.match(sql, /using \(\(select auth\.uid\(\)\)=user_id\)/i);
+});
+
 test('ownership integrity and database guards are reproducible', async () => {
   const ownership = await read(foundationalMigrations[3]);
   const reconciliation = await read(foundationalMigrations[4]);
@@ -78,6 +97,30 @@ test('all deployed Edge Function sources are present in the repository', async (
   for (const name of edgeFunctions) {
     await access(join(root, 'supabase', 'functions', name, 'index.ts'));
   }
+  assert.equal(edgeFunctions.length, 16);
+});
+
+test('external order callback is authenticated independently of Supabase JWT', async () => {
+  const receiver = await read('supabase/functions/order-events/index.ts');
+  const manager = await read('supabase/functions/webhook-manager/index.ts');
+  const config = await read('supabase/config.toml');
+
+  assert.match(receiver, /x-api-key/i);
+  assert.match(receiver, /SHA-256/i);
+  assert.match(receiver, /secret_hash/);
+  assert.match(receiver, /event_fingerprint/);
+  assert.match(receiver, /on conflict \(event_fingerprint\) do nothing/i);
+  assert.match(receiver, /excluded\.event_at>=public\.marketplace_live_orders\.event_at/i);
+  assert.doesNotMatch(receiver, /customerFirstName|customerLastName|shipmentAddress|invoiceAddress|phone/i);
+
+  assert.match(manager, /authenticationType:'API_KEY'/);
+  assert.match(manager, /subscribedStatuses:\[\]/);
+  assert.match(manager, /order-events\?c=/);
+  assert.match(manager, /secretHash=await sha256\(hookSecret\)/);
+
+  assert.match(config, /\[functions\.order-events\][\s\S]*?verify_jwt = false/);
+  assert.match(config, /\[functions\.webhook-manager\][\s\S]*?verify_jwt = true/);
+  assert.match(config, /\[functions\.live-overview\][\s\S]*?verify_jwt = true/);
 });
 
 test('Trendyol sync preserves audit visibility for unclassified adjustments', async () => {
@@ -91,6 +134,21 @@ test('Trendyol sync preserves audit visibility for unclassified adjustments', as
   assert.match(alerts, /sınıflandırılamadı/);
 });
 
+test('vNext is a distinct evidence-first layer loaded after the stable core', async () => {
+  const loader = await read('v4-alerts.js');
+  const next = await read('vnext.js');
+  const css = await read('vnext.css');
+
+  assert.match(loader, /\/vnext\.css/);
+  assert.match(loader, /\/vnext\.js/);
+  assert.match(next, /Hızlı sipariş sinyali, sonradan doğrulanan finans gerçeği/);
+  assert.match(next, /Rakamın dayanağı/);
+  assert.match(next, /Para köprüsü/);
+  assert.match(next, /Canlı Siparişler/);
+  assert.match(css, /--kk-copper:#f2a65a/);
+  assert.match(css, /--kk-ice:#79c7ff/);
+});
+
 test('public browser code does not contain privileged Supabase secrets', async () => {
   const browserFiles = [
     'app-core.js',
@@ -100,7 +158,8 @@ test('public browser code does not contain privileged Supabase secrets', async (
     'v4.js',
     'v4-security.js',
     'v4-enhance.js',
-    'v4-alerts.js'
+    'v4-alerts.js',
+    'vnext.js'
   ];
   const forbidden = [
     /SUPABASE_SERVICE_ROLE_KEY/,
