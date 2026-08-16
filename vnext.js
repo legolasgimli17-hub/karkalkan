@@ -1,15 +1,8 @@
 'use strict';
 
-/* KârKalkan vNext: distinct product language, evidence-first finance and live order signal UI. */
-const kkVNext={
-  daily:null,
-  evidence:{sales:null,returns:null,cost:null,cargo:null},
-  webhook:null,
-  liveTimer:null,
-  mounted:false
-};
-
-function kkClamp(v,min=0,max=1){const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):0}
+/* KârKalkan vNext — evidence-first finance, live order signals and explainable decisions. */
+const kkVNext={evidence:{sales:null,returns:null,cost:null,cargo:null},decision:null,liveTimer:null,mounted:false};
+const kkClamp=(v,min=0,max=1)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):0};
 function kkMoney(v,currency='TRY'){const n=Number(v);if(!Number.isFinite(n))return '—';try{return new Intl.NumberFormat('tr-TR',{style:'currency',currency,maximumFractionDigits:0}).format(n)}catch{return `${Math.round(n).toLocaleString('tr-TR')} ${currency}`}}
 function kkPct(v){const n=Number(v);return Number.isFinite(n)?`%${n.toLocaleString('tr-TR',{maximumFractionDigits:0})}`:'—'}
 function kkEsc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -17,20 +10,21 @@ function kkDateLabel(v){const d=new Date(v);return Number.isNaN(d.getTime())?'�
 
 function kkMount(){
   if(kkVNext.mounted)return;
-  const dashboard=document.getElementById('dashboard');
-  const syncMessage=document.getElementById('syncMessage');
+  const dashboard=document.getElementById('dashboard'),syncMessage=document.getElementById('syncMessage');
   if(!dashboard||!syncMessage)return;
   kkVNext.mounted=true;
 
+  const oldTrend=document.getElementById('trendPanel');if(oldTrend)oldTrend.hidden=true;
+  const oldTruth=document.getElementById('financeTruthPanel');
+  if(oldTruth){const e=oldTruth.querySelector('.eyebrow'),h=oldTruth.querySelector('h3');if(e)e.textContent='HAKEDİŞ VE KESİNTİLER';if(h)h.textContent='Doğrulanmış finans kalemleri';}
   document.querySelector('.v4-topbar .eyebrow')?.replaceChildren(document.createTextNode('KÂRKALKAN · PARA AKIŞI'));
   const topTitle=document.querySelector('.v4-topbar h1');if(topTitle)topTitle.textContent='Paranın nerede kaldığını gör';
   const sideStatus=document.querySelector('.side-status small');if(sideStatus)sideStatus.textContent='Hızlı sinyal · doğrulanmış finans';
 
   const nav=document.querySelector('.side-nav');
   if(nav){
-    const links=[...nav.querySelectorAll('a')];
-    const names=['Genel Bakış','Mağaza Bağlantısı','Güvenli Bağlantı','Ürün Maliyetleri','Veri Geçmişi'];
-    links.forEach((a,i)=>{const num=String(i+1).padStart(2,'0');a.innerHTML=`<span>${num}</span> ${names[i]||a.textContent}`});
+    const links=[...nav.querySelectorAll('a')],names=['Genel Bakış','Mağaza Bağlantısı','Güvenli Bağlantı','Ürün Maliyetleri','Veri Geçmişi'];
+    links.forEach((a,i)=>{a.innerHTML=`<span>${String(i+1).padStart(2,'0')}</span> ${names[i]||a.textContent}`});
     const live=document.createElement('a');live.href='#kkLiveStream';live.innerHTML='<span>06</span> Canlı Siparişler';nav.append(live);
     const flow=document.createElement('a');flow.href='#kkFlowCard';flow.innerHTML='<span>07</span> Para Akışı';nav.append(flow);
     const all=[...nav.querySelectorAll('a')];
@@ -53,133 +47,82 @@ function kkMount(){
 
   const insight=document.createElement('div');insight.className='kk-insight-grid';insight.innerHTML=`
     <article class="kk-chart-card">
-      <div class="kk-card-head"><div><div class="kk-kicker">Günlük görünüm</div><h3>Satış ve elde kalan akışı</h3><p>Gün gün satış hacmi ile bilinen kesintiler sonrası kalan tutarı birlikte oku.</p></div><span class="kk-card-badge">Grafik</span></div>
+      <div class="kk-card-head"><div><div class="kk-kicker">Günlük görünüm</div><h3>Satış ve bilinen kalan akışı</h3><p>Satış hacmi ile bilinen kesintiler sonrası kalan tutarı gün gün birlikte oku.</p></div><span class="kk-card-badge">Grafik</span></div>
       <div id="kkDailyChart" class="kk-chart-wrap"><div class="kk-chart-empty">Veri bekleniyor.</div></div>
       <div class="kk-chart-legend"><span class="sales"><i></i>Toplam satış</span><span class="cash"><i></i>Bilinen kesintiler sonrası</span></div>
     </article>
     <article class="kk-evidence-card">
-      <div class="kk-card-head"><div><div class="kk-kicker">Veri güveni</div><h3>Rakamın dayanağı</h3><p>Yüzde yükseldikçe sonuç daha fazla gerçek veriyle desteklenir.</p></div><span class="kk-card-badge">Kanıt</span></div>
+      <div class="kk-card-head"><div><div class="kk-kicker">Şeffaf mağaza skoru</div><h3 id="kkHealthTitle">Rakamın dayanağı</h3><p id="kkHealthCopy">Puanın neden yükseldiğini veya düştüğünü bileşenleriyle gör.</p></div><span id="kkHealthBadge" class="kk-card-badge">Kanıt</span></div>
       <div id="kkEvidenceList" class="kk-evidence-list"></div>
-      <div class="kk-evidence-callout">KârKalkan “emin olmadığı” kısmı saklamaz. Eksik maliyet, proxy iade veya dağıtılamayan kargo varsa bunu ayrıca gösterir.</div>
+      <div class="kk-evidence-callout">KârKalkan emin olmadığı kısmı saklamaz. Eksik maliyet, proxy iade veya dağıtılamayan kargo ayrı görünür.</div>
     </article>`;
   const health=document.querySelector('#dashboard .health-grid');(health||command).after(insight);
 
-  const flow=document.createElement('article');flow.id='kkFlowCard';flow.className='kk-flow-card';flow.innerHTML=`<div class="kk-card-head"><div><div class="kk-kicker">Para köprüsü</div><h3>Satıştan bilinen nakde</h3><p>Hangi kesintinin ne kadar etkilediğini tek bakışta gör. Bu görünüm muhasebe net kârı değildir.</p></div><span class="kk-card-badge">Açıklanabilir finans</span></div><div id="kkFlowGrid" class="kk-flow-grid"><div class="kk-chart-empty" style="grid-column:1/-1">Veri bekleniyor.</div></div>`;
+  const flow=document.createElement('article');flow.id='kkFlowCard';flow.className='kk-flow-card';flow.innerHTML=`<div class="kk-card-head"><div><div class="kk-kicker">Para köprüsü</div><h3>Satıştan bilinen nakde</h3><p>Kesintilerin etkisini tek bakışta gör. Bu görünüm muhasebe net kârı değildir.</p></div><span class="kk-card-badge">Açıklanabilir finans</span></div><div id="kkFlowGrid" class="kk-flow-grid"><div class="kk-chart-empty" style="grid-column:1/-1">Veri bekleniyor.</div></div>`;
   const kpis=document.querySelector('#dashboard .v4-kpis');(kpis||insight).after(flow);
 
-  const liveStream=document.createElement('article');liveStream.id='kkLiveStream';liveStream.className='kk-live-stream';liveStream.innerHTML=`<div class="kk-card-head"><div><div class="kk-kicker">Canlı akış</div><h3>Son sipariş sinyalleri</h3><p>Webhook aktifse sipariş paketi durum değişiklikleri burada görünür; finansal tutar daha sonra settlement ile doğrulanır.</p></div><span class="kk-card-badge">PII-minimized</span></div><div id="kkLiveList" class="kk-live-list"><div class="kk-live-empty">Canlı sipariş akışı henüz kurulmadı.</div></div>`;
-  flow.after(liveStream);
+  const radar=document.createElement('article');radar.id='kkLeakRadar';radar.className='kk-live-stream';radar.innerHTML=`<div class="kk-card-head"><div><div class="kk-kicker">Para kaçağı radarı</div><h3>Önce kontrol etmen gereken yerler</h3><p>Kesin zarar iddiası değil; finans sonucunu bozabilecek kanıt boşlukları ve sıra dışı hareketler.</p></div><span class="kk-card-badge">Açıklanabilir</span></div><div id="kkLeakList" class="kk-live-list"><div class="kk-live-empty">Radar için doğrulanmış veri bekleniyor.</div></div>`;
+  flow.after(radar);
 
+  const liveStream=document.createElement('article');liveStream.id='kkLiveStream';liveStream.className='kk-live-stream';liveStream.innerHTML=`<div class="kk-card-head"><div><div class="kk-kicker">Canlı akış</div><h3>Son sipariş sinyalleri</h3><p>Webhook durum değişikliklerini hızlı gösterir; finansal tutar daha sonra hakedişle doğrulanır.</p></div><span class="kk-card-badge">Minimum veri</span></div><div id="kkLiveList" class="kk-live-list"><div class="kk-live-empty">Canlı sipariş akışı henüz kurulmadı.</div></div>`;
+  radar.after(liveStream);
   document.getElementById('kkWebhookBtn')?.addEventListener('click',kkRegisterWebhook);
 }
 
 function kkRenderEvidence(){
   const host=document.getElementById('kkEvidenceList');if(!host)return;
-  const rows=[
-    ['Satış adedi kanıtı',kkVNext.evidence.sales,'Sipariş satırlarıyla doğrulanabilen ürün payı.'],
-    ['İade kanıtı',kkVNext.evidence.returns,'Kabul edilmiş claim kayıtlarıyla doğrulanabilen iade payı.'],
-    ['Ürün maliyeti kapsamı',kkVNext.evidence.cost,'Maliyeti bilinen ürün/satış kapsamı.'],
-    ['Kargo eşleşmesi',kkVNext.evidence.cargo,'Fatura kargosunun sipariş → ürüne kanıtlı dağıtılabilen bölümü.']
-  ];
-  host.innerHTML=rows.map(([label,value,help])=>{const ready=Number.isFinite(Number(value));const p=ready?Math.round(kkClamp(value)*100):0;return `<div class="kk-evidence-row"><header><span>${label}</span><strong>${ready?`%${p}`:'—'}</strong></header><div class="kk-meter"><i style="width:${p}%"></i></div><small>${help}</small></div>`}).join('');
+  const decision=kkVNext.decision,components=Array.isArray(decision?.components)?decision.components:[];
+  if(components.length){
+    document.getElementById('kkHealthTitle').textContent=`${Number(decision.healthScore||0)}/100 · ${decision.healthLabel||'Değerlendiriliyor'}`;
+    document.getElementById('kkHealthBadge').textContent='Şeffaf skor';
+    host.innerHTML=components.map(c=>{const p=Math.max(0,Math.min(100,Number(c.score)||0));return `<div class="kk-evidence-row"><header><span>${kkEsc(c.label)}</span><strong>%${p}</strong></header><div class="kk-meter"><i style="width:${p}%"></i></div><small>${kkEsc(c.help)} · Skor ağırlığı %${Number(c.weight)||0}</small></div>`}).join('');
+    return;
+  }
+  const rows=[['Satış adedi kanıtı',kkVNext.evidence.sales,'Sipariş satırlarıyla doğrulanabilen ürün payı.'],['İade kanıtı',kkVNext.evidence.returns,'Kabul edilmiş claim kayıtlarıyla doğrulanabilen iade payı.'],['Ürün maliyeti kapsamı',kkVNext.evidence.cost,'Maliyeti bilinen ürün/satış kapsamı.'],['Kargo eşleşmesi',kkVNext.evidence.cargo,'Fatura kargosunun siparişten ürüne kanıtlı dağıtılabilen bölümü.']];
+  host.innerHTML=rows.map(([label,value,help])=>{const ready=Number.isFinite(Number(value)),p=ready?Math.round(kkClamp(value)*100):0;return `<div class="kk-evidence-row"><header><span>${label}</span><strong>${ready?`%${p}`:'—'}</strong></header><div class="kk-meter"><i style="width:${p}%"></i></div><small>${help}</small></div>`}).join('');
 }
 
 function kkRenderDaily(data){
-  const host=document.getElementById('kkDailyChart');if(!host)return;
-  const rows=Array.isArray(data?.daily)?data.daily.filter(r=>r&&r.day):[];
+  const host=document.getElementById('kkDailyChart');if(!host)return;const rows=Array.isArray(data?.daily)?data.daily.filter(r=>r?.day):[];
   if(rows.length<2){host.innerHTML='<div class="kk-chart-empty">Grafik için en az iki günlük veri gerekir.</div>';return}
-  const W=720,H=250,L=42,R=12,T=16,B=34,plotW=W-L-R,plotH=H-T-B;
-  const values=rows.flatMap(r=>[Number(r.grossSales)||0,Number(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)||0]);
-  const max=Math.max(1,...values),min=Math.min(0,...values);const range=Math.max(1,max-min);
-  const x=i=>L+(rows.length===1?plotW/2:i*plotW/(rows.length-1));const y=v=>T+(max-(Number(v)||0))*plotH/range;
-  const sales=rows.map((r,i)=>`${x(i).toFixed(1)},${y(r.grossSales).toFixed(1)}`).join(' ');
-  const cash=rows.map((r,i)=>`${x(i).toFixed(1)},${y(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue).toFixed(1)}`).join(' ');
-  const salesArea=`${L},${T+plotH} ${sales} ${L+plotW},${T+plotH}`;
-  const cashArea=`${L},${T+plotH} ${cash} ${L+plotW},${T+plotH}`;
-  const ticks=[0,.25,.5,.75,1];
-  const grid=ticks.map(t=>{const gy=T+t*plotH,val=max-t*range;return `<line class="kk-grid-line" x1="${L}" y1="${gy}" x2="${L+plotW}" y2="${gy}"/><text class="kk-axis-label" x="${L-7}" y="${gy+3}" text-anchor="end">${Math.round(val/1000)}k</text>`}).join('');
-  const labelStep=Math.max(1,Math.ceil(rows.length/6));
-  const labels=rows.map((r,i)=>i%labelStep===0||i===rows.length-1?`<text class="kk-axis-label" x="${x(i)}" y="${H-10}" text-anchor="middle">${kkDateLabel(r.day)}</text>`:'').join('');
-  const dots=rows.map((r,i)=>`<circle class="kk-dot-sales" cx="${x(i)}" cy="${y(r.grossSales)}" r="2.3"><title>${kkDateLabel(r.day)} · Satış ${kkMoney(r.grossSales)}</title></circle><circle class="kk-dot-cash" cx="${x(i)}" cy="${y(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)}" r="2.3"><title>${kkDateLabel(r.day)} · Bilinen kesinti sonrası ${kkMoney(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)}</title></circle>`).join('');
+  const W=720,H=250,L=42,R=12,T=16,B=34,plotW=W-L-R,plotH=H-T-B,values=rows.flatMap(r=>[Number(r.grossSales)||0,Number(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)||0]),max=Math.max(1,...values),min=Math.min(0,...values),range=Math.max(1,max-min),x=i=>L+i*plotW/(rows.length-1),y=v=>T+(max-(Number(v)||0))*plotH/range;
+  const sales=rows.map((r,i)=>`${x(i).toFixed(1)},${y(r.grossSales).toFixed(1)}`).join(' '),cash=rows.map((r,i)=>`${x(i).toFixed(1)},${y(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue).toFixed(1)}`).join(' '),salesArea=`${L},${T+plotH} ${sales} ${L+plotW},${T+plotH}`,cashArea=`${L},${T+plotH} ${cash} ${L+plotW},${T+plotH}`;
+  const grid=[0,.25,.5,.75,1].map(t=>{const gy=T+t*plotH,val=max-t*range;return `<line class="kk-grid-line" x1="${L}" y1="${gy}" x2="${L+plotW}" y2="${gy}"/><text class="kk-axis-label" x="${L-7}" y="${gy+3}" text-anchor="end">${Math.round(val/1000)}k</text>`}).join(''),step=Math.max(1,Math.ceil(rows.length/6)),labels=rows.map((r,i)=>i%step===0||i===rows.length-1?`<text class="kk-axis-label" x="${x(i)}" y="${H-10}" text-anchor="middle">${kkDateLabel(r.day)}</text>`:'').join(''),dots=rows.map((r,i)=>`<circle class="kk-dot-sales" cx="${x(i)}" cy="${y(r.grossSales)}" r="2.3"><title>${kkDateLabel(r.day)} · Satış ${kkMoney(r.grossSales)}</title></circle><circle class="kk-dot-cash" cx="${x(i)}" cy="${y(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)}" r="2.3"><title>${kkDateLabel(r.day)} · Bilinen kesinti sonrası ${kkMoney(r.knownFeeNet??r.adjustedSellerRevenue??r.sellerRevenue)}</title></circle>`).join('');
   host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Günlük satış ve bilinen kesintiler sonrası kalan tutar grafiği"><defs><linearGradient id="kkSalesArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#79c7ff" stop-opacity=".18"/><stop offset="1" stop-color="#79c7ff" stop-opacity="0"/></linearGradient><linearGradient id="kkCashArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2a65a" stop-opacity=".16"/><stop offset="1" stop-color="#f2a65a" stop-opacity="0"/></linearGradient></defs>${grid}<polygon class="kk-area-sales" points="${salesArea}"/><polygon class="kk-area-cash" points="${cashArea}"/><polyline class="kk-sales-line" points="${sales}"/><polyline class="kk-cash-line" points="${cash}"/>${dots}${labels}</svg>`;
 }
 
 function kkRenderFlow(data){
-  const host=document.getElementById('kkFlowGrid');if(!host)return;
-  const t=data?.totals||{},s=data?.settlementSnapshot||{},o=data?.otherFinancialSnapshot||{};
-  const gross=Number(t.grossSales)||0,returns=Math.abs(Number(t.grossReturns)||0),commission=Math.abs(Number(t.commissionCost)||0),adjust=Math.abs(Number(s.adjustmentNet??t.settlementAdjustmentNet)||0),platform=Math.abs(Number(o.platformServiceFeeCost??t.platformServiceFeeCost)||0),cargo=Math.abs(Number(o.cargoCost??t.cargoCost)||0),final=Number(o.knownFeeNet??t.knownFeeNet??t.adjustedSellerRevenue??t.sellerRevenue)||0;
-  const items=[['Toplam satış',gross,'base'],['İade',returns,'negative'],['Komisyon',commission,'negative'],['Hakediş düzeltmesi',adjust,'adjustment'],['Platform ücreti',platform,'negative'],['Kargo',cargo,'negative'],['Bilinen kalan',final,'final']];
-  const max=Math.max(1,...items.map(x=>Math.abs(Number(x[1])||0)));
-  host.innerHTML=items.map(([label,val,kind])=>{const h=Math.max(3,Math.round(Math.abs(Number(val)||0)/max*100));return `<div class="kk-flow-item ${kind}"><div class="kk-flow-bar-shell"><div class="kk-flow-bar" style="height:${h}%"></div></div><span title="${kkEsc(label)}">${kkEsc(label)}</span><strong title="${kkMoney(val)}">${kkMoney(val)}</strong></div>`}).join('');
+  const host=document.getElementById('kkFlowGrid');if(!host)return;const t=data?.totals||{},s=data?.settlementSnapshot||{},o=data?.otherFinancialSnapshot||{},items=[['Toplam satış',Number(t.grossSales)||0,'base'],['İade',Math.abs(Number(t.grossReturns)||0),'negative'],['Komisyon',Math.abs(Number(t.commissionCost)||0),'negative'],['Hakediş düzeltmesi',Math.abs(Number(s.adjustmentNet??t.settlementAdjustmentNet)||0),'adjustment'],['Platform ücreti',Math.abs(Number(o.platformServiceFeeCost??t.platformServiceFeeCost)||0),'negative'],['Kargo',Math.abs(Number(o.cargoCost??t.cargoCost)||0),'negative'],['Bilinen kalan',Number(o.knownFeeNet??t.knownFeeNet??t.adjustedSellerRevenue??t.sellerRevenue)||0,'final']],max=Math.max(1,...items.map(x=>Math.abs(Number(x[1])||0)));
+  host.innerHTML=items.map(([label,val,kind])=>`<div class="kk-flow-item ${kind}"><div class="kk-flow-bar-shell"><div class="kk-flow-bar" style="height:${Math.max(3,Math.round(Math.abs(Number(val)||0)/max*100))}%"></div></div><span title="${kkEsc(label)}">${kkEsc(label)}</span><strong>${kkMoney(val)}</strong></div>`).join('');
 }
 
-function kkRenderDashboard(data){
-  kkVNext.daily=data;
-  const unit=data?.unitSnapshot||{};
-  kkVNext.evidence.sales=Number.isFinite(Number(unit.salesEvidenceCoverage))?kkClamp(unit.salesEvidenceCoverage):null;
-  kkVNext.evidence.returns=Number.isFinite(Number(unit.returnEvidenceCoverage))?kkClamp(unit.returnEvidenceCoverage):null;
-  kkVNext.evidence.cost=Number.isFinite(Number(data?.salesCostCoverage))?kkClamp(data.salesCostCoverage):Number.isFinite(Number(data?.costCoverage))?kkClamp(data.costCoverage):null;
-  kkRenderEvidence();kkRenderDaily(data);kkRenderFlow(data);
+function kkRenderDashboard(data){const unit=data?.unitSnapshot||{};kkVNext.evidence.sales=Number.isFinite(Number(unit.salesEvidenceCoverage))?kkClamp(unit.salesEvidenceCoverage):null;kkVNext.evidence.returns=Number.isFinite(Number(unit.returnEvidenceCoverage))?kkClamp(unit.returnEvidenceCoverage):null;kkVNext.evidence.cost=Number.isFinite(Number(data?.salesCostCoverage))?kkClamp(data.salesCostCoverage):Number.isFinite(Number(data?.costCoverage))?kkClamp(data.costCoverage):null;kkRenderEvidence();kkRenderDaily(data);kkRenderFlow(data)}
+
+function kkRenderRadar(data){
+  const host=document.getElementById('kkLeakList');if(!host)return;const rows=Array.isArray(data?.moneyLeakRadar)?data.moneyLeakRadar:[];
+  if(!rows.length){host.innerHTML='<div class="kk-live-empty">Belirgin veri boşluğu görünmüyor. Bu, muhasebe açısından kesin sorun olmadığı anlamına gelmez.</div>';return}
+  host.innerHTML=rows.map(r=>`<div class="kk-live-row"><strong>${kkEsc(r.title)}</strong><span class="kk-status">${r.severity==='high'?'Öncelikli':'Kontrol et'}</span><span>${r.impactBasis==null?'Tutar belirtilmedi':`Etkilenen taban ${kkMoney(r.impactBasis)}`}</span><span title="${kkEsc(r.message)}">${kkEsc(r.message)}</span></div>`).join('');
 }
 
-async function kkAuthRest(path){
-  const token=await ensureAccessToken();
-  const r=await fetch(`${SUPABASE_URL}${path}`,{headers:{apikey:PUBLISHABLE_KEY,Authorization:`Bearer ${token}`},cache:'no-store'});
-  if(!r.ok){const e=new Error(`HTTP_${r.status}`);e.status=r.status;throw e}return r.json();
-}
+async function kkLoadDecision(){if(!activeConnectionId){kkVNext.decision=null;kkRenderEvidence();kkRenderRadar(null);return}try{const days=Number(els?.rangeDays?.value||30),data=await functionRequest('decision-center',{query:{connection_id:activeConnectionId,days}});kkVNext.decision=data;kkRenderEvidence();kkRenderRadar(data)}catch{kkVNext.decision=null;kkRenderEvidence();const host=document.getElementById('kkLeakList');if(host)host.innerHTML='<div class="kk-live-empty">Karar merkezi şu an okunamadı.</div>'}}
 
 async function kkLoadWebhookState(){
-  const badge=document.getElementById('kkWebhookState'),btn=document.getElementById('kkWebhookBtn'),msg=document.getElementById('kkWebhookMessage');
-  if(!badge||!btn||!msg)return;
-  if(!activeConnectionId){badge.className='kk-live-state';badge.innerHTML='<i></i> Mağaza seç';btn.disabled=true;msg.textContent='Önce mağaza seç.';return}
-  btn.disabled=false;
-  try{
-    const data=await functionRequest('webhook-manager',{query:{connection_id:activeConnectionId}});
-    kkVNext.webhook=data;
-    if(data?.active){badge.className='kk-live-state ready';badge.innerHTML='<i></i> Canlı akış açık';btn.textContent='Webhook’u yenile';msg.textContent='Sipariş sinyalleri açık; finansal doğrulama batch sync ile devam eder.'}
-    else{badge.className='kk-live-state warn';badge.innerHTML='<i></i> Kurulu değil';btn.textContent='Canlı akışı kur';msg.textContent='Kurulum Trendyol webhook aboneliğini güvenli anahtarla açar.'}
-  }catch(e){
-    badge.className='kk-live-state';badge.innerHTML='<i></i> Hazır değil';btn.textContent='Canlı akışı kur';msg.textContent=e?.status===404?'Canlı akış backend’i henüz yayınlanmadı.':'Durum kontrol edilemedi.';
-  }
+  const badge=document.getElementById('kkWebhookState'),btn=document.getElementById('kkWebhookBtn'),msg=document.getElementById('kkWebhookMessage');if(!badge||!btn||!msg)return;
+  if(!activeConnectionId){badge.className='kk-live-state';badge.innerHTML='<i></i> Mağaza seç';btn.disabled=true;msg.textContent='Önce mağaza seç.';return}btn.disabled=false;
+  try{const data=await functionRequest('webhook-manager',{query:{connection_id:activeConnectionId}});if(data?.active){badge.className='kk-live-state ready';badge.innerHTML='<i></i> Canlı akış açık';btn.textContent='Canlı akış açık';btn.disabled=true;msg.textContent='Sipariş sinyali açık; finansal doğrulama senkronla devam eder.'}else{badge.className='kk-live-state warn';badge.innerHTML='<i></i> Kurulu değil';btn.textContent='Canlı akışı kur';msg.textContent='Kurulum, mağazanın kendi API bilgileriyle webhook aboneliği açar.'}}catch(e){badge.className='kk-live-state';badge.innerHTML='<i></i> Hazır değil';btn.textContent='Canlı akışı kur';msg.textContent=e?.status===404?'Canlı akış backend’i yayınlanmadı.':'Durum kontrol edilemedi.'}
 }
 
-async function kkRegisterWebhook(){
-  const btn=document.getElementById('kkWebhookBtn'),msg=document.getElementById('kkWebhookMessage');if(!btn||!msg||!activeConnectionId)return;
-  const old=btn.textContent;btn.disabled=true;btn.textContent='Kuruluyor…';msg.textContent='Trendyol webhook aboneliği hazırlanıyor…';
-  try{const data=await functionRequest('webhook-manager',{method:'POST',body:{connection_id:activeConnectionId}});msg.textContent=data?.active?'Canlı sipariş sinyali kuruldu. Periyodik senkron finansal doğrulama için açık kalır.':'Kurulum tamamlanamadı.';await kkLoadWebhookState();await kkLoadLiveOrders()}
-  catch(e){msg.textContent=humanError(e)}finally{btn.disabled=false;if(btn.textContent==='Kuruluyor…')btn.textContent=old}
-}
+async function kkRegisterWebhook(){const btn=document.getElementById('kkWebhookBtn'),msg=document.getElementById('kkWebhookMessage');if(!btn||!msg||!activeConnectionId)return;btn.disabled=true;btn.textContent='Kuruluyor…';msg.textContent='Canlı sipariş sinyali hazırlanıyor…';try{const data=await functionRequest('webhook-manager',{method:'POST',body:{connection_id:activeConnectionId}});msg.textContent=data?.active?'Canlı sipariş sinyali kuruldu. Hakediş doğrulaması ayrıca devam edecek.':'Kurulum tamamlanamadı.';await Promise.allSettled([kkLoadWebhookState(),kkLoadLiveOrders(),kkLoadDecision()])}catch(e){msg.textContent=humanError(e);btn.disabled=false;btn.textContent='Canlı akışı kur'}}
 
 async function kkLoadLiveOrders(){
-  const host=document.getElementById('kkLiveList');if(!host)return;
-  if(!activeConnectionId){host.innerHTML='<div class="kk-live-empty">Canlı akış için mağaza seç.</div>';return}
-  try{
-    const q=new URLSearchParams({select:'order_number,package_id,status,event_at,total_amount,line_count',connection_id:`eq.${activeConnectionId}`,order:'event_at.desc',limit:'8'});
-    const rows=await kkAuthRest(`/rest/v1/marketplace_live_orders?${q}`);
-    if(!Array.isArray(rows)||!rows.length){host.innerHTML='<div class="kk-live-empty">Henüz webhook sipariş sinyali yok. Bu alan yalnız gerçek webhook verisi geldiğinde dolar.</div>';return}
-    host.innerHTML=rows.map(r=>`<div class="kk-live-row"><strong>#${kkEsc(r.order_number||r.package_id||'—')}</strong><span class="kk-status">${kkEsc(r.status||'Bilinmiyor')}</span><span>${Number.isFinite(Number(r.total_amount))?kkMoney(r.total_amount):'Tutar bekleniyor'}</span><span>${r.event_at?new Date(r.event_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}):'—'}</span></div>`).join('');
-  }catch(e){host.innerHTML=e?.status===404?'<div class="kk-live-empty">Canlı sipariş tablosu henüz yayınlanmadı.</div>':'<div class="kk-live-empty">Canlı siparişler şu an okunamadı.</div>'}
+  const host=document.getElementById('kkLiveList');if(!host)return;if(!activeConnectionId){host.innerHTML='<div class="kk-live-empty">Canlı akış için mağaza seç.</div>';return}
+  try{const data=await functionRequest('live-overview',{query:{connection_id:activeConnectionId}}),rows=Array.isArray(data?.liveOrders?.rows)?data.liveOrders.rows.slice(0,8):[];if(!rows.length){host.innerHTML='<div class="kk-live-empty">Henüz gerçek webhook sipariş sinyali yok.</div>';return}host.innerHTML=rows.map(r=>`<div class="kk-live-row"><strong>#${kkEsc(r.order_number||r.package_id||'—')}</strong><span class="kk-status">${kkEsc(r.status||'Bilinmiyor')}</span><span>${Number.isFinite(Number(r.total_amount))?kkMoney(r.total_amount):'Tutar bekleniyor'}</span><span>${r.event_at?new Date(r.event_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}):'—'}</span></div>`).join('')}catch{host.innerHTML='<div class="kk-live-empty">Canlı siparişler şu an okunamadı.</div>'}
 }
 
 function kkStartLivePolling(){if(kkVNext.liveTimer)clearInterval(kkVNext.liveTimer);kkVNext.liveTimer=setInterval(()=>{if(activeConnectionId&&!document.hidden)kkLoadLiveOrders().catch(()=>{})},12000)}
 
-kkMount();
-kkRenderEvidence();
-kkStartLivePolling();
-
-if(typeof renderDashboard==='function'){
-  const kkBaseRenderDashboard=renderDashboard;
-  renderDashboard=function(data){kkBaseRenderDashboard(data);kkRenderDashboard(data)};
-}
-if(typeof alertRender==='function'){
-  const kkBaseAlertRender=alertRender;
-  alertRender=function(data){kkBaseAlertRender(data);const c=Number(data?.financialTruth?.cargoAllocationCoverage);kkVNext.evidence.cargo=Number.isFinite(c)?kkClamp(c/100):null;kkRenderEvidence()};
-}
-if(typeof refreshConnectionData==='function'){
-  const kkBaseRefreshConnectionData=refreshConnectionData;
-  refreshConnectionData=async function(){await kkBaseRefreshConnectionData();await Promise.allSettled([kkLoadWebhookState(),kkLoadLiveOrders()])};
-}
-if(typeof resetDashboardOnly==='function'){
-  const kkBaseResetDashboardOnly=resetDashboardOnly;
-  resetDashboardOnly=function(){kkBaseResetDashboardOnly();kkVNext.evidence={sales:null,returns:null,cost:null,cargo:null};kkRenderEvidence();const chart=document.getElementById('kkDailyChart');if(chart)chart.innerHTML='<div class="kk-chart-empty">Veri bekleniyor.</div>';const flow=document.getElementById('kkFlowGrid');if(flow)flow.innerHTML='<div class="kk-chart-empty" style="grid-column:1/-1">Veri bekleniyor.</div>';kkLoadWebhookState().catch(()=>{});kkLoadLiveOrders().catch(()=>{})};
-}
+kkMount();kkRenderEvidence();kkStartLivePolling();
+if(typeof renderDashboard==='function'){const base=renderDashboard;renderDashboard=function(data){base(data);kkRenderDashboard(data)}}
+if(typeof alertRender==='function'){const base=alertRender;alertRender=function(data){base(data);const c=Number(data?.financialTruth?.cargoAllocationCoverage);kkVNext.evidence.cargo=Number.isFinite(c)?kkClamp(c/100):null;kkRenderEvidence()}}
+if(typeof refreshConnectionData==='function'){const base=refreshConnectionData;refreshConnectionData=async function(){await base();await Promise.allSettled([kkLoadWebhookState(),kkLoadLiveOrders(),kkLoadDecision()])}}
+if(typeof resetDashboardOnly==='function'){const base=resetDashboardOnly;resetDashboardOnly=function(){base();kkVNext.evidence={sales:null,returns:null,cost:null,cargo:null};kkVNext.decision=null;kkRenderEvidence();kkRenderRadar(null);const chart=document.getElementById('kkDailyChart');if(chart)chart.innerHTML='<div class="kk-chart-empty">Veri bekleniyor.</div>';const flow=document.getElementById('kkFlowGrid');if(flow)flow.innerHTML='<div class="kk-chart-empty" style="grid-column:1/-1">Veri bekleniyor.</div>';kkLoadWebhookState().catch(()=>{});kkLoadLiveOrders().catch(()=>{})}}
