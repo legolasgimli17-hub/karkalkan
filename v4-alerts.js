@@ -182,11 +182,7 @@ async function loadRuleAlerts() {
   }
 }
 
-/*
- * Trendyol sometimes changes human-readable settlement descriptions. The sync
- * worker records rows it could not classify. Never let that audit signal stay
- * hidden: a non-zero count is surfaced immediately after a successful sync.
- */
+/* Surface audit-visible settlement rows immediately after sync. */
 const alertCoreFunctionRequest = functionRequest;
 functionRequest = async function alertAwareFunctionRequest(name, options = {}) {
   const data = await alertCoreFunctionRequest(name, options);
@@ -218,15 +214,14 @@ resetDashboardOnly = function resetWithAlerts() {
 };
 if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts().catch(() => {});
 
-/* vNext layers are loaded after the stable authenticated core. */
-(function loadKarkalkanVNext(){
+/* One consolidated seller-dashboard enhancement script owns all vNext behavior. */
+(function loadKarkalkanSellerDashboard(){
   const addStyle=(href,key)=>{if(document.querySelector(`link[data-${key}]`))return;const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset[key]='1';document.head.append(link)};
-  const loadOps=()=>{
-    addStyle('/vnext-ops.css','karkalkanVnextOps');
-    if(!document.querySelector('script[data-karkalkan-vnext-ops]')){const ops=document.createElement('script');ops.src='/vnext-ops.js';ops.dataset.karkalkanVnextOps='1';document.body.append(ops)}
-  };
   addStyle('/vnext.css','karkalkanVnext');
-  const existing=document.querySelector('script[data-karkalkan-vnext]');
-  if(existing){loadOps();return}
-  const script=document.createElement('script');script.src='/vnext.js';script.dataset.karkalkanVnext='1';script.addEventListener('load',loadOps,{once:true});document.body.append(script);
+  addStyle('/vnext-ops.css','karkalkanVnextOps');
+  if(document.querySelector('script[data-karkalkan-vnext]'))return;
+  const script=document.createElement('script');
+  script.src='/vnext.js';
+  script.dataset.karkalkanVnext='1';
+  document.body.append(script);
 })();
