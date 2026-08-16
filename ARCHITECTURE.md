@@ -33,9 +33,39 @@ High-level real-store flow:
 4. Server-side functions request marketplace data.
 5. Normalized financial/sales data is stored per user/store.
 6. User-provided product costs enrich marketplace data.
-7. Dashboard calculations present sales, deductions and profitability outputs.
+7. Shared finance primitives convert those rows into one cash vocabulary.
+8. Dashboard, alert, confidence and portfolio endpoints build their own views from that same finance core.
 
 Public demo flow does not require marketplace credentials and uses example data.
+
+## Shared finance core
+
+`supabase/functions/_shared/finance.js` is the single reusable source for seller-facing financial primitives. It owns:
+
+- paginated reads with an explicit maximum-row failure instead of silent truncation,
+- settlement-adjusted seller cash,
+- platform/kargo deductions,
+- stoppage-aware known cash,
+- sales-weighted product-cost coverage,
+- the rule that incomplete product cost cannot become a numeric operating contribution,
+- operating-expense date overlap allocation.
+
+`dashboard-summary`, `risk-alerts`, `decision-center` and `portfolio-summary` import this module. CI imports the same file directly, so production formulas and tests do not maintain separate copies of the core arithmetic.
+
+## Authenticated dashboard layering
+
+The historical authenticated core remains `v4.js` + `v4-enhance.js` + `v4-alerts.js`. The newer seller experience is now one behavior layer:
+
+- `vnext.js` owns evidence confidence, daily cash visualization, money-leak radar, live order signals, operating expenses and portfolio refreshes.
+- `vnext-ops.js` no longer exists; its behavior is consolidated into `vnext.js`.
+- `v4-alerts.js` loads one vNext behavior script and the required styles.
+- `refreshConnectionData` is wrapped once by the consolidated vNext layer instead of once per vNext feature file.
+
+This keeps the historical core stable while reducing the number of interdependent browser-script wrappers.
+
+## Test fixture
+
+`tests/fixtures/synthetic-store.mjs` generates a deterministic 30-day synthetic seller dataset. It contains no real seller information. Finance tests use it to exercise stoppage, partial product-cost coverage, operating expenses and shared cash calculations with production code.
 
 ## Security principles
 
