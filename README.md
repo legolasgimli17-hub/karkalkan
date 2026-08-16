@@ -19,6 +19,8 @@ There is only one product: **KârKalkan**. Historical filenames/migrations that 
 
 Production source branch: `main`
 
+Canonical store-panel route: `/uygulama`
+
 Development workflow: `feature branch -> Vercel preview -> verification -> merge to main -> production`
 
 ## Acquisition / handover documentation
@@ -28,6 +30,8 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - `TRANSFER.md` — asset-transfer and acceptance checklist
 - `KNOWN_LIMITATIONS.md` — due-diligence disclosures and outstanding validation
 - `SUPABASE_INVENTORY.md` — deployed backend-function inventory and auth configuration
+- `THIRD_PARTY.md` — runtime dependency inventory and upgrade policy
+- `.env.example` — safe placeholder names/shapes for server-side configuration
 
 ## Backend reproducibility
 
@@ -39,4 +43,4 @@ The product is pre-revenue unless later evidence is documented. Do not claim a c
 
 ## Security
 
-Never commit API secrets, seller credentials, personal access tokens or `.env` files. During a transfer, the buyer should create/rotate secrets in buyer-controlled infrastructure accounts.
+Never commit API secrets, seller credentials, personal access tokens or real `.env` files. During a transfer, the buyer should create/rotate secrets in buyer-controlled infrastructure accounts.
