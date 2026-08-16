@@ -179,8 +179,11 @@ function kkVisualLeakRadar(){
   const countEl=document.getElementById('kkLeakCount');if(countEl)countEl.textContent=`${count} sinyal`;
   const rings=visual.querySelector('.kk-leak-rings');
   rings?.querySelectorAll('.kk-leak-dot').forEach(dot=>dot.remove());
-  for(let i=0;i<Math.min(count,6);i++){
-    const dot=document.createElement('em');dot.className='kk-leak-dot';dot.style.setProperty('--i',String(i));rings?.append(dot);
+  const positions=[[28,28],[63,33],[45,48],[72,56],[31,66],[57,74]];
+  for(let i=0;i<Math.min(count,positions.length);i++){
+    const dot=document.createElement('em');dot.className='kk-leak-dot';
+    dot.style.left=`${positions[i][0]}%`;dot.style.top=`${positions[i][1]}%`;
+    rings?.append(dot);
   }
 }
 
