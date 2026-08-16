@@ -26,8 +26,9 @@ Deno.serve(async(req:Request)=>{
   if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
   const {data:conn,error:ce}=await sb.from('marketplace_connections').select('id,marketplace,external_seller_id').eq('id',connectionId).maybeSingle();if(ce)return json(500,{error:'DB_ERROR'},origin);if(!conn||conn.marketplace!=='trendyol')return json(404,{error:'NOT_FOUND'},origin)
   const existing=await sql`select provider_webhook_id,status,endpoint_url,subscribed_statuses,registered_at,updated_at from public.marketplace_webhooks where connection_id=${connectionId}::uuid and user_id=${user.id}::uuid limit 1`
-  if(req.method==='GET')return json(200,{configured:!!existing.length,webhook:existing[0]||null},origin)
-  if(existing.length&&existing[0].status==='active')return json(200,{ok:true,configured:true,alreadyActive:true,webhook:existing[0]},origin)
+  const current=existing[0]||null
+  if(req.method==='GET')return json(200,{configured:!!current,active:current?.status==='active',webhook:current},origin)
+  if(current?.status==='active')return json(200,{ok:true,configured:true,active:true,alreadyActive:true,webhook:current},origin)
   const sellerId=String(conn.external_seller_id||'');if(!/^\d{1,20}$/.test(sellerId))return json(400,{error:'INVALID_SELLER_ID'},origin)
   const kn=`kk.trendyol.${connectionId}.key`,sn=`kk.trendyol.${connectionId}.secret`,sec=await sql`select name,decrypted_secret from vault.decrypted_secrets where name in (${kn},${sn})`,map=new Map(sec.map((r:any)=>[String(r.name),String(r.decrypted_secret||'')])),apiKey=map.get(kn)||'',apiSecret=map.get(sn)||'';if(!apiKey||!apiSecret)return json(409,{error:'CREDENTIALS_MISSING'},origin)
   const hookSecret=randomSecret(),secretHash=await sha256(hookSecret),endpoint=`${PROJECT_URL}/functions/v1/order-events?c=${encodeURIComponent(connectionId)}`
@@ -37,5 +38,5 @@ Deno.serve(async(req:Request)=>{
   let data:any={};try{data=await response.json()}catch{}
   const providerId=String(data?.id||'').slice(0,180);if(!providerId)return json(502,{error:'WEBHOOK_BAD_RESPONSE'},origin)
   const rows=await sql`insert into public.marketplace_webhooks(connection_id,user_id,provider_webhook_id,secret_hash,endpoint_url,status,subscribed_statuses,registered_at,updated_at) values(${connectionId}::uuid,${user.id}::uuid,${providerId},${secretHash},${endpoint},'active',${sql.array([],'text')},now(),now()) on conflict (connection_id) do update set provider_webhook_id=excluded.provider_webhook_id,secret_hash=excluded.secret_hash,endpoint_url=excluded.endpoint_url,status='active',subscribed_statuses=excluded.subscribed_statuses,registered_at=now(),updated_at=now() returning provider_webhook_id,status,endpoint_url,registered_at`
-  return json(200,{ok:true,configured:true,webhook:rows[0]},origin)
+  return json(200,{ok:true,configured:true,active:true,webhook:rows[0]},origin)
 })
