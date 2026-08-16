@@ -1,5 +1,226 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
-const PROJECT_URL=Deno.env.get('SUPABASE_URL')||'',PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})(),fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'}),PAGE=1000,MAX_ROWS=100000
-function allowedOrigin(o:string|null){if(!o)return true;if(o==='https://karkalkan.vercel.app'||o===PROJECT_ORIGIN)return true;try{const u=new URL(o);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}function headers(o:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(o&&allowedOrigin(o)){h['Access-Control-Allow-Origin']=o;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, OPTIONS'}return h}function json(s:number,b:unknown,o:string|null){return new Response(JSON.stringify(b),{status:s,headers:headers(o)})}function dayKey(date:Date){const p=fmt.formatToParts(date),g=(t:string)=>p.find(x=>x.type===t)?.value;return `${g('year')}-${g('month')}-${g('day')}`}function startDay(days:number){const p=fmt.formatToParts(new Date()),g=(t:string)=>Number(p.find(x=>x.type===t)?.value),mid=Date.UTC(g('year'),g('month')-1,g('day'))-3*60*60*1000;return dayKey(new Date(mid-(days-1)*86400000))}function n(v:unknown){const x=Number(v);return Number.isFinite(x)?x:0}function money(v:number){return Math.round(v*100)/100}function pct(v:number){return Math.round(v*100)/100}async function paged(make:(f:number,t:number)=>PromiseLike<any>){const out:any[]=[];for(let f=0;f<MAX_ROWS;f+=PAGE){const {data,error}=await make(f,f+PAGE-1);if(error)throw error;const rows=Array.isArray(data)?data:[];out.push(...rows);if(rows.length<PAGE)return out}throw new Error('DATA_TOO_LARGE')}
-const THRESHOLDS={lowMarginPct:5,highReturnPct:20,highCargoBurdenPct:15,minSalesForRateAlert:500,minCargoAllocationCoveragePct:80}
-Deno.serve(async(req:Request)=>{const origin=req.headers.get('Origin');if(!allowedOrigin(origin))return json(403,{error:'ORIGIN_NOT_ALLOWED'},origin);if(req.method==='OPTIONS')return new Response(null,{status:204,headers:headers(origin)});if(req.method!=='GET')return json(405,{error:'METHOD_NOT_ALLOWED'},origin);const auth=req.headers.get('Authorization')||'';if(!auth.startsWith('Bearer '))return json(401,{error:'UNAUTHORIZED'},origin);const key=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default;if(!PROJECT_URL||!key)return json(503,{error:'SERVER_CONFIG'},origin);const sb=createClient(PROJECT_URL,key,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}}),{data:ud,error:ue}=await sb.auth.getUser(auth.slice(7));if(ue||!ud?.user)return json(401,{error:'UNAUTHORIZED'},origin);const u=new URL(req.url),connectionId=u.searchParams.get('connection_id')||'',raw=Number(u.searchParams.get('days')||30),days=[7,30].includes(raw)?raw:30;if(!/^[0-9a-f-]{36}$/i.test(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin);const {data:conn}=await sb.from('marketplace_connections').select('id').eq('id',connectionId).maybeSingle();if(!conn)return json(404,{error:'NOT_FOUND'},origin);const start=startDay(days);let products:any[],alloc:any[],daily:any[];try{[products,alloc,daily]=await Promise.all([paged((f,t)=>sb.from('marketplace_product_daily_metrics').select('id,external_product_id,sku,barcode,product_name,gross_sales,gross_returns,seller_revenue,estimated_profit').eq('connection_id',connectionId).gte('day',start).order('id',{ascending:true}).range(f,t)),paged((f,t)=>sb.from('marketplace_product_cargo_allocations').select('id,external_product_id,allocated_amount').eq('connection_id',connectionId).gte('invoice_day',start).order('id',{ascending:true}).range(f,t)),paged((f,t)=>sb.from('marketplace_daily_financials').select('id,seller_revenue,settlement_adjustment_net,platform_service_fee_cost,cargo_cost,stoppage_net').eq('connection_id',connectionId).gte('day',start).order('id',{ascending:true}).range(f,t))])}catch(e){return json(e instanceof Error&&e.message==='DATA_TOO_LARGE'?409:500,{error:e instanceof Error&&e.message==='DATA_TOO_LARGE'?'DATA_TOO_LARGE':'DB_ERROR'},origin)}const store=daily.reduce((a:any,r:any)=>{a.core+=n(r.seller_revenue);a.adjust+=n(r.settlement_adjustment_net);a.platform+=n(r.platform_service_fee_cost);a.cargo+=n(r.cargo_cost);a.stoppage+=n(r.stoppage_net);return a},{core:0,adjust:0,platform:0,cargo:0,stoppage:0});store.adjusted=store.core+store.adjust;store.beforeStoppage=store.adjusted-store.platform-store.cargo;store.knownAfterStoppage=store.beforeStoppage-store.stoppage;const cargo=new Map<string,number>();let allocatedCargo=0;for(const r of alloc){const id=String(r.external_product_id||''),amount=n(r.allocated_amount);allocatedCargo+=amount;if(id)cargo.set(id,(cargo.get(id)||0)+amount)}const allocationCoverage=store.cargo>0?Math.max(0,Math.min(1,allocatedCargo/store.cargo)):1,map=new Map<string,any>();for(const r of products){const id=String(r.external_product_id||r.barcode||'').trim();if(!id)continue;const p=map.get(id)||{externalProductId:id,sku:r.sku||null,barcode:r.barcode||id,name:r.product_name||null,grossSales:0,grossReturns:0,sellerRevenue:0,profit:0,profitRows:0};p.grossSales+=n(r.gross_sales);p.grossReturns+=n(r.gross_returns);p.sellerRevenue+=n(r.seller_revenue);if(r.estimated_profit!==null){p.profit+=n(r.estimated_profit);p.profitRows++}if(!p.name&&r.product_name)p.name=r.product_name;if(!p.sku&&r.sku)p.sku=r.sku;map.set(id,p)}const alerts:any[]=[];for(const p of map.values()){const cargoCost=cargo.get(p.externalProductId)||0,estimatedProfit=p.profitRows?p.profit:null,profitAfterCargo=estimatedProfit===null?null:estimatedProfit-cargoCost,marginAfterCargo=profitAfterCargo===null||p.sellerRevenue===0?null:profitAfterCargo/p.sellerRevenue*100,returnRate=p.grossSales>0?p.grossReturns/p.grossSales*100:0,cargoBurden=p.sellerRevenue>0?cargoCost/p.sellerRevenue*100:0,label=p.name||p.sku||p.barcode||p.externalProductId;if(profitAfterCargo!==null&&profitAfterCargo<0)alerts.push({type:'loss_after_cargo',severity:'critical',externalProductId:p.externalProductId,label,value:money(profitAfterCargo),message:`${label}: bilinen ürün maliyeti ve eşleşen kargo sonrası katkı negatif.`});else if(marginAfterCargo!==null&&marginAfterCargo<THRESHOLDS.lowMarginPct)alerts.push({type:'low_margin',severity:'warning',externalProductId:p.externalProductId,label,value:pct(marginAfterCargo),message:`${label}: bilinen maliyet ve kargo sonrası katkı oranı %${pct(marginAfterCargo)}.`});if(p.grossSales>=THRESHOLDS.minSalesForRateAlert&&returnRate>=THRESHOLDS.highReturnPct)alerts.push({type:'high_return_rate',severity:'warning',externalProductId:p.externalProductId,label,value:pct(returnRate),message:`${label}: iade oranı %${pct(returnRate)}.`});if(p.sellerRevenue>0&&cargoBurden>=THRESHOLDS.highCargoBurdenPct)alerts.push({type:'high_cargo_burden',severity:'warning',externalProductId:p.externalProductId,label,value:pct(cargoBurden),message:`${label}: eşleşen kargo yükü satıcı gelirinin %${pct(cargoBurden)}'si.`});if(estimatedProfit===null&&p.grossSales>=THRESHOLDS.minSalesForRateAlert)alerts.push({type:'missing_cost',severity:'info',externalProductId:p.externalProductId,label,value:money(p.grossSales),message:`${label}: satış var ama ürün maliyeti eksik; katkı sonucu bilinmiyor.`})}if(store.cargo>0&&allocationCoverage*100<THRESHOLDS.minCargoAllocationCoveragePct)alerts.push({type:'cargo_allocation_gap',severity:'warning',externalProductId:null,label:'Kargo eşleştirme',value:pct(allocationCoverage*100),message:`Kargo maliyetinin yalnızca %${pct(allocationCoverage*100)} bölümü ürünlere kanıtlı dağıtılabildi.`});const order={critical:0,warning:1,info:2};alerts.sort((a,b)=>(order[a.severity as keyof typeof order]??9)-(order[b.severity as keyof typeof order]??9)||Math.abs(Number(b.value)||0)-Math.abs(Number(a.value)||0));const top=alerts.slice(0,20),counts={critical:alerts.filter(a=>a.severity==='critical').length,warning:alerts.filter(a=>a.severity==='warning').length,info:alerts.filter(a=>a.severity==='info').length};return json(200,{connectionId,rangeDays:days,startDay:start,thresholds:THRESHOLDS,counts,total:alerts.length,alerts:top,engine:'rules_v3',financialTruth:{coreSellerRevenue:money(store.core),settlementAdjustmentNet:money(store.adjust),adjustedSellerRevenue:money(store.adjusted),platformServiceFeeCost:money(store.platform),cargoCost:money(store.cargo),stoppageNet:money(store.stoppage),platformCashBeforeStoppage:money(store.beforeStoppage),knownCashAfterFeesAndStoppage:money(store.knownAfterStoppage),allocatedCargoCost:money(allocatedCargo),cargoAllocationCoverage:pct(allocationCoverage*100)},disclaimer:'Ürün alarmları yalnız bilinen ürün maliyeti ve eşleştirilebilen kargo kapsamındadır. Stopaj nakit kesintisi olarak gösterilir; muhasebe net kârı değildir.'},origin)})
+import {
+  aggregateCashRows,
+  clamp01,
+  money,
+  numberValue,
+  percent,
+  readAllPages
+} from '../_shared/finance.js'
+
+const PROJECT_URL = Deno.env.get('SUPABASE_URL') || ''
+const PROJECT_ORIGIN = (() => { try { return new URL(PROJECT_URL).origin } catch { return '' } })()
+const dayFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit'
+})
+
+const THRESHOLDS = {
+  lowMarginPct: 5,
+  highReturnPct: 20,
+  highCargoBurdenPct: 15,
+  minSalesForRateAlert: 500,
+  minCargoAllocationCoveragePct: 80
+}
+
+function allowedOrigin(origin: string | null) {
+  if (!origin) return true
+  if (origin === 'https://karkalkan.vercel.app' || origin === PROJECT_ORIGIN) return true
+  try {
+    const url = new URL(origin)
+    return url.protocol === 'https:' && url.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')
+  } catch { return false }
+}
+
+function responseHeaders(origin: string | null) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store, max-age=0',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'Vary': 'Origin'
+  }
+  if (origin && allowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+    headers['Access-Control-Allow-Headers'] = 'authorization, apikey, content-type'
+    headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+  }
+  return headers
+}
+
+function json(status: number, body: unknown, origin: string | null) {
+  return new Response(JSON.stringify(body), { status, headers: responseHeaders(origin) })
+}
+
+function dayKey(date: Date) {
+  const parts = dayFormatter.formatToParts(date)
+  const get = (type: string) => parts.find(part => part.type === type)?.value || ''
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+function startDay(days: number) {
+  const parts = dayFormatter.formatToParts(new Date())
+  const get = (type: string) => Number(parts.find(part => part.type === type)?.value)
+  const todayIstanbul = Date.UTC(get('year'), get('month') - 1, get('day')) - 3 * 60 * 60 * 1000
+  return dayKey(new Date(todayIstanbul - (days - 1) * 86400000))
+}
+
+function buildProductMap(rows: any[]) {
+  const products = new Map<string, any>()
+  for (const row of rows) {
+    const id = String(row.external_product_id || row.barcode || '').trim()
+    if (!id) continue
+    const product = products.get(id) || {
+      externalProductId: id,
+      sku: row.sku || null,
+      barcode: row.barcode || id,
+      name: row.product_name || null,
+      grossSales: 0,
+      grossReturns: 0,
+      sellerRevenue: 0,
+      profit: 0,
+      profitRows: 0
+    }
+    product.grossSales += numberValue(row.gross_sales)
+    product.grossReturns += numberValue(row.gross_returns)
+    product.sellerRevenue += numberValue(row.seller_revenue)
+    if (row.estimated_profit !== null) {
+      product.profit += numberValue(row.estimated_profit)
+      product.profitRows++
+    }
+    if (!product.name && row.product_name) product.name = row.product_name
+    if (!product.sku && row.sku) product.sku = row.sku
+    products.set(id, product)
+  }
+  return products
+}
+
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get('Origin')
+  if (!allowedOrigin(origin)) return json(403, { error: 'ORIGIN_NOT_ALLOWED' }, origin)
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin) })
+  if (req.method !== 'GET') return json(405, { error: 'METHOD_NOT_ALLOWED' }, origin)
+
+  const auth = req.headers.get('Authorization') || ''
+  if (!auth.startsWith('Bearer ')) return json(401, { error: 'UNAUTHORIZED' }, origin)
+
+  const publishableKey = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}').default
+  if (!PROJECT_URL || !publishableKey) return json(503, { error: 'SERVER_CONFIG' }, origin)
+
+  const supabase = createClient(PROJECT_URL, publishableKey, {
+    global: { headers: { Authorization: auth } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  })
+  const { data: userData, error: userError } = await supabase.auth.getUser(auth.slice(7))
+  if (userError || !userData?.user) return json(401, { error: 'UNAUTHORIZED' }, origin)
+
+  const url = new URL(req.url)
+  const connectionId = url.searchParams.get('connection_id') || ''
+  const requestedDays = Number(url.searchParams.get('days') || 30)
+  const days = [7, 30].includes(requestedDays) ? requestedDays : 30
+  if (!/^[0-9a-f-]{36}$/i.test(connectionId)) return json(400, { error: 'INVALID_CONNECTION' }, origin)
+
+  const { data: connection } = await supabase.from('marketplace_connections').select('id').eq('id', connectionId).maybeSingle()
+  if (!connection) return json(404, { error: 'NOT_FOUND' }, origin)
+
+  const start = startDay(days)
+  let productRows: any[]
+  let allocations: any[]
+  let dailyRows: any[]
+  try {
+    [productRows, allocations, dailyRows] = await Promise.all([
+      readAllPages((from, to) => supabase.from('marketplace_product_daily_metrics')
+        .select('id,external_product_id,sku,barcode,product_name,gross_sales,gross_returns,seller_revenue,estimated_profit')
+        .eq('connection_id', connectionId).gte('day', start).order('id', { ascending: true }).range(from, to)),
+      readAllPages((from, to) => supabase.from('marketplace_product_cargo_allocations')
+        .select('id,external_product_id,allocated_amount')
+        .eq('connection_id', connectionId).gte('invoice_day', start).order('id', { ascending: true }).range(from, to)),
+      readAllPages((from, to) => supabase.from('marketplace_daily_financials')
+        .select('id,seller_revenue,settlement_adjustment_net,platform_service_fee_cost,cargo_cost,stoppage_net')
+        .eq('connection_id', connectionId).gte('day', start).order('id', { ascending: true }).range(from, to))
+    ])
+  } catch (error) {
+    const tooLarge = error instanceof Error && error.message === 'DATA_TOO_LARGE'
+    return json(tooLarge ? 409 : 500, { error: tooLarge ? 'DATA_TOO_LARGE' : 'DB_ERROR' }, origin)
+  }
+
+  const cash = aggregateCashRows(dailyRows)
+  const cargoByProduct = new Map<string, number>()
+  let allocatedCargo = 0
+  for (const row of allocations) {
+    const id = String(row.external_product_id || '')
+    const amount = numberValue(row.allocated_amount)
+    allocatedCargo += amount
+    if (id) cargoByProduct.set(id, (cargoByProduct.get(id) || 0) + amount)
+  }
+
+  const allocationCoverage = cash.cargoCost > 0 ? clamp01(allocatedCargo / cash.cargoCost) : 1
+  const products = buildProductMap(productRows)
+  const alerts: any[] = []
+
+  for (const product of products.values()) {
+    const cargoCost = cargoByProduct.get(product.externalProductId) || 0
+    const estimatedProfit = product.profitRows ? product.profit : null
+    const profitAfterCargo = estimatedProfit === null ? null : estimatedProfit - cargoCost
+    const marginAfterCargo = profitAfterCargo === null || product.sellerRevenue === 0 ? null : profitAfterCargo / product.sellerRevenue * 100
+    const returnRate = product.grossSales > 0 ? product.grossReturns / product.grossSales * 100 : 0
+    const cargoBurden = product.sellerRevenue > 0 ? cargoCost / product.sellerRevenue * 100 : 0
+    const label = product.name || product.sku || product.barcode || product.externalProductId
+
+    if (profitAfterCargo !== null && profitAfterCargo < 0) {
+      alerts.push({ type: 'loss_after_cargo', severity: 'critical', externalProductId: product.externalProductId, label, value: money(profitAfterCargo), message: `${label}: bilinen ürün maliyeti ve eşleşen kargo sonrası katkı negatif.` })
+    } else if (marginAfterCargo !== null && marginAfterCargo < THRESHOLDS.lowMarginPct) {
+      alerts.push({ type: 'low_margin', severity: 'warning', externalProductId: product.externalProductId, label, value: percent(marginAfterCargo), message: `${label}: bilinen maliyet ve kargo sonrası katkı oranı %${percent(marginAfterCargo)}.` })
+    }
+
+    if (product.grossSales >= THRESHOLDS.minSalesForRateAlert && returnRate >= THRESHOLDS.highReturnPct) {
+      alerts.push({ type: 'high_return_rate', severity: 'warning', externalProductId: product.externalProductId, label, value: percent(returnRate), message: `${label}: iade oranı %${percent(returnRate)}.` })
+    }
+    if (product.sellerRevenue > 0 && cargoBurden >= THRESHOLDS.highCargoBurdenPct) {
+      alerts.push({ type: 'high_cargo_burden', severity: 'warning', externalProductId: product.externalProductId, label, value: percent(cargoBurden), message: `${label}: eşleşen kargo yükü satıcı gelirinin %${percent(cargoBurden)}'si.` })
+    }
+    if (estimatedProfit === null && product.grossSales >= THRESHOLDS.minSalesForRateAlert) {
+      alerts.push({ type: 'missing_cost', severity: 'info', externalProductId: product.externalProductId, label, value: money(product.grossSales), message: `${label}: satış var ama ürün maliyeti eksik; katkı sonucu bilinmiyor.` })
+    }
+  }
+
+  if (cash.cargoCost > 0 && allocationCoverage * 100 < THRESHOLDS.minCargoAllocationCoveragePct) {
+    alerts.push({
+      type: 'cargo_allocation_gap', severity: 'warning', externalProductId: null, label: 'Kargo eşleştirme',
+      value: percent(allocationCoverage * 100),
+      message: `Kargo maliyetinin yalnızca %${percent(allocationCoverage * 100)} bölümü ürünlere kanıtlı dağıtılabildi.`
+    })
+  }
+
+  const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 }
+  alerts.sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9) || Math.abs(Number(b.value) || 0) - Math.abs(Number(a.value) || 0))
+
+  const counts = {
+    critical: alerts.filter(alert => alert.severity === 'critical').length,
+    warning: alerts.filter(alert => alert.severity === 'warning').length,
+    info: alerts.filter(alert => alert.severity === 'info').length
+  }
+
+  return json(200, {
+    connectionId,
+    rangeDays: days,
+    startDay: start,
+    thresholds: THRESHOLDS,
+    counts,
+    total: alerts.length,
+    alerts: alerts.slice(0, 20),
+    engine: 'rules_v4_shared_finance',
+    financialTruth: {
+      coreSellerRevenue: cash.sellerRevenue,
+      settlementAdjustmentNet: cash.settlementAdjustmentNet,
+      adjustedSellerRevenue: cash.adjustedSellerRevenue,
+      platformServiceFeeCost: cash.platformServiceFeeCost,
+      cargoCost: cash.cargoCost,
+      stoppageNet: cash.stoppageNet,
+      platformCashBeforeStoppage: cash.platformCashBeforeStoppage,
+      knownCashAfterFeesAndStoppage: cash.knownCashAfterFeesAndStoppage,
+      allocatedCargoCost: money(allocatedCargo),
+      cargoAllocationCoverage: percent(allocationCoverage * 100)
+    },
+    disclaimer: 'Ürün alarmları yalnız bilinen ürün maliyeti ve eşleştirilebilen kargo kapsamındadır. Stopaj nakit kesintisi olarak gösterilir; muhasebe net kârı değildir.'
+  }, origin)
+})
