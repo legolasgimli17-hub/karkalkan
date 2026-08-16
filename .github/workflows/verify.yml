@@ -28,6 +28,9 @@ jobs:
       - name: Finance core and semantics tests
         run: node --test tests/finance-semantics.test.mjs
 
+      - name: Visual layer integrity tests
+        run: node --test tests/visual-layer.test.mjs
+
       - name: Browser and shared JavaScript syntax
         run: |
           node --check app-core.js
@@ -39,4 +42,5 @@ jobs:
           node --check v4-enhance.js
           node --check v4-alerts.js
           node --check vnext.js
+          node --check vnext-visual.js
           node --check supabase/functions/_shared/finance.js
