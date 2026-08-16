@@ -90,13 +90,16 @@ function kkVisualEvidence(){
   const score=scoreMatch?Math.max(0,Math.min(100,Number(scoreMatch[1]))):(applicable.length?Math.round(applicable.reduce((a,b)=>a+b,0)/applicable.length):null);
   const ring=document.getElementById('kkConfidenceRing');
   const number=document.getElementById('kkConfidenceNumber');
-  if(ring)ring.style.setProperty('--kk-score',String(score??0));
-  if(number)number.textContent=score==null?'—':String(score);
+  if(ring&&ring.dataset.score!==String(score??0)){ring.dataset.score=String(score??0);ring.style.setProperty('--kk-score',String(score??0))}
+  if(number&&number.textContent!==(score==null?'—':String(score)))number.textContent=score==null?'—':String(score);
   kkVisualRadar(values);
 }
 
 function kkVisualRadar(values){
   const svg=document.getElementById('kkEvidenceRadar');if(!svg)return;
+  const signature=values.map(value=>Number.isFinite(value)?Math.round(value):'x').join('|');
+  if(svg.dataset.signature===signature)return;
+  svg.dataset.signature=signature;
   svg.replaceChildren();
   const cx=90,cy=75,radius=56,count=Math.max(4,values.length||4);
   for(let level=1;level<=4;level++){
@@ -160,7 +163,6 @@ function kkVisualEmptyStates(){
 
 function kkVisualFlow(){
   document.querySelectorAll('#kkFlowGrid .kk-flow-item').forEach((item,index)=>{
-    item.style.setProperty('--kk-flow-index',String(index));
     if(index>0&&!item.querySelector('.kk-flow-connector')){
       const connector=document.createElement('i');connector.className='kk-flow-connector';connector.setAttribute('aria-hidden','true');item.prepend(connector);
     }
@@ -172,6 +174,8 @@ function kkVisualLeakRadar(){
   let visual=card.querySelector('.kk-leak-visual');
   if(!visual){visual=document.createElement('div');visual.className='kk-leak-visual';visual.innerHTML='<div class="kk-leak-rings"><i></i><i></i><i></i><span class="kk-sweep"></span><b>K</b></div><div class="kk-leak-summary"><strong id="kkLeakCount">0 sinyal</strong><small>Konum görseli dekoratiftir; öncelik sırası aşağıdaki gerçek sinyallerden gelir.</small></div>';list.before(visual)}
   const count=list.querySelectorAll('.kk-live-row').length;
+  if(visual.dataset.count===String(count))return;
+  visual.dataset.count=String(count);
   const countEl=document.getElementById('kkLeakCount');if(countEl)countEl.textContent=`${count} sinyal`;
   const rings=visual.querySelector('.kk-leak-rings');
   rings?.querySelectorAll('.kk-leak-dot').forEach(dot=>dot.remove());
@@ -192,7 +196,7 @@ function kkVisualBoot(){
   kkVisualState.mounted=true;
   const target=document.getElementById('appPanel')||document.body;
   kkVisualState.observer=new MutationObserver(()=>requestAnimationFrame(kkVisualRun));
-  kkVisualState.observer.observe(target,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+  kkVisualState.observer.observe(target,{subtree:true,childList:true});
 }
 
 kkVisualBoot();
