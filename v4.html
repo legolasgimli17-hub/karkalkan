@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f5f7fb">
+  <meta name="theme-color" content="#1b222b">
   <meta name="robots" content="noindex,nofollow">
-  <meta name="description" content="KârKalkan mağaza kârlılık ve ürün takip paneli.">
-  <title>KârKalkan — Mağaza Paneli</title>
+  <meta name="description" content="KârKalkan mağaza kârlılık ve ürün takip çalışma alanı.">
+  <title>KârKalkan — Mağaza Çalışma Alanı</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="v4.css">
   <link rel="stylesheet" href="v4-enhance.css">
@@ -15,24 +15,24 @@
 <body class="v4-body">
 <header class="v4-mobile-head">
   <a class="v4-logo" href="/uygulama"><span class="logo-mark">K</span><span>KârKalkan</span></a>
-  <span class="beta-dot"><i></i> Mağaza Paneli</span>
+  <span class="beta-dot"><i></i> Çalışma Alanı</span>
 </header>
 
 <aside class="v4-sidebar">
-  <div class="sidebar-brand"><a class="v4-logo" href="/uygulama"><span class="logo-mark">K</span><span>KârKalkan</span></a><span class="side-version">Mağaza Paneli</span></div>
+  <div class="sidebar-brand"><a class="v4-logo" href="/"><span class="logo-mark">K</span><span>KârKalkan</span></a><span class="side-version">Finans</span></div>
   <div class="side-status"><span class="live-dot"></span><div><strong>Trendyol bağlantısı</strong><small>Satış · İade · Ürün</small></div></div>
   <nav class="side-nav" aria-label="Konsol navigasyonu">
     <a href="#dashboard"><span>01</span> Genel Bakış</a><a href="#connections"><span>02</span> Mağaza Bağlantısı</a><a href="#credentials"><span>03</span> Güvenli Bağlantı</a><a href="#costs"><span>04</span> Ürün Maliyetleri</a><a href="#history"><span>05</span> Senkron Geçmişi</a>
   </nav>
-  <div class="sidebar-foot"><a href="/">← KârKalkan ana sayfa</a><p>Mağaza paneli · noindex</p></div>
+  <div class="sidebar-foot"><a href="/">Örnek mağazayı aç</a><p>KârKalkan çalışma alanı</p></div>
 </aside>
 
 <main class="v4-shell">
-  <section class="v4-topbar"><div><p class="eyebrow">KÂRKALKAN MAĞAZA PANELİ</p><h1>Finansal kontrol merkezi</h1></div><div class="topbar-meta"><span class="beta-dot"><i></i> Mağaza Paneli</span><span class="secure-chip">Güvenli mağaza bağlantısı</span></div></section>
+  <section class="v4-topbar"><div><p class="eyebrow">KÂRKALKAN</p><h1>Mağaza finansı</h1></div><div class="topbar-meta"><span class="beta-dot"><i></i> Çalışma Alanı</span><span class="secure-chip">Güvenli mağaza bağlantısı</span></div></section>
 
   <section id="authPanel" class="auth-stage">
     <div class="auth-copy"><p class="eyebrow">KÂRKALKAN</p><h2>Satıştan sana ne kaldığını daha doğru gör.</h2><p>Mağaza verisini güvenli biçimde bağla; iadeyi, komisyonu ve ürün maliyetini aynı görünümde izle.</p><div class="trust-grid"><div><strong>01</strong><span>Bağlantı bilgileri şifreli saklanır</span></div><div><strong>02</strong><span>Her kullanıcının verisi ayrı tutulur</span></div><div><strong>03</strong><span>7 / 30 günlük mağaza görünümü</span></div></div></div>
-    <div class="panel auth-card"><div class="auth-card-head"><span class="status-orb"></span><div><h3>Hesabına giriş yap</h3><p>KârKalkan mağaza panelini aç.</p></div></div><form id="authForm" class="auth-form"><div class="field"><label for="authEmail">E-posta</label><input class="input" id="authEmail" type="email" autocomplete="email" required maxlength="254" placeholder="ornek@mail.com"></div><div class="field"><label for="authPassword">Şifre</label><input class="input" id="authPassword" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="En az 12 karakter"></div><button class="btn primary auth-primary" id="signInBtn" type="submit">Giriş yap</button><button class="btn secondary" id="signUpBtn" type="button">Ücretsiz hesap oluştur</button></form><div id="authMessage" class="notice" role="status"></div><p class="auth-note">Yeni hesaplarda güçlü parola ve sızıntı kontrolü uygulanır; e-posta doğrulaması istenebilir.</p></div>
+    <div class="panel auth-card"><div class="auth-card-head"><span class="status-orb"></span><div><h3>Mağazana geç</h3><p>Kendi satış ve maliyet verilerini aç.</p></div></div><form id="authForm" class="auth-form"><div class="field"><label for="authEmail">E-posta</label><input class="input" id="authEmail" type="email" autocomplete="email" required maxlength="254" placeholder="ornek@mail.com"></div><div class="field"><label for="authPassword">Şifre</label><input class="input" id="authPassword" type="password" autocomplete="current-password" required minlength="12" maxlength="128" placeholder="En az 12 karakter"></div><button class="btn primary auth-primary" id="signInBtn" type="submit">Çalışma alanını aç</button><button class="btn secondary" id="signUpBtn" type="button">Ücretsiz hesap oluştur</button></form><div id="authMessage" class="notice" role="status"></div><p class="auth-note">Yeni hesaplarda güçlü parola ve sızıntı kontrolü uygulanır; e-posta doğrulaması istenebilir.</p></div>
   </section>
 
   <section id="appPanel" class="hide">
