@@ -220,6 +220,7 @@ if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts
   addStyle('/vnext.css','karkalkanVnext');
   addStyle('/vnext-ops.css','karkalkanVnextOps');
   addStyle('/vnext-visual.css','karkalkanVnextVisual');
+  addStyle('/finance-light.css','karkalkanFinanceLight');
   if(document.querySelector('script[data-karkalkan-vnext]'))return;
   const script=document.createElement('script');
   script.src='/vnext.js';
