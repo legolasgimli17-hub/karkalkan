@@ -219,9 +219,17 @@ if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts
   const addStyle=(href,key)=>{if(document.querySelector(`link[data-${key}]`))return;const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset[key]='1';document.head.append(link)};
   addStyle('/vnext.css','karkalkanVnext');
   addStyle('/vnext-ops.css','karkalkanVnextOps');
+  addStyle('/vnext-visual.css','karkalkanVnextVisual');
   if(document.querySelector('script[data-karkalkan-vnext]'))return;
   const script=document.createElement('script');
   script.src='/vnext.js';
   script.dataset.karkalkanVnext='1';
+  script.addEventListener('load',()=>{
+    if(document.querySelector('script[data-karkalkan-vnext-visual]'))return;
+    const visual=document.createElement('script');
+    visual.src='/vnext-visual.js';
+    visual.dataset.karkalkanVnextVisual='1';
+    document.body.append(visual);
+  });
   document.body.append(script);
 })();
