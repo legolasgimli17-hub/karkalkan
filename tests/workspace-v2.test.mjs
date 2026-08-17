@@ -4,10 +4,8 @@ import {readFile} from 'node:fs/promises';
 
 const read=(path)=>readFile(new URL(`../${path}`,import.meta.url),'utf8');
 
-test('root opens the unified finance workspace',async()=>{
-  const config=JSON.parse(await read('vercel.json'));
-  assert.ok(config.rewrites.some(rule=>rule.source==='/'&&rule.destination==='/home-v2.html'));
-  const html=await read('home-v2.html');
+test('root index is the unified finance workspace',async()=>{
+  const html=await read('index.html');
   assert.match(html,/class="workspace-sidebar"/);
   assert.match(html,/id="salesLine"/);
   assert.match(html,/id="costDonut"/);
