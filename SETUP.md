@@ -61,12 +61,21 @@ The browser Supabase client is pinned in `v4.html` to `@supabase/supabase-js@2.5
 - `SUPABASE_PUBLISHABLE_KEYS` — JSON object containing the browser-safe/publishable key used by the server functions when creating user-scoped Supabase clients. The current code expects a `default` property.
 - `SENTRY_DSN` — optional until a Sentry project is created; when present, critical Edge Functions report safe failure codes and unhandled exceptions. Request bodies, marketplace credentials and default PII are not sent.
 - `SENTRY_ENVIRONMENT` — optional environment label; defaults to `production`.
+- `PADDLE_ENVIRONMENT` — `sandbox` during acceptance testing, then `production` after Paddle approves the seller account and domain.
+- `PADDLE_API_KEY` — server-side Paddle Billing API key with transaction and customer-portal permissions.
+- `PADDLE_WEBHOOK_SECRET` — secret for the Paddle notification destination that points to `/functions/v1/billing-webhook`.
+- `PADDLE_CHECKOUT_URL` — Paddle-approved return/checkout domain, normally `https://karkalkan.vercel.app/uygulama#billing`.
+- `PADDLE_PRICE_STARTER_MONTHLY`, `PADDLE_PRICE_GROWTH_MONTHLY`, `PADDLE_PRICE_SCALE_MONTHLY` — Paddle recurring price IDs. The catalog amounts in Paddle must match the visible pricing before production is enabled.
 
 Example shape:
 
 ```text
 SUPABASE_PUBLISHABLE_KEYS={"default":"sb_publishable_REPLACE_ME"}
+PADDLE_ENVIRONMENT=sandbox
+PADDLE_PRICE_STARTER_MONTHLY=pri_REPLACE_ME
 ```
+
+The application never collects card numbers. `billing-checkout` creates a Paddle transaction and redirects to Paddle's hosted checkout. `billing-webhook` verifies the exact raw request body using `Paddle-Signature`, records an idempotency hash, and stores only safe subscription identifiers/state. Invoices, tax collection and payment-method changes stay in Paddle's hosted portal.
 
 Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself as a direct database URL, so application code must not use that default for Edge runtime SQL. The custom `KARKALKAN_DB_POOLER_URL` secret avoids the reserved prefix. The shared Postgres factory forces `prepare:false` because transaction pooling does not support prepared statements, and caps each Edge isolate at `max:1` client connection. A wrong/missing pooler URL produces `SERVER_CONFIG` instead of silently opening direct connections.
 
