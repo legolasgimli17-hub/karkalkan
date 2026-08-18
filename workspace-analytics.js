@@ -2,11 +2,19 @@
 
 (() => {
   const ONBOARDING_STAGES = new Set(['store', 'data', 'cost', 'decision', 'complete']);
+  const TARGET_STEPS = new Set(['store', 'data', 'cost', 'decision']);
+  const BACKEND_EVENTS = new Map([
+    ['Onboarding Stage Viewed', 'onboarding_stage_viewed'],
+    ['Onboarding Completed', 'onboarding_completed'],
+    ['Onboarding Next Clicked', 'onboarding_next_clicked'],
+    ['Onboarding Step Clicked', 'onboarding_step_clicked']
+  ]);
   const SESSION_STAGE_KEY = 'karkalkan.analytics.onboarding-stage.v1';
   const SESSION_COMPLETE_KEY = 'karkalkan.analytics.onboarding-complete.v1';
 
-  // Vercel Web Analytics HTML integration. Keep events queued until the
-  // first-party /_vercel/insights script is ready.
+  // Vercel Web Analytics provides page views on every Vercel plan and custom
+  // events where the account supports them. The Supabase aggregate endpoint
+  // below is the plan-independent source of truth for the activation funnel.
   window.va = window.va || function () {
     (window.vaq = window.vaq || []).push(arguments);
   };
@@ -29,11 +37,30 @@
     }
   });
 
+  function normalizedAggregatePayload(name, data) {
+    const eventName = BACKEND_EVENTS.get(name);
+    if (!eventName) return null;
+    const stage = ONBOARDING_STAGES.has(String(data.stage || '')) ? String(data.stage) : 'none';
+    const completedSteps = Number(data.completedSteps);
+    const targetStep = TARGET_STEPS.has(String(data.targetStep || '')) ? String(data.targetStep) : 'none';
+    return {
+      event_name: eventName,
+      stage,
+      completed_steps: Number.isInteger(completedSteps) && completedSteps >= 0 && completedSteps <= 4 ? completedSteps : 0,
+      target_step: targetStep
+    };
+  }
+
   function safeTrack(name, data = {}) {
     try {
       window.va('event', { name, data });
     } catch {
-      // Analytics must never block the product flow.
+      // Vercel analytics must never block the product flow.
+    }
+
+    const payload = normalizedAggregatePayload(name, data);
+    if (payload && typeof functionRequest === 'function') {
+      void functionRequest('product-analytics', { method: 'POST', body: payload }).catch(() => {});
     }
   }
 
@@ -66,14 +93,14 @@
       let completeSeen = false;
       try { completeSeen = sessionStorage.getItem(SESSION_COMPLETE_KEY) === '1'; } catch { /* non-critical */ }
       if (!completeSeen) {
-        safeTrack('Onboarding Completed', { completedSteps: 4 });
+        safeTrack('Onboarding Completed', { stage: 'complete', completedSteps: 4 });
         try { sessionStorage.setItem(SESSION_COMPLETE_KEY, '1'); } catch { /* non-critical */ }
       }
     }
   }
 
-  function currentStage() {
-    return readFunnelState()?.stage || 'store';
+  function currentFunnelState() {
+    return readFunnelState() || { stage: 'store', completedSteps: 0 };
   }
 
   function bindActions() {
@@ -81,15 +108,17 @@
     const primary = guide?.querySelector('.onboarding-guide-actions .btn.primary');
     if (primary) {
       primary.addEventListener('click', () => {
-        safeTrack('Onboarding Next Clicked', { stage: currentStage() });
+        const state = currentFunnelState();
+        safeTrack('Onboarding Next Clicked', { stage: state.stage, completedSteps: state.completedSteps });
       });
     }
 
     document.querySelectorAll('.onboarding-strip [data-setup-step]').forEach((node) => {
       node.addEventListener('click', () => {
         const targetStep = String(node.dataset.setupStep || '');
-        if (ONBOARDING_STAGES.has(targetStep)) {
-          safeTrack('Onboarding Step Clicked', { targetStep });
+        if (TARGET_STEPS.has(targetStep)) {
+          const state = currentFunnelState();
+          safeTrack('Onboarding Step Clicked', { stage: state.stage, completedSteps: state.completedSteps, targetStep });
         }
       });
     });
