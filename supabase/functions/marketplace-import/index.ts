@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { allowedOrigin, json, responseHeaders } from '../_shared/edge-auth.ts'
 import { captureSafeFailure } from '../_shared/observability.ts'
+import { consumeRateLimit, isUuid, readJsonBody, requestError } from '../_shared/request-security.ts'
 
 type ImportRow={day:string;external_product_id:string;sku:string|null;product_name:string|null;sales_units:number;return_units:number;gross_sales:number;gross_returns:number;commission_cost:number;discount_cost:number;coupon_cost:number;seller_revenue:number}
 type ProductAgg=ImportRow&{orders:number}
@@ -11,7 +12,6 @@ type CostRow={external_product_id:string;cost_amount:number;valid_from:string;va
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'',{max_lifetime:60})
 const MAX_ROWS=5000
-function uuid(value:string){return /^[0-9a-f-]{36}$/i.test(value)}
 function date(value:unknown){const result=String(value||'').trim();return /^\d{4}-\d{2}-\d{2}$/.test(result)&&!Number.isNaN(Date.parse(`${result}T12:00:00Z`))?result:''}
 function text(value:unknown,max:number){const result=String(value??'').trim();return result&&result.length<=max?result:''}
 function amount(value:unknown){const result=Number(value);return Number.isFinite(result)&&Math.abs(result)<=1_000_000_000?Math.round(result*100)/100:null}
@@ -30,12 +30,13 @@ Deno.serve(async(req:Request)=>{
   const {data:userData,error:userError}=await userClient.auth.getUser(auth.slice(7)),user=userData?.user
   if(userError||!user)return json(401,{error:'UNAUTHORIZED'},origin)
   let body:any
-  try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}
+  try{body=await readJsonBody(req,3_000_000)}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
   const connectionId=String(body?.connection_id||''),sourceRows=Array.isArray(body?.rows)?body.rows:[]
-  if(!uuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
+  if(!isUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
   if(!sourceRows.length||sourceRows.length>MAX_ROWS)return json(400,{error:'INVALID_IMPORT_SIZE',maxRows:MAX_ROWS},origin)
   const {data:connection}=await userClient.from('marketplace_connections').select('id,marketplace').eq('id',connectionId).maybeSingle()
   if(!connection)return json(404,{error:'NOT_FOUND'},origin)
+  if(!await consumeRateLimit(sql,'marketplace-import',`${user.id}:${connectionId}`,10,3600))return json(429,{error:'RATE_LIMITED'},origin)
   const rows:ImportRow[]=[]
   for(let index=0;index<sourceRows.length;index++){
     const source=sourceRows[index]||{},day=date(source.day),productId=text(source.external_product_id,180),salesUnits=units(source.sales_units),returnUnits=units(source.return_units)

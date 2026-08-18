@@ -1,16 +1,284 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { readJsonBody, requestError } from "../_shared/request-security.ts";
 
-const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
-const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
-const dayFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'})
-function istanbulDay(){const p=dayFormatter.formatToParts(new Date());const get=(t:string)=>p.find(x=>x.type===t)?.value||'';return `${get('year')}-${get('month')}-${get('day')}`}
-function allowedOrigin(origin:string|null){if(!origin)return true;if(origin==='https://karkalkan.vercel.app'||origin===PROJECT_ORIGIN)return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
-function headers(origin:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(origin&&allowedOrigin(origin)){h['Access-Control-Allow-Origin']=origin;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, POST, DELETE, OPTIONS'}return h}
-function json(status:number,body:unknown,origin:string|null){return new Response(JSON.stringify(body),{status,headers:headers(origin)})}
-function validUuid(v:string){return /^[0-9a-f-]{36}$/i.test(v)}
-function finiteMoney(v:unknown){const n=Number(v);return Number.isFinite(n)&&n>=0&&n<=100000000?n:null}
-function isoDate(v:string){return /^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(`${v}T00:00:00Z`))}
-type CostVersion={cost_amount:number,valid_from:string,valid_to:string|null}
-function activeCost(rows:CostVersion[],day:string){for(const row of rows){if(row.valid_from<=day&&(!row.valid_to||row.valid_to>=day))return Number(row.cost_amount)}return null}
-async function recomputeProduct(admin:any,connectionId:string,userId:string,productId:string){const [{data:costs,error:costErr},{data:metrics,error:metricErr}]=await Promise.all([admin.from('marketplace_product_costs').select('cost_amount,valid_from,valid_to').eq('connection_id',connectionId).eq('user_id',userId).eq('external_product_id',productId).order('valid_from',{ascending:false}),admin.from('marketplace_product_daily_metrics').select('id,day,units,seller_revenue').eq('connection_id',connectionId).eq('user_id',userId).eq('external_product_id',productId).limit(5000)]);if(costErr||metricErr)throw new Error('DB_RECOMPUTE_READ_FAILED');const versions=(costs||[]) as CostVersion[];for(const metric of metrics||[]){const cost=activeCost(versions,String(metric.day)),units=Math.trunc(Number(metric.units)||0),revenue=Number(metric.seller_revenue)||0,knownCogs=cost===null?null:Math.round(cost*units*100)/100,estimatedProfit=knownCogs===null?null:Math.round((revenue-knownCogs)*100)/100,estimatedMargin=estimatedProfit===null||revenue===0?null:Math.round((estimatedProfit/revenue*100)*100)/100;const {error}=await admin.from('marketplace_product_daily_metrics').update({known_cogs:knownCogs,estimated_profit:estimatedProfit,estimated_margin:estimatedMargin,profit_confidence:knownCogs===null?'platform_only':'cost_known',updated_at:new Date().toISOString()}).eq('id',metric.id).eq('user_id',userId);if(error)throw new Error('DB_RECOMPUTE_WRITE_FAILED')}return {updatedMetrics:(metrics||[]).length}}
-Deno.serve(async(req:Request)=>{const origin=req.headers.get('Origin');if(!allowedOrigin(origin))return json(403,{error:'ORIGIN_NOT_ALLOWED'},origin);if(req.method==='OPTIONS')return new Response(null,{status:204,headers:headers(origin)});if(!['GET','POST','DELETE'].includes(req.method))return json(405,{error:'METHOD_NOT_ALLOWED'},origin);const auth=req.headers.get('Authorization')||'';if(!auth.startsWith('Bearer '))return json(401,{error:'UNAUTHORIZED'},origin);const pub=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default,secret=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default;if(!PROJECT_URL||!pub||!secret)return json(503,{error:'SERVER_CONFIG'},origin);const userClient=createClient(PROJECT_URL,pub,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}}),admin=createClient(PROJECT_URL,secret,{auth:{persistSession:false,autoRefreshToken:false}}),token=auth.slice(7),{data:userData,error:userErr}=await userClient.auth.getUser(token),user=userData?.user;if(userErr||!user)return json(401,{error:'UNAUTHORIZED'},origin);if(req.method==='GET'){const u=new URL(req.url),connectionId=u.searchParams.get('connection_id')||'';if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin);const {data:conn}=await userClient.from('marketplace_connections').select('id').eq('id',connectionId).maybeSingle();if(!conn)return json(404,{error:'NOT_FOUND'},origin);const {data,error}=await userClient.from('marketplace_product_costs').select('id,connection_id,external_product_id,cost_amount,purchase_vat_rate,valid_from,valid_to,created_at').eq('connection_id',connectionId).order('valid_from',{ascending:false}).limit(500);if(error)return json(500,{error:'DB_ERROR'},origin);return json(200,{costs:data||[]},origin)}if(req.method==='POST'){let body:any;try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}const connectionId=String(body?.connection_id||''),productId=String(body?.external_product_id||'').trim(),cost=finiteMoney(body?.cost_amount),vat=Number(body?.purchase_vat_rate??20),validFrom=String(body?.valid_from||istanbulDay());if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin);if(!productId||productId.length>180)return json(400,{error:'INVALID_PRODUCT'},origin);if(cost===null)return json(400,{error:'INVALID_COST'},origin);if(!Number.isFinite(vat)||vat<0||vat>100)return json(400,{error:'INVALID_VAT'},origin);if(!isoDate(validFrom))return json(400,{error:'INVALID_DATE'},origin);const {data:conn}=await userClient.from('marketplace_connections').select('id').eq('id',connectionId).maybeSingle();if(!conn)return json(404,{error:'NOT_FOUND'},origin);const {data,error}=await admin.from('marketplace_product_costs').insert({connection_id:connectionId,user_id:user.id,external_product_id:productId,cost_amount:cost,purchase_vat_rate:vat,valid_from:validFrom}).select('id,connection_id,external_product_id,cost_amount,purchase_vat_rate,valid_from,created_at').single();if(error){if(error.code==='23505')return json(409,{error:'COST_VERSION_EXISTS'},origin);return json(500,{error:'DB_ERROR'},origin)}try{const recompute=await recomputeProduct(admin,connectionId,user.id,productId);return json(201,{cost:data,recompute},origin)}catch{return json(201,{cost:data,recompute:{updatedMetrics:0,warning:'RECOMPUTE_FAILED'}},origin)}}const u=new URL(req.url),id=u.searchParams.get('id')||'';if(!validUuid(id))return json(400,{error:'INVALID_ID'},origin);const {data:own}=await userClient.from('marketplace_product_costs').select('id,connection_id,external_product_id').eq('id',id).maybeSingle();if(!own)return json(404,{error:'NOT_FOUND'},origin);const {error}=await admin.from('marketplace_product_costs').delete().eq('id',id).eq('user_id',user.id);if(error)return json(500,{error:'DB_ERROR'},origin);try{const recompute=await recomputeProduct(admin,String(own.connection_id),user.id,String(own.external_product_id));return json(200,{ok:true,recompute},origin)}catch{return json(200,{ok:true,recompute:{updatedMetrics:0,warning:'RECOMPUTE_FAILED'}},origin)}})
+const PROJECT_URL = Deno.env.get("SUPABASE_URL") || "";
+const PROJECT_ORIGIN = (() => {
+  try {
+    return new URL(PROJECT_URL).origin;
+  } catch {
+    return "";
+  }
+})();
+const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Istanbul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+function istanbulDay() {
+  const p = dayFormatter.formatToParts(new Date());
+  const get = (t: string) => p.find((x) => x.type === t)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+function allowedOrigin(origin: string | null) {
+  if (!origin) return true;
+  if (origin === "https://karkalkan.vercel.app" || origin === PROJECT_ORIGIN)
+    return true;
+  try {
+    const u = new URL(origin);
+    return (
+      u.protocol === "https:" &&
+      u.hostname.endsWith("-krgzabdullah22-8562s-projects.vercel.app")
+    );
+  } catch {
+    return false;
+  }
+}
+function headers(origin: string | null) {
+  const h: Record<string, string> = {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store, max-age=0",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    Vary: "Origin",
+  };
+  if (origin && allowedOrigin(origin)) {
+    h["Access-Control-Allow-Origin"] = origin;
+    h["Access-Control-Allow-Headers"] = "authorization, apikey, content-type";
+    h["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
+  }
+  return h;
+}
+function json(status: number, body: unknown, origin: string | null) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: headers(origin),
+  });
+}
+function validUuid(v: string) {
+  return /^[0-9a-f-]{36}$/i.test(v);
+}
+function finiteMoney(v: unknown) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 100000000 ? n : null;
+}
+function isoDate(v: string) {
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`))
+  );
+}
+type CostVersion = {
+  cost_amount: number;
+  valid_from: string;
+  valid_to: string | null;
+};
+function activeCost(rows: CostVersion[], day: string) {
+  for (const row of rows) {
+    if (row.valid_from <= day && (!row.valid_to || row.valid_to >= day))
+      return Number(row.cost_amount);
+  }
+  return null;
+}
+async function recomputeProduct(
+  admin: any,
+  connectionId: string,
+  userId: string,
+  productId: string,
+) {
+  const [{ data: costs, error: costErr }, { data: metrics, error: metricErr }] =
+    await Promise.all([
+      admin
+        .from("marketplace_product_costs")
+        .select("cost_amount,valid_from,valid_to")
+        .eq("connection_id", connectionId)
+        .eq("user_id", userId)
+        .eq("external_product_id", productId)
+        .order("valid_from", { ascending: false }),
+      admin
+        .from("marketplace_product_daily_metrics")
+        .select("id,day,units,seller_revenue")
+        .eq("connection_id", connectionId)
+        .eq("user_id", userId)
+        .eq("external_product_id", productId)
+        .limit(5000),
+    ]);
+  if (costErr || metricErr) throw new Error("DB_RECOMPUTE_READ_FAILED");
+  const versions = (costs || []) as CostVersion[];
+  for (const metric of metrics || []) {
+    const cost = activeCost(versions, String(metric.day)),
+      units = Math.trunc(Number(metric.units) || 0),
+      revenue = Number(metric.seller_revenue) || 0,
+      knownCogs = cost === null ? null : Math.round(cost * units * 100) / 100,
+      estimatedProfit =
+        knownCogs === null
+          ? null
+          : Math.round((revenue - knownCogs) * 100) / 100,
+      estimatedMargin =
+        estimatedProfit === null || revenue === 0
+          ? null
+          : Math.round((estimatedProfit / revenue) * 100 * 100) / 100;
+    const { error } = await admin
+      .from("marketplace_product_daily_metrics")
+      .update({
+        known_cogs: knownCogs,
+        estimated_profit: estimatedProfit,
+        estimated_margin: estimatedMargin,
+        profit_confidence: knownCogs === null ? "platform_only" : "cost_known",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", metric.id)
+      .eq("user_id", userId);
+    if (error) throw new Error("DB_RECOMPUTE_WRITE_FAILED");
+  }
+  return { updatedMetrics: (metrics || []).length };
+}
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("Origin");
+  if (!allowedOrigin(origin))
+    return json(403, { error: "ORIGIN_NOT_ALLOWED" }, origin);
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: headers(origin) });
+  if (!["GET", "POST", "DELETE"].includes(req.method))
+    return json(405, { error: "METHOD_NOT_ALLOWED" }, origin);
+  const auth = req.headers.get("Authorization") || "";
+  if (!auth.startsWith("Bearer "))
+    return json(401, { error: "UNAUTHORIZED" }, origin);
+  const pub = JSON.parse(
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}",
+    ).default,
+    secret = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default;
+  if (!PROJECT_URL || !pub || !secret)
+    return json(503, { error: "SERVER_CONFIG" }, origin);
+  const userClient = createClient(PROJECT_URL, pub, {
+      global: { headers: { Authorization: auth } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
+    admin = createClient(PROJECT_URL, secret, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
+    token = auth.slice(7),
+    { data: userData, error: userErr } = await userClient.auth.getUser(token),
+    user = userData?.user;
+  if (userErr || !user) return json(401, { error: "UNAUTHORIZED" }, origin);
+  if (req.method === "GET") {
+    const u = new URL(req.url),
+      connectionId = u.searchParams.get("connection_id") || "";
+    if (!validUuid(connectionId))
+      return json(400, { error: "INVALID_CONNECTION" }, origin);
+    const { data: conn } = await userClient
+      .from("marketplace_connections")
+      .select("id")
+      .eq("id", connectionId)
+      .maybeSingle();
+    if (!conn) return json(404, { error: "NOT_FOUND" }, origin);
+    const { data, error } = await userClient
+      .from("marketplace_product_costs")
+      .select(
+        "id,connection_id,external_product_id,cost_amount,purchase_vat_rate,valid_from,valid_to,created_at",
+      )
+      .eq("connection_id", connectionId)
+      .order("valid_from", { ascending: false })
+      .limit(500);
+    if (error) return json(500, { error: "DB_ERROR" }, origin);
+    return json(200, { costs: data || [] }, origin);
+  }
+  if (req.method === "POST") {
+    let body: any;
+    try {
+      body = await readJsonBody(req, 32 * 1024);
+    } catch (error) {
+      const failure = requestError(error);
+      return json(failure.status, { error: failure.code }, origin);
+    }
+    const connectionId = String(body?.connection_id || ""),
+      productId = String(body?.external_product_id || "").trim(),
+      cost = finiteMoney(body?.cost_amount),
+      vat = Number(body?.purchase_vat_rate ?? 20),
+      validFrom = String(body?.valid_from || istanbulDay());
+    if (!validUuid(connectionId))
+      return json(400, { error: "INVALID_CONNECTION" }, origin);
+    if (!productId || productId.length > 180)
+      return json(400, { error: "INVALID_PRODUCT" }, origin);
+    if (cost === null) return json(400, { error: "INVALID_COST" }, origin);
+    if (!Number.isFinite(vat) || vat < 0 || vat > 100)
+      return json(400, { error: "INVALID_VAT" }, origin);
+    if (!isoDate(validFrom))
+      return json(400, { error: "INVALID_DATE" }, origin);
+    const { data: conn } = await userClient
+      .from("marketplace_connections")
+      .select("id")
+      .eq("id", connectionId)
+      .maybeSingle();
+    if (!conn) return json(404, { error: "NOT_FOUND" }, origin);
+    const { data, error } = await admin
+      .from("marketplace_product_costs")
+      .insert({
+        connection_id: connectionId,
+        user_id: user.id,
+        external_product_id: productId,
+        cost_amount: cost,
+        purchase_vat_rate: vat,
+        valid_from: validFrom,
+      })
+      .select(
+        "id,connection_id,external_product_id,cost_amount,purchase_vat_rate,valid_from,created_at",
+      )
+      .single();
+    if (error) {
+      if (error.code === "23505")
+        return json(409, { error: "COST_VERSION_EXISTS" }, origin);
+      return json(500, { error: "DB_ERROR" }, origin);
+    }
+    try {
+      const recompute = await recomputeProduct(
+        admin,
+        connectionId,
+        user.id,
+        productId,
+      );
+      return json(201, { cost: data, recompute }, origin);
+    } catch {
+      return json(
+        201,
+        {
+          cost: data,
+          recompute: { updatedMetrics: 0, warning: "RECOMPUTE_FAILED" },
+        },
+        origin,
+      );
+    }
+  }
+  const u = new URL(req.url),
+    id = u.searchParams.get("id") || "";
+  if (!validUuid(id)) return json(400, { error: "INVALID_ID" }, origin);
+  const { data: own } = await userClient
+    .from("marketplace_product_costs")
+    .select("id,connection_id,external_product_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!own) return json(404, { error: "NOT_FOUND" }, origin);
+  const { error } = await admin
+    .from("marketplace_product_costs")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return json(500, { error: "DB_ERROR" }, origin);
+  try {
+    const recompute = await recomputeProduct(
+      admin,
+      String(own.connection_id),
+      user.id,
+      String(own.external_product_id),
+    );
+    return json(200, { ok: true, recompute }, origin);
+  } catch {
+    return json(
+      200,
+      {
+        ok: true,
+        recompute: { updatedMetrics: 0, warning: "RECOMPUTE_FAILED" },
+      },
+      origin,
+    );
+  }
+});

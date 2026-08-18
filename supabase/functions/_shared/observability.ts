@@ -19,10 +19,15 @@ async function flush(){try{await Sentry.flush(1500)}catch{/* Monitoring must nev
 
 export async function captureMonitoringException(error:unknown,context:{functionName:string;code?:string}){
   if(!DSN)return false
-  const safeError=error instanceof Error?error:new Error(tag(error,160))
+  // Never send the original exception object. Database/network libraries may
+  // attach connection strings, request URLs, headers or row details to it.
+  const errorType=error instanceof Error?tag(error.name,80):typeof error
+  const safeError=new Error(`${tag(context.functionName)}:${tag(context.code||'UNHANDLED')}`)
+  safeError.name='KarkalkanSafeError'
   Sentry.withScope(scope=>{
     scope.setTag('edge_function',tag(context.functionName))
     scope.setTag('error_code',tag(context.code||'UNHANDLED'))
+    scope.setTag('original_error_type',errorType)
     scope.setTag('region',tag(Deno.env.get('SB_REGION')))
     Sentry.captureException(safeError)
   })

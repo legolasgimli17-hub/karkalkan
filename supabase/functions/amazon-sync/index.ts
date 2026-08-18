@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { captureSafeFailure } from '../_shared/observability.ts'
+import { readJsonBody, requestError } from '../_shared/request-security.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
@@ -113,7 +114,7 @@ async function lwaAccessToken(refreshToken:string){
   if(!clientId||!clientSecret)throw new SyncError('AMAZON_APP_NOT_CONFIGURED',409)
   let response:Response
   try{
-    response=await fetch(LWA_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken,client_id:clientId,client_secret:clientSecret}),signal:AbortSignal.timeout(20_000)})
+    response=await fetch(LWA_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken,client_id:clientId,client_secret:clientSecret}),redirect:'error',signal:AbortSignal.timeout(20_000)})
   }catch{throw new SyncError('AMAZON_TOKEN_NETWORK',502)}
   if(response.status===400||response.status===401)throw new SyncError('AMAZON_REAUTH_REQUIRED',401,response.status)
   if(!response.ok)throw new SyncError('AMAZON_TOKEN_HTTP_ERROR',502,response.status)
@@ -133,7 +134,7 @@ async function financePage(accessToken:string,start:number,end:number,nextToken?
   for(let attempt=0;attempt<3;attempt++){
     let response:Response
     try{
-      response=await fetch(url,{headers:{Accept:'application/json','x-amz-access-token':accessToken,'x-amz-date':amzDate(),'User-Agent':'Karkalkan/1.0 (Language=Deno; Marketplace=AmazonTR)'},signal:AbortSignal.timeout(30_000)})
+      response=await fetch(url,{headers:{Accept:'application/json','x-amz-access-token':accessToken,'x-amz-date':amzDate(),'User-Agent':'Karkalkan/1.0 (Language=Deno; Marketplace=AmazonTR)'},redirect:'error',signal:AbortSignal.timeout(30_000)})
     }catch{if(attempt<2){await sleep(1_000*(attempt+1));continue}throw new SyncError('AMAZON_NETWORK',502)}
     if(response.status===401)throw new SyncError('AMAZON_REAUTH_REQUIRED',401,401)
     if(response.status===403)throw new SyncError('AMAZON_FORBIDDEN',403,403)
@@ -225,7 +226,7 @@ Deno.serve(async(req:Request)=>{
   const token=auth.slice(7),{data:userData,error:userError}=await userClient.auth.getUser(token),user=userData?.user
   if(userError||!user)return json(401,{error:'UNAUTHORIZED'},origin)
   let body:any
-  try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}
+  try{body=await readJsonBody(req,16*1024)}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
   const connectionId=String(body?.connection_id||''),days=Number(body?.days||30)
   if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
   if(![7,30].includes(days))return json(400,{error:'INVALID_RANGE'},origin)

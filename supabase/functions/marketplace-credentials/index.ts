@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { isMarketplace, PROVIDERS } from '../_shared/providers.ts'
+import { consumeRateLimit, isUuid, readJsonBody, requestError } from '../_shared/request-security.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
@@ -9,7 +10,6 @@ const sql=createTransactionPool(dbUrl,{max_lifetime:60})
 function allowedOrigin(origin:string|null){if(!origin)return true;if(origin==='https://karkalkan.vercel.app'||origin===PROJECT_ORIGIN)return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
 function headers(origin:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(origin&&allowedOrigin(origin)){h['Access-Control-Allow-Origin']=origin;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, POST, DELETE, OPTIONS'}return h}
 function json(status:number,body:unknown,origin:string|null){return new Response(JSON.stringify(body),{status,headers:headers(origin)})}
-function validUuid(v:string){return /^[0-9a-f-]{36}$/i.test(v)}
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('Origin')
@@ -25,11 +25,12 @@ Deno.serve(async(req:Request)=>{
   if(userErr||!user)return json(401,{error:'UNAUTHORIZED'},origin)
   const u=new URL(req.url)
   let connectionId=u.searchParams.get('connection_id')||'',body:Record<string,unknown>={}
-  if(req.method==='POST'){try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}connectionId=String(body.connection_id||'')}
-  if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
+  if(req.method==='POST'){try{body=await readJsonBody(req,65_536) as Record<string,unknown>}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}connectionId=String(body.connection_id||'')}
+  if(!isUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
   const {data:connection,error:connErr}=await userClient.from('marketplace_connections').select('id,marketplace,status').eq('id',connectionId).maybeSingle()
   if(connErr)return json(500,{error:'DB_ERROR'},origin)
   if(!connection||!isMarketplace(connection.marketplace))return json(404,{error:'NOT_FOUND'},origin)
+  if(req.method!=='GET'&&!await consumeRateLimit(sql,'marketplace-credentials',`${user.id}:${connectionId}`,20,600))return json(429,{error:'RATE_LIMITED'},origin)
   const provider=PROVIDERS[connection.marketplace]
   if(connection.marketplace==='amazon'){
     const secretName=`kk.amazon.${connectionId}.refresh_token`

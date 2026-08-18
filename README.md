@@ -1,8 +1,11 @@
 # KârKalkan
 
+[![Verify](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/verify.yml/badge.svg)](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/verify.yml)
+[![CodeQL](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/codeql.yml/badge.svg)](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/codeql.yml)
+
 KârKalkan is a multi-marketplace seller profitability product that combines sales/financial data with seller-provided product costs to help answer a simple question: **after deductions and costs, what is left?**
 
-Live production: `https://karkalkan.vercel.app`
+**[Live production](https://karkalkan.vercel.app)** · **[Seller workspace](https://karkalkan.vercel.app/uygulama)**
 
 ## Product surfaces
 
@@ -32,6 +35,16 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - `SUPABASE_INVENTORY.md` — deployed backend-function inventory and auth configuration
 - `THIRD_PARTY.md` — runtime dependency inventory and upgrade policy
 - `.env.example` — safe placeholder names/shapes for server-side configuration
+
+## Security and engineering governance
+
+- [`SECURITY.md`](SECURITY.md) — private vulnerability reporting and supported-version policy
+- [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md) — trust boundaries and implemented controls
+- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — protected assets, threats and residual launch gates
+- [`docs/SECURITY_REVIEW_2026-08-18.md`](docs/SECURITY_REVIEW_2026-08-18.md) — latest review scope and evidence
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — change, testing and secret-handling rules
+
+CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
 
 ## Backend reproducibility
 
