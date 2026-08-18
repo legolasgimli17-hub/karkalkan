@@ -24,6 +24,8 @@
 .provider-card small{display:block;font-size:.7rem;line-height:1.45;min-height:2em}
 .provider-state{position:absolute;top:.85rem;right:.85rem;border:1px solid transparent;border-radius:999px;font-size:.58rem;font-weight:850;letter-spacing:.08em;padding:.32rem .46rem;text-transform:uppercase}
 .provider-state.live{color:#bff4df;background:rgba(121,224,183,.1);border-color:rgba(121,224,183,.28)}
+.provider-state.verified{color:#bff4df;background:rgba(121,224,183,.1);border-color:rgba(121,224,183,.28)}
+.provider-state.ready{color:#cbe9ff;background:rgba(121,199,255,.1);border-color:rgba(121,199,255,.28)}
 .provider-state.beta{color:#cbe9ff;background:rgba(121,199,255,.1);border-color:rgba(121,199,255,.28)}
 .provider-state.gated{color:#ffdaa9;background:rgba(242,166,90,.1);border-color:rgba(242,166,90,.28)}
 .provider-state.import{color:#e0d5ff;background:rgba(172,142,255,.1);border-color:rgba(172,142,255,.28)}

@@ -88,6 +88,16 @@ Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself a
 5. Compare payment, return, commission, service fee, cargo and stoppage totals against the same merchant-statement period. Only after this reconciliation should the provider be promoted from API beta to live-verified.
 6. Rotate the service key immediately if it was exposed outside the merchant panel/KârKalkan credential form.
 
+### n11 first-store activation
+
+1. In n11 Seller Office, open **Hesabım → API Hesapları** and create or select an API account.
+2. Copy the API key shown in the panel and the API password delivered through the authorized merchant email. Do not send these values by chat or ordinary email.
+3. In KârKalkan, add an n11 store and save **API anahtarı** and **API şifresi**. They are written only to Supabase Vault.
+4. Start with a 7-day sync. The worker reads the official `shipmentPackages` REST endpoint and the `ClaimReturnList` SOAP endpoint, discards cancelled lines and includes only approved/manual-refund claims.
+5. Compare order totals, seller discounts, commission/service-rate calculations and approved returns with the same period in Seller Office.
+6. n11's public order API does not expose every final cargo and account-statement adjustment. Import the n11 payment-detail report through KârKalkan's standard finance report path before treating the result as final cash reconciliation.
+7. Rotate the API password immediately if it was exposed outside the merchant panel/KârKalkan credential form.
+
 ### Origin / CORS note for a buyer
 
 The checked-in marketplace functions trust the canonical production origin `https://karkalkan.vercel.app` and the current Vercel preview hostname pattern. If the buyer changes the public domain or Vercel team, update the `allowedOrigin` rules in the relevant Edge Functions before using the new origin. Keeping the transferred canonical production domain avoids changing the production-origin entry, but buyer preview URLs may still require updating the preview-host rule.

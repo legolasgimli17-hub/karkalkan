@@ -2,13 +2,13 @@
 
 (() => {
   const fallbackProviders=[
-    {key:'trendyol',label:'Trendyol',tier:'live',mode:'api',sellerIdLabel:'Satıcı numarası',sellerIdRequired:true,credentialFields:[{key:'api_key',label:'API Key'},{key:'api_secret',label:'API Secret'}],capabilities:['Sipariş V2','Finans hareketleri','Kargo','Canlı sipariş'],note:'Canlı finans senkronu hazır.'},
-    {key:'hepsiburada',label:'Hepsiburada',tier:'beta',mode:'api',sellerIdLabel:'Merchant ID (UUID)',sellerIdRequired:true,credentialFields:[{key:'username',label:'Entegrasyon kullanıcı adı'},{key:'password',label:'Servis anahtarı'}],capabilities:['Finans hareketleri','Ürün kârlılığı','Komisyon ve kesintiler','CSV yedeği'],note:'Resmî muhasebe ve performans API senkronu hazır; ilk yetkili mağazada canlı veri doğrulaması bekliyor.'},
-    {key:'n11',label:'n11',tier:'beta',mode:'api',sellerIdLabel:'Mağaza kodu',sellerIdRequired:false,credentialFields:[{key:'app_key',label:'App Key'},{key:'app_secret',label:'App Secret'}],capabilities:['Sipariş bağlantısı','Komisyon alanları','CSV içe aktarma'],note:'Resmî OrderService kimlik bilgileri gerekir.'},
+    {key:'trendyol',label:'Trendyol',tier:'ready',mode:'api',sellerIdLabel:'Satıcı numarası',sellerIdRequired:true,credentialFields:[{key:'api_key',label:'API Key'},{key:'api_secret',label:'API Secret'}],capabilities:['Sipariş V2','Finans hareketleri','Kargo','Otomatik eşitleme'],note:'Entegrasyon hazır; ilk yetkili mağazada gerçek veri doğrulaması bekliyor.'},
+    {key:'hepsiburada',label:'Hepsiburada',tier:'ready',mode:'api',sellerIdLabel:'Merchant ID (UUID)',sellerIdRequired:true,credentialFields:[{key:'username',label:'Entegrasyon kullanıcı adı'},{key:'password',label:'Servis anahtarı'}],capabilities:['Finans hareketleri','Ürün kârlılığı','Komisyon ve kesintiler','Otomatik eşitleme'],note:'Entegrasyon hazır; ilk yetkili mağazada gerçek veri doğrulaması bekliyor.'},
+    {key:'n11',label:'n11',tier:'ready',mode:'api',sellerIdLabel:'Satıcı ID',sellerIdRequired:false,credentialFields:[{key:'app_key',label:'API anahtarı'},{key:'app_secret',label:'API şifresi'}],capabilities:['Siparişler','Onaylı iadeler','Komisyon ve hizmet oranları','Otomatik eşitleme'],note:'Entegrasyon hazır; kargo ve son ekstre kesintileri n11 ödeme detay raporuyla tamamlanır, ilk yetkili mağaza doğrulaması bekliyor.'},
     {key:'amazon',label:'Amazon',tier:'gated',mode:'oauth',sellerIdLabel:'Seller ID',sellerIdRequired:false,credentialFields:[],capabilities:['SP-API','Finances API','OAuth'],note:'Amazon uygulama kaydı, rol onayı ve satıcı OAuth izni gerekir.'},
     {key:'flo',label:'FLO',tier:'import',mode:'file',sellerIdLabel:'Mağaza / iş ortağı kodu',sellerIdRequired:false,credentialFields:[],capabilities:['Rapor içe aktarma','Partner API geçişi'],note:'Partner erişimi veya standart finans raporu ile çalışır.'}
   ];
-  const tierLabels={live:'Canlı',beta:'API beta',gated:'Onay gerekli',import:'Rapor'};
+  const tierLabels={verified:'Canlı doğrulandı',ready:'Hazır · doğrulama bekliyor',beta:'Geliştiriliyor',gated:'Onay gerekli',import:'Rapor'};
   const providerInitials={trendyol:'ty',hepsiburada:'hb',n11:'n11',amazon:'a',flo:'flo'};
   const getProviders=()=>Array.isArray(providerCatalog)&&providerCatalog.length?providerCatalog:fallbackProviders;
   const getProvider=(key)=>getProviders().find((provider)=>provider.key===key)||fallbackProviders[0];
@@ -47,7 +47,7 @@
     if(secretLabel)secretLabel.textContent=fields[1]?.label||'Bu kanalda manuel anahtar yok';
     panel?.classList.toggle('is-gated',!fields.length);
     if(els.saveCredentialsBtn)els.saveCredentialsBtn.hidden=!fields.length;
-    if(els.syncBtn)els.syncBtn.textContent=provider.key==='trendyol'?'Trendyol’u eşitle':provider.key==='hepsiburada'?'Hepsiburada’yı eşitle':'Raporla veri getir';
+    if(els.syncBtn)els.syncBtn.textContent=provider.key==='trendyol'?'Trendyol’u eşitle':provider.key==='hepsiburada'?'Hepsiburada’yı eşitle':provider.key==='n11'?'n11’i eşitle':'Raporla veri getir';
   }
 
   function renderCredentialState(connection,value){

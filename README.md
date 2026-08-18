@@ -35,13 +35,13 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 
 ## Backend reproducibility
 
-All 26 currently deployed Supabase Edge Function sources are checked into `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state.
+All 27 currently deployed Supabase Edge Function sources are checked into `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state.
 
 The decision center's **Money Leak Radar** is an evidence-weighted financial-confidence system, not a generic store-health score. Non-applicable evidence is excluded from its denominator, and each gap is tied to an affected TL basis and a concrete action without presenting unknown amounts as proven loss.
 
 ## Important status
 
-The product is pre-revenue unless later evidence is documented. Do not claim complete real-store Trendyol or Hepsiburada production validation until the end-to-end tests described in `KNOWN_LIMITATIONS.md` have actually been completed.
+The product is pre-revenue unless later evidence is documented. Do not claim complete real-store Trendyol, Hepsiburada or n11 production validation until the end-to-end tests described in `KNOWN_LIMITATIONS.md` have actually been completed.
 
 ## Security
 
