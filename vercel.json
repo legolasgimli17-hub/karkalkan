@@ -6,6 +6,22 @@
       "destination": "/v4.html"
     },
     {
+      "source": "/gizlilik",
+      "destination": "/gizlilik.html"
+    },
+    {
+      "source": "/kvkk",
+      "destination": "/kvkk.html"
+    },
+    {
+      "source": "/cerezler",
+      "destination": "/cerezler.html"
+    },
+    {
+      "source": "/kullanim-kosullari",
+      "destination": "/kullanim-kosullari.html"
+    },
+    {
       "source": "/api/health",
       "destination": "/health.json"
     }
@@ -34,6 +50,26 @@
     {
       "source": "/v4.html",
       "destination": "/uygulama",
+      "permanent": true
+    },
+    {
+      "source": "/gizlilik.html",
+      "destination": "/gizlilik",
+      "permanent": true
+    },
+    {
+      "source": "/kvkk.html",
+      "destination": "/kvkk",
+      "permanent": true
+    },
+    {
+      "source": "/cerezler.html",
+      "destination": "/cerezler",
+      "permanent": true
+    },
+    {
+      "source": "/kullanim-kosullari.html",
+      "destination": "/kullanim-kosullari",
       "permanent": true
     }
   ],
