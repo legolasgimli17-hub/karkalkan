@@ -23,7 +23,7 @@ Deno.serve(async(req:Request)=>{
   try{raw=await readTextBody(req,MAX_BODY_BYTES,true)}catch(error){const failure=requestError(error);return plainJson(failure.status,{error:failure.code})}
   const parsedSignature=parseSignature(req.headers.get('Paddle-Signature')||'')
   const timestamp=Number(parsedSignature.ts)
-  if(!Number.isFinite(timestamp)||Math.abs(Math.floor(Date.now()/1000)-timestamp)>300||!parsedSignature.signatures.length)return plainJson(401,{error:'INVALID_SIGNATURE'})
+  if(!Number.isFinite(timestamp)||Math.abs(Math.floor(Date.now()/1000)-timestamp)>config.webhookToleranceSeconds||!parsedSignature.signatures.length)return plainJson(401,{error:'INVALID_SIGNATURE'})
   const expected=await hmacHex(config.webhookSecret,`${parsedSignature.ts}:${raw}`)
   if(!parsedSignature.signatures.some(signature=>timingSafeHexEqual(expected,signature)))return plainJson(401,{error:'INVALID_SIGNATURE'})
   let event:any

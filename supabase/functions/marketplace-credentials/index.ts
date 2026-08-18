@@ -60,7 +60,8 @@ Deno.serve(async(req:Request)=>{
     try{
       const rows=await sql`select name from vault.secrets where name in ${sql(names)}`
       const stored=new Set(rows.map((row:any)=>String(row.name)))
-      return json(200,{configured:names.every(name=>stored.has(name)),mode:provider.mode,tier:provider.tier,fields:provider.credentialFields.map(field=>({key:field.key,label:field.label,stored:stored.has(`kk.${connection.marketplace}.${connectionId}.${field.vaultKey||field.key}`)}))},origin)
+      const configured=names.every(name=>stored.has(name))
+      return json(200,{configured,mode:provider.mode,tier:provider.tier,fields:provider.credentialFields.map(field=>({key:field.key,label:field.label,stored:stored.has(`kk.${connection.marketplace}.${connectionId}.${field.vaultKey||field.key}`)})),...(connection.marketplace==='flo'?{actionRequired:provider.note}:{})},origin)
     }catch{return json(500,{error:'VAULT_READ_FAILED'},origin)}
   }
 
@@ -90,8 +91,9 @@ Deno.serve(async(req:Request)=>{
         if(existingId)await tx`select vault.update_secret(${existingId}::uuid,${value},${name},${description})`
         else await tx`select vault.create_secret(${value},${name},${description})`
       }
-      await tx`update public.marketplace_connections set status='connected',updated_at=now() where id=${connectionId}::uuid and user_id=${user.id}::uuid`
+      const nextStatus=connection.marketplace==='flo'?'pending':'connected'
+      await tx`update public.marketplace_connections set status=${nextStatus},updated_at=now() where id=${connectionId}::uuid and user_id=${user.id}::uuid`
     })
-    return json(200,{configured:true,provider:connection.marketplace,verification:'stored_not_yet_synced'},origin)
+    return json(200,{configured:true,provider:connection.marketplace,verification:'stored_not_yet_synced',...(connection.marketplace==='flo'?{actionRequired:provider.note}:{})},origin)
   }catch{return json(500,{error:'VAULT_WRITE_FAILED'},origin)}
 })

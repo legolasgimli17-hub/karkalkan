@@ -1,5 +1,5 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
-import { isPlanKey, paddleConfig, paddleRequest } from '../_shared/billing.ts'
+import { isPlanKey, paddleConfig, paddleReadiness, paddleRequest } from '../_shared/billing.ts'
 import { readJsonBody, requestError } from '../_shared/request-security.ts'
 
 Deno.serve(async(req:Request)=>{
@@ -14,8 +14,11 @@ Deno.serve(async(req:Request)=>{
   try{body=await readJsonBody(req,16_384) as Record<string,unknown>}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
   const planKey=String(body.plan||'')
   if(!isPlanKey(planKey))return json(400,{error:'INVALID_PLAN'},origin)
-  const config=paddleConfig(),priceId=config.prices[planKey]
-  if(!config.apiKey||!priceId)return json(503,{error:'BILLING_NOT_CONFIGURED'},origin)
+  const config=paddleConfig(),readiness=paddleReadiness(config),priceId=config.prices[planKey]
+  // Do not accept money unless webhook provisioning and every advertised plan
+  // are fully configured. A checkout without a working entitlement webhook can
+  // charge a customer while leaving the account on the wrong plan.
+  if(!readiness.ready||!priceId)return json(503,{error:'BILLING_NOT_CONFIGURED'},origin)
   const {data:existing}=await auth.admin.from('billing_subscriptions').select('status,paddle_subscription_id').eq('user_id',auth.user.id).maybeSingle()
   if(existing&&['active','trialing','past_due','paused'].includes(existing.status))return json(409,{error:'SUBSCRIPTION_ALREADY_EXISTS',manageInstead:true},origin)
   try{
