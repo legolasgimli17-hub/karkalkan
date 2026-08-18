@@ -41,8 +41,10 @@ test('analytics redacts temporary workspace query and fragment values before sen
 
 test('analytics remains compatible with strict same-origin CSP',async()=>{
   const vercel=await read('vercel.json');
+  const html=await read('v4.html');
   const source=await read('workspace-analytics.js');
   assert.match(vercel,/script-src 'self'/);
-  assert.match(source,/\/_vercel\/insights/);
+  assert.match(html,/src="\/_vercel\/insights\/script\.js"/);
+  assert.doesNotMatch(source,/https?:\/\//i);
   assert.doesNotMatch(source,/createElement\(['"]script['"]\)|eval\(|new Function\(/);
 });
