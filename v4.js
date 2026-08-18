@@ -171,6 +171,7 @@ function humanError(error) {
     'User already registered': 'Bu email ile zaten hesap var.',
     'CONNECTION_EXISTS': 'Bu mağaza bağlantısı zaten eklenmiş.',
     'INVALID_SELLER_ID': 'Satıcı ID yalnızca rakamlardan oluşmalı.',
+    'INVALID_HEPSIBURADA_MERCHANT_ID': 'Hepsiburada Merchant ID, tireli UUID biçiminde olmalı.',
     'INVALID_MARKETPLACE': 'Desteklenmeyen satış kanalı seçildi.',
     'INVALID_CREDENTIALS': 'Bağlantı alanlarını eksiksiz doldur.',
     'VAULT_READ_FAILED': 'Şifreli bağlantı durumu okunamadı.',
@@ -184,10 +185,18 @@ function humanError(error) {
     'BILLING_CUSTOMER_NOT_FOUND': 'Henüz yönetilecek bir abonelik bulunmuyor.',
     'PADDLE_CHECKOUT_URL_MISSING': 'Güvenli ödeme bağlantısı oluşturulamadı.',
     'PADDLE_PORTAL_URL_MISSING': 'Fatura portalı açılamadı.',
-    'CREDENTIALS_MISSING': 'Önce Trendyol API bilgilerini kaydet.',
+    'CREDENTIALS_MISSING': 'Önce seçili mağazanın API bilgilerini kaydet.',
     'TRENDYOL_UNAUTHORIZED': 'Trendyol API bilgileri reddedildi. Anahtarları kontrol et.',
     'TRENDYOL_FORBIDDEN': 'Trendyol bu API erişimine izin vermedi.',
     'TRENDYOL_RATE_LIMIT': 'Trendyol istek limiti doldu. Bir süre sonra tekrar dene.',
+    'HEPSIBURADA_UNAUTHORIZED': 'Hepsiburada kullanıcı adı veya servis anahtarı reddedildi.',
+    'HEPSIBURADA_FORBIDDEN': 'Hepsiburada bu mağaza için muhasebe API erişimine izin vermedi.',
+    'HEPSIBURADA_RATE_LIMIT': 'Hepsiburada istek limiti doldu. Bir süre sonra tekrar dene.',
+    'HEPSIBURADA_CURRENCY_CONFLICT': 'Hepsiburada aynı sonuçta birden fazla para birimi döndürdü. Daha kısa dönem seç.',
+    'UNSUPPORTED_CURRENCY': 'Bu sürüm yalnızca TRY finans kayıtlarını işler; farklı para birimi bulundu.',
+    'HEPSIBURADA_NETWORK': 'Hepsiburada API bağlantısı kurulamadı. Bir süre sonra tekrar dene.',
+    'HEPSIBURADA_BAD_JSON': 'Hepsiburada beklenmeyen bir yanıt döndürdü; hata kayda alındı.',
+    'HEPSIBURADA_HTTP_ERROR': 'Hepsiburada finans servisi isteği tamamlayamadı.',
     'SYNC_IN_PROGRESS': 'Bu mağaza için zaten bir senkron çalışıyor.',
     'SYNC_TOO_LARGE': 'Senkron veri sınırını aştı. Daha kısa aralık dene.',
     'ORIGIN_NOT_ALLOWED': 'Bu sayfanın adresine backend erişim izni yok.',
@@ -530,16 +539,18 @@ els.saveCredentialsBtn.addEventListener('click', async () => {
 els.syncBtn.addEventListener('click', async () => {
   if (!activeConnectionId) { setNotice(els.syncMessage, 'Önce bağlantı seç.', 'bad'); return; }
   const connection = selectedConnection();
-  if (connection?.marketplace !== 'trendyol') {
+  if (!['trendyol', 'hepsiburada'].includes(connection?.marketplace)) {
     document.getElementById('credentials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setNotice(els.syncMessage, `${providerCatalog.find((entry) => entry.key === connection?.marketplace)?.label || 'Bu kanal'} için standart raporu yükle; API erişimi hazır olduğunda aynı mağazada kesintisiz devam eder.`, 'good');
     return;
   }
   const days = Number(els.rangeDays.value);
   setBusy(els.syncBtn, true, 'Senkronlanıyor…');
-  setNotice(els.syncMessage, 'Trendyol verileri güvenli şekilde alınıyor…');
+  const providerName = connection.marketplace === 'hepsiburada' ? 'Hepsiburada' : 'Trendyol';
+  const syncFunction = connection.marketplace === 'hepsiburada' ? 'hepsiburada-sync' : 'trendyol-sync';
+  setNotice(els.syncMessage, `${providerName} finans verileri güvenli şekilde alınıyor…`);
   try {
-    const data = await functionRequest('trendyol-sync', { method: 'POST', body: { connection_id: activeConnectionId, days } });
+    const data = await functionRequest(syncFunction, { method: 'POST', body: { connection_id: activeConnectionId, days } });
     setNotice(els.syncMessage, `Senkron tamamlandı: ${Number(data.importedTransactions || 0).toLocaleString('tr-TR')} işlem, ${Number(data.dailyRows || 0).toLocaleString('tr-TR')} günlük kayıt.`, 'good');
     await loadConnections();
   } catch (error) {

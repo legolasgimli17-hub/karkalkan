@@ -11,7 +11,7 @@ This baseline records the cleaned product state intended for product validation 
 - Canonical authenticated application route: `/uygulama`
 - API-free public example experience and free calculator
 - Simplified seller-facing language
-- Complete checked-in Supabase Edge Function source inventory (25/25)
+- Complete checked-in Supabase Edge Function source inventory (26/26)
 - Supabase migration history and per-function JWT configuration
 - Buyer setup, architecture, transfer, limitation and dependency documentation
 - Safe server configuration template
@@ -24,11 +24,12 @@ This baseline records the cleaned product state intended for product validation 
 
 ## Outstanding production validation
 
-The only outstanding product-validation item is:
+The outstanding marketplace product-validation items are:
 
 - Complete a real Trendyol seller-account end-to-end test and record the result.
+- Complete a real Hepsiburada seller-account finance/performance sync and reconcile the result against the merchant statement.
 
-Do not claim real-store Trendyol production proof until that test is completed.
+Do not claim real-store Trendyol or Hepsiburada production proof until the corresponding test is completed.
 
 ## Platform note
 
