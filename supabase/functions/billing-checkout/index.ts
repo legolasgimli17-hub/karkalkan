@@ -1,5 +1,6 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
 import { isPlanKey, paddleConfig, paddleRequest } from '../_shared/billing.ts'
+import { readJsonBody, requestError } from '../_shared/request-security.ts'
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('Origin')
@@ -10,7 +11,7 @@ Deno.serve(async(req:Request)=>{
   try{auth=await authenticate(req)}catch{return json(503,{error:'SERVER_CONFIG'},origin)}
   if(!auth)return json(401,{error:'UNAUTHORIZED'},origin)
   let body:Record<string,unknown>
-  try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}
+  try{body=await readJsonBody(req,16_384) as Record<string,unknown>}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
   const planKey=String(body.plan||'')
   if(!isPlanKey(planKey))return json(400,{error:'INVALID_PLAN'},origin)
   const config=paddleConfig(),priceId=config.prices[planKey]

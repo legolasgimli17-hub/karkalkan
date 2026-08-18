@@ -168,7 +168,7 @@ function humanError(error) {
   const map = {
     'Invalid login credentials': 'Email veya şifre hatalı.',
     'Email not confirmed': 'Önce email adresini doğrulaman gerekiyor.',
-    'User already registered': 'Bu email ile zaten hesap var.',
+    'User already registered': 'Kayıt isteği tamamlanamadı. Giriş yapmayı veya şifre yenilemeyi deneyin.',
     'CONNECTION_EXISTS': 'Bu mağaza bağlantısı zaten eklenmiş.',
     'INVALID_SELLER_ID': 'Satıcı ID yalnızca rakamlardan oluşmalı.',
     'INVALID_HEPSIBURADA_MERCHANT_ID': 'Hepsiburada Merchant ID, tireli UUID biçiminde olmalı.',
@@ -215,6 +215,7 @@ function humanError(error) {
     'AMAZON_OAUTH_STATE_INVALID': 'Amazon bağlantı isteği geçersiz. Uygulamadan yeniden başlat.',
     'AMAZON_OAUTH_STATE_EXPIRED': 'Amazon bağlantı isteğinin süresi doldu. Uygulamadan yeniden başlat.',
     'AMAZON_OAUTH_STATE_FAILED': 'Amazon bağlantı isteği doğrulanamadı.',
+    'AMAZON_OAUTH_SELLER_MISMATCH': 'Amazon izni seçili mağazayla eşleşmedi. Bağlantıyı uygulamadan yeniden başlat.',
     'AMAZON_OAUTH_RESPONSE_INVALID': 'Amazon eksik bir yetkilendirme yanıtı döndürdü.',
     'AMAZON_OAUTH_EXCHANGE_FAILED': 'Amazon izni güvenli erişim anahtarına dönüştürülemedi. Yeniden bağlanmayı dene.',
     'AMAZON_REAUTH_REQUIRED': 'Amazon izni geçersiz veya yenilenmeli. Amazon’a yeniden bağlan.',
@@ -228,6 +229,9 @@ function humanError(error) {
     'AMAZON_BAD_JSON': 'Amazon finans servisi beklenmeyen yanıt döndürdü.',
     'AMAZON_HTTP_ERROR': 'Amazon finans servisi isteği tamamlayamadı.',
     'AMAZON_MARKETPLACE_MISMATCH': 'Amazon Türkiye dışında bir mağaza verisi döndü; veri güvenliği için işlem durduruldu.',
+    'RATE_LIMITED': 'Güvenlik isteği sınırı doldu. Bir dakika bekleyip tekrar dene.',
+    'PAYLOAD_TOO_LARGE': 'Gönderilen veri güvenlik sınırını aşıyor.',
+    'UNSUPPORTED_MEDIA_TYPE': 'İstek biçimi desteklenmiyor.',
     'SYNC_IN_PROGRESS': 'Bu mağaza için zaten bir senkron çalışıyor.',
     'SYNC_TOO_LARGE': 'Senkron veri sınırını aştı. Daha kısa aralık dene.',
     'ORIGIN_NOT_ALLOWED': 'Bu sayfanın adresine backend erişim izni yok.',
@@ -654,7 +658,7 @@ async function completeAmazonLoginHandoff(params) {
     if (!connection || connection.marketplace !== 'amazon' || !amazonCallbackUri || !amazonState || !sellerId) throw new Error('AMAZON_LOGIN_REQUEST_INVALID');
     const data = await functionRequest('amazon-auth-login', { method: 'POST', body: { connection_id: connection.id, amazon_callback_uri: amazonCallbackUri, amazon_state: amazonState, selling_partner_id: sellerId, version: params.get('version') || '' } });
     const target = new URL(String(data.continuationUrl || ''));
-    const allowedHosts = new Set(['sellercentral.amazon.com.tr', 'sellercentral.amazon.com', 'amazon.com']);
+    const allowedHosts = new Set(['sellercentral.amazon.com.tr', 'sellercentral.amazon.com']);
     if (target.protocol !== 'https:' || !allowedHosts.has(target.hostname) || !target.pathname.startsWith('/apps/authorize/confirm/')) throw new Error('AMAZON_LOGIN_HANDOFF_FAILED');
     history.replaceState(null, '', `${location.pathname}${location.hash}`);
     location.assign(target.toString());

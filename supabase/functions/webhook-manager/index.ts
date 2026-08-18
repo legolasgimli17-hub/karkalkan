@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { createTransactionPool } from '../_shared/postgres.ts'
+import { readJsonBody, requestError } from '../_shared/request-security.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
@@ -13,7 +14,7 @@ function validUuid(v:string){return /^[0-9a-f-]{36}$/i.test(v)}
 function basic(v:string){const b=new TextEncoder().encode(v);let s='';for(const x of b)s+=String.fromCharCode(x);return btoa(s)}
 async function sha256(v:string){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 function randomSecret(){const bytes=crypto.getRandomValues(new Uint8Array(32));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function providerRequest(url:string,auth:string,userAgent:string,init:RequestInit={}){let r:Response;try{r=await fetch(url,{...init,headers:{Authorization:auth,'User-Agent':userAgent,Accept:'application/json',...(init.headers||{})},signal:AbortSignal.timeout(20_000)})}catch{throw new Error('WEBHOOK_NETWORK')}if(r.status===401)throw new Error('TRENDYOL_UNAUTHORIZED');if(r.status===403)throw new Error('TRENDYOL_FORBIDDEN');if(r.status===429)throw new Error('TRENDYOL_RATE_LIMIT');if(!r.ok)throw new Error(`WEBHOOK_HTTP_${r.status}`);return r}
+async function providerRequest(url:string,auth:string,userAgent:string,init:RequestInit={}){let r:Response;try{r=await fetch(url,{...init,headers:{Authorization:auth,'User-Agent':userAgent,Accept:'application/json',...(init.headers||{})},redirect:'error',signal:AbortSignal.timeout(20_000)})}catch{throw new Error('WEBHOOK_NETWORK')}if(r.status===401)throw new Error('TRENDYOL_UNAUTHORIZED');if(r.status===403)throw new Error('TRENDYOL_FORBIDDEN');if(r.status===429)throw new Error('TRENDYOL_RATE_LIMIT');if(!r.ok)throw new Error(`WEBHOOK_HTTP_${r.status}`);return r}
 function statusForError(e:unknown){const c=e instanceof Error?e.message:'WEBHOOK_ERROR';return c==='TRENDYOL_UNAUTHORIZED'?401:c==='TRENDYOL_RATE_LIMIT'?429:502}
 
 Deno.serve(async(req:Request)=>{
@@ -23,7 +24,7 @@ Deno.serve(async(req:Request)=>{
  const auth=req.headers.get('Authorization')||'';if(!auth.startsWith('Bearer '))return json(401,{error:'UNAUTHORIZED'},origin)
  const pub=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default;if(!PROJECT_URL||!pub||!sql)return json(503,{error:'SERVER_CONFIG'},origin)
  const sb=createClient(PROJECT_URL,pub,{global:{headers:{Authorization:auth}},auth:{persistSession:false,autoRefreshToken:false}}),{data:ud,error:ue}=await sb.auth.getUser(auth.slice(7)),user=ud?.user;if(ue||!user)return json(401,{error:'UNAUTHORIZED'},origin)
- const u=new URL(req.url);let body:any={},connectionId=u.searchParams.get('connection_id')||'';if(req.method==='POST'){try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}connectionId=String(body?.connection_id||connectionId)}
+ const u=new URL(req.url);let body:any={},connectionId=u.searchParams.get('connection_id')||'';if(req.method==='POST'){try{body=await readJsonBody(req,16*1024)}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}connectionId=String(body?.connection_id||connectionId)}
  if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
  const {data:conn,error:ce}=await sb.from('marketplace_connections').select('id,marketplace,external_seller_id').eq('id',connectionId).maybeSingle();if(ce)return json(500,{error:'DB_ERROR'},origin);if(!conn||conn.marketplace!=='trendyol')return json(404,{error:'NOT_FOUND'},origin)
  const sellerId=String(conn.external_seller_id||'');if(!/^\d{1,20}$/.test(sellerId))return json(400,{error:'INVALID_SELLER_ID'},origin)

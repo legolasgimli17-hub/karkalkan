@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { captureSafeFailure } from '../_shared/observability.ts'
+import { readJsonBody, requestError } from '../_shared/request-security.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
@@ -105,7 +106,7 @@ async function apiPage(path:string,params:Record<string,string>,authHeader:strin
   for(const [key,value] of Object.entries(params))url.searchParams.set(key,value)
   let response:Response
   try{
-    response=await fetch(url,{headers:{Authorization:authHeader,'User-Agent':userAgent,Accept:'application/json'},signal:AbortSignal.timeout(25_000)})
+    response=await fetch(url,{headers:{Authorization:authHeader,'User-Agent':userAgent,Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(25_000)})
   }catch(error){throw new SyncError('HEPSIBURADA_NETWORK',502)}
   if(response.status===401)throw new SyncError('HEPSIBURADA_UNAUTHORIZED',401,401)
   if(response.status===403)throw new SyncError('HEPSIBURADA_FORBIDDEN',502,403)
@@ -226,7 +227,7 @@ Deno.serve(async(req:Request)=>{
   const token=auth.slice(7),{data:userData,error:userError}=await userClient.auth.getUser(token),user=userData?.user
   if(userError||!user)return json(401,{error:'UNAUTHORIZED'},origin)
   let body:any
-  try{body=await req.json()}catch{return json(400,{error:'INVALID_JSON'},origin)}
+  try{body=await readJsonBody(req,16*1024)}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
   const connectionId=String(body?.connection_id||''),days=Number(body?.days||30)
   if(!validUuid(connectionId))return json(400,{error:'INVALID_CONNECTION'},origin)
   if(![7,30].includes(days))return json(400,{error:'INVALID_RANGE'},origin)

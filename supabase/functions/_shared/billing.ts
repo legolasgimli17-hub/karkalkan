@@ -27,6 +27,7 @@ export async function paddleRequest(path:string,init:RequestInit={}){
   const response=await fetch(`${config.baseUrl}${path}`,{
     ...init,
     headers:{'Authorization':`Bearer ${config.apiKey}`,'Content-Type':'application/json','Paddle-Version':'1',...(init.headers||{})},
+    redirect:'error',
     signal:AbortSignal.timeout(15000)
   })
   let payload:any=null

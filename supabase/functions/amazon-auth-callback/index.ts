@@ -11,7 +11,7 @@ function redirect(result:'connected'|'error',code?:string){
   const target=new URL(APP_RETURN_URL)
   target.searchParams.set('amazon',result)
   if(code)target.searchParams.set('code',code.slice(0,80))
-  return new Response(null,{status:303,headers:{Location:target.toString(),'Cache-Control':'no-store, max-age=0','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'}})
+  return new Response(null,{status:303,headers:{Location:target.toString(),'Cache-Control':'no-store, max-age=0','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'; base-uri 'none'"}})
 }
 function bytesToHex(bytes:ArrayBuffer){return Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('')}
 async function sha256(value:string){return bytesToHex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
@@ -44,9 +44,10 @@ Deno.serve(async(req:Request)=>{
   let stateRow:any
   try{
     const hash=await sha256(state)
-    const rows=await sql`update public.amazon_oauth_states set consumed_at=now() where state_hash=${hash} and consumed_at is null and expires_at>now() returning connection_id,user_id`
+    const rows=await sql`update public.amazon_oauth_states set consumed_at=now() where state_hash=${hash} and consumed_at is null and expires_at>now() returning connection_id,user_id,expected_seller_id`
     stateRow=rows[0]
     if(!stateRow)return redirect('error','AMAZON_OAUTH_STATE_EXPIRED')
+    if(stateRow.expected_seller_id&&String(stateRow.expected_seller_id)!==sellerId)return redirect('error','AMAZON_OAUTH_SELLER_MISMATCH')
   }catch(error){
     await captureSafeFailure('amazon-auth-callback','AMAZON_OAUTH_STATE_FAILED',error)
     return redirect('error','AMAZON_OAUTH_STATE_FAILED')
@@ -54,7 +55,7 @@ Deno.serve(async(req:Request)=>{
 
   try{
     const form=new URLSearchParams({grant_type:'authorization_code',code:oauthCode,redirect_uri:redirectUri,client_id:clientId,client_secret:clientSecret})
-    const tokenResponse=await fetch(LWA_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json'},body:form,signal:AbortSignal.timeout(20_000)})
+    const tokenResponse=await fetch(LWA_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json'},body:form,redirect:'error',signal:AbortSignal.timeout(20_000)})
     if(!tokenResponse.ok)throw new Error(`LWA_HTTP_${tokenResponse.status}`)
     const tokens=await tokenResponse.json()
     const refreshToken=String(tokens?.refresh_token||'')

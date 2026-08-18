@@ -1,7 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 import { isMarketplace, PROVIDERS, publicProviderCatalog } from '../_shared/providers.ts'
+import { createTransactionPool } from '../_shared/postgres.ts'
+import { isUuid, readJsonBody, requestError } from '../_shared/request-security.ts'
 
 const url=Deno.env.get('SUPABASE_URL')||''
+const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'',{max_lifetime:60})
 const projectOrigin=(()=>{try{return new URL(url).origin}catch{return ''}})()
 const allowedOrigins=new Set(['https://karkalkan.vercel.app',projectOrigin])
 function isAllowedOrigin(origin:string|null){if(!origin)return true;if(allowedOrigins.has(origin))return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
@@ -33,7 +36,7 @@ Deno.serve(async(req:Request)=>{
 
   if(req.method==='POST'){
     let body:Record<string,unknown>
-    try{body=await req.json()}catch{return json({error:'INVALID_JSON'},400,origin)}
+    try{body=await readJsonBody(req,32_768) as Record<string,unknown>}catch(error){const failure=requestError(error);return json({error:failure.code},failure.status,origin)}
     const marketplace=cleanText(body.marketplace,20)
     const displayName=cleanText(body.display_name,120)
     const sellerId=cleanText(body.external_seller_id,120)
@@ -53,10 +56,18 @@ Deno.serve(async(req:Request)=>{
 
   if(req.method==='DELETE'){
     const u=new URL(req.url),id=cleanText(u.searchParams.get('id'),80)
-    if(!/^[0-9a-f-]{36}$/i.test(id))return json({error:'INVALID_CONNECTION_ID'},400,origin)
-    const {data,error}=await admin.from('marketplace_connections').delete().eq('id',id).eq('user_id',user.id).select('id')
-    if(error)return json({error:'DB_DELETE_FAILED'},500,origin)
-    if(!data?.length)return json({error:'NOT_FOUND'},404,origin)
+    if(!isUuid(id))return json({error:'INVALID_CONNECTION_ID'},400,origin)
+    if(!sql)return json({error:'SERVER_MISCONFIGURED'},503,origin)
+    let deleted=false
+    try{
+      await sql.begin(async tx=>{
+        const rows=await tx`delete from public.marketplace_connections where id=${id}::uuid and user_id=${user.id}::uuid returning id`
+        if(!rows.length)return
+        await tx`delete from vault.secrets where name like ${`kk.%.${id}.%`}`
+        deleted=true
+      })
+    }catch{return json({error:'DB_DELETE_FAILED'},500,origin)}
+    if(!deleted)return json({error:'NOT_FOUND'},404,origin)
     return json({deleted:true},200,origin)
   }
   return json({error:'METHOD_NOT_ALLOWED'},405,origin)
