@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
+import { planEntitlements } from '../_shared/billing.ts'
 import { isMarketplace, PROVIDERS, publicProviderCatalog } from '../_shared/providers.ts'
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { isUuid, readJsonBody, requestError } from '../_shared/request-security.ts'
@@ -47,12 +48,39 @@ Deno.serve(async(req:Request)=>{
     if(marketplace==='trendyol'&&!/^\d{1,20}$/.test(sellerId))return json({error:'INVALID_SELLER_ID'},400,origin)
     if(marketplace==='hepsiburada'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sellerId))return json({error:'INVALID_HEPSIBURADA_MERCHANT_ID'},400,origin)
     if(marketplace==='flo'&&!/^[A-Za-z0-9._-]{2,80}$/.test(sellerId))return json({error:'INVALID_FLO_SELLER_ID'},400,origin)
-    const {data,error}=await admin.from('marketplace_connections').insert({
-      user_id:user.id,marketplace,display_name:displayName,external_seller_id:sellerId||null,
-      status:'pending',connection_mode:provider.mode,capability_tier:provider.tier
-    }).select('id,marketplace,display_name,external_seller_id,status,connection_mode,capability_tier,created_at').single()
-    if(error){if(error.code==='23505')return json({error:'CONNECTION_EXISTS'},409,origin);return json({error:'DB_WRITE_FAILED'},500,origin)}
-    return json({connection:data,provider:publicProviderCatalog().find(item=>item.key===marketplace)},201,origin)
+    if(!sql)return json({error:'SERVER_MISCONFIGURED'},503,origin)
+
+    let connection:Record<string,unknown>|null=null
+    let limitDetails:{plan_key:string;store_limit:number;stores_used:number;upgrade_required:boolean}|null=null
+    try{
+      await sql.begin(async tx=>{
+        // Serialize connection creation per tenant so concurrent requests cannot
+        // race the count check and exceed the subscribed store entitlement.
+        await tx`select pg_advisory_xact_lock(hashtextextended(${user.id}::text,0))`
+        const subscriptions=await tx`select plan_key,status from public.billing_subscriptions where user_id=${user.id}::uuid limit 1`
+        const entitlement=planEntitlements(subscriptions[0]?.plan_key,subscriptions[0]?.status)
+        const counts=await tx`select count(*)::int as count from public.marketplace_connections where user_id=${user.id}::uuid`
+        const storesUsed=Number(counts[0]?.count||0)
+        if(storesUsed>=entitlement.stores){
+          limitDetails={plan_key:entitlement.planKey,store_limit:entitlement.stores,stores_used:storesUsed,upgrade_required:true}
+          throw new Error('PLAN_STORE_LIMIT_REACHED')
+        }
+        const rows=await tx`
+          insert into public.marketplace_connections
+            (user_id,marketplace,display_name,external_seller_id,status,connection_mode,capability_tier)
+          values
+            (${user.id}::uuid,${marketplace},${displayName},${sellerId||null},'pending',${provider.mode},${provider.tier})
+          returning id,marketplace,display_name,external_seller_id,status,connection_mode,capability_tier,created_at
+        `
+        connection=(rows[0]??null) as Record<string,unknown>|null
+      })
+    }catch(error){
+      if(String((error as Error)?.message||'')==='PLAN_STORE_LIMIT_REACHED')return json({error:'PLAN_STORE_LIMIT_REACHED',...limitDetails},403,origin)
+      if(String((error as {code?:string})?.code||'')==='23505')return json({error:'CONNECTION_EXISTS'},409,origin)
+      return json({error:'DB_WRITE_FAILED'},500,origin)
+    }
+    if(!connection)return json({error:'DB_WRITE_FAILED'},500,origin)
+    return json({connection,provider:publicProviderCatalog().find(item=>item.key===marketplace)},201,origin)
   }
 
   if(req.method==='DELETE'){

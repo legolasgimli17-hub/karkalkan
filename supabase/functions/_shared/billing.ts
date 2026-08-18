@@ -1,4 +1,5 @@
 export type PlanKey='starter'|'growth'|'scale'
+export type BillingStatus='inactive'|'trialing'|'active'|'past_due'|'paused'|'canceled'
 
 export const PLAN_CATALOG=[
   {key:'starter' as PlanKey,name:'Başlangıç',monthlyTry:499,stores:1,orders:500,description:'Kârlılığını ilk kez düzenli takip eden mağazalar için.'},
@@ -6,12 +7,19 @@ export const PLAN_CATALOG=[
   {key:'scale' as PlanKey,name:'Ölçek',monthlyTry:2499,stores:10,orders:50000,description:'Ajanslar ve yüksek hacimli e-ticaret ekipleri için.'}
 ]
 
+export const FREE_STORE_LIMIT=1
+const ENTITLED_STATUSES=new Set<BillingStatus>(['trialing','active','past_due'])
 const PADDLE_PRICE_ID=/^pri_[a-z0-9]{26}$/
 
-function positiveInteger(value:string,fallback:number,min:number,max:number){
-  const parsed=Number(value)
-  return Number.isInteger(parsed)&&parsed>=min&&parsed<=max?parsed:fallback
+export function planEntitlements(planKey:unknown,status:unknown){
+  const normalizedPlan=String(planKey||'free')
+  const normalizedStatus=String(status||'inactive') as BillingStatus
+  const plan=PLAN_CATALOG.find(item=>item.key===normalizedPlan)
+  if(!plan||!ENTITLED_STATUSES.has(normalizedStatus))return {planKey:'free' as const,stores:FREE_STORE_LIMIT,entitled:false}
+  return {planKey:plan.key,stores:plan.stores,entitled:true}
 }
+
+const positiveInteger=(value:string,fallback:number,min:number,max:number)=>{const parsed=Number(value);return Number.isInteger(parsed)&&parsed>=min&&parsed<=max?parsed:fallback}
 
 function validCheckoutUrl(value:string){
   try{
