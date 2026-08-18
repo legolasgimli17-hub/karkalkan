@@ -6,6 +6,12 @@ KârKalkan is not positioned as a clone of another Trendyol dashboard. The produ
 2. **Evidence before confidence** — every important financial number should expose where it came from and how complete the supporting data is.
 3. **Plain Turkish** — seller-facing copy should prefer concrete phrases such as “satıştan kalan”, “kesintiler”, “maliyet kapsamı” and “veri güveni” over accounting jargon unless the accounting term is necessary.
 
+## Product differentiation: Money Leak Radar
+
+The decision center is not a generic 0–100 store-health score. It calculates evidence confidence from weighted, explainable components such as sales evidence, product-cost coverage, cargo allocation, settlement classification and freshness. A component that is not applicable in the selected period is removed from the denominator instead of creating a fake low score.
+
+Each material evidence gap becomes a reviewable “money leak” signal with an affected TL basis, confidence context and a concrete next action. Unknown amounts are never presented as proven loss. This evidence-first model is a core KârKalkan differentiator and should stay visible in product copy, onboarding and sales material.
+
 ## Visual identity
 
 The application uses an Obsidian + Copper + Ice palette. It intentionally avoids green-first SaaS styling and does not mirror competitor layouts, names, score systems, traffic-light patterns or marketing phrases.

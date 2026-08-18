@@ -1,6 +1,6 @@
 # KârKalkan — Supabase Inventory
 
-Snapshot reviewed: 2026-08-16
+Snapshot reviewed: 2026-08-18
 
 The production Supabase project contains the following application Edge Functions. This inventory exists so an acquisition does not depend on undocumented infrastructure.
 
@@ -47,6 +47,14 @@ These values must not be described as accounting or tax net profit.
 ## Data-size correctness guard
 
 Financial summary endpoints do not rely on the Data API's first response page for potentially large datasets. `dashboard-summary`, `risk-alerts`, `decision-center` and `portfolio-summary` page through their source rows and fail explicitly with `DATA_TOO_LARGE` at the configured safety ceiling instead of silently returning a partial financial total. The operating-expense ledger likewise returns an explicit `EXPENSE_LEDGER_TOO_LARGE` error beyond its review ceiling.
+
+## Edge database connection safety
+
+Every Edge Function that uses `postgres.js` reads the custom `KARKALKAN_DB_POOLER_URL` secret and obtains its client from `_shared/postgres.ts`. Supabase's platform-provided `SUPABASE_DB_URL` remains a reserved direct connection and is intentionally not used. The factory accepts only Supabase transaction-pooler hosts on port `6543`, forces `prepare:false` and caps each isolate at `max:1`. A direct `:5432` URL is rejected with a configuration error before a connection is opened.
+
+## External error monitoring
+
+`_shared/observability.ts` provides pinned Sentry Deno integration. With `SENTRY_DSN` configured, `trendyol-sync` reports every `safeFail` code and critical workers report unexpected exceptions. Default PII is disabled and monitoring calls receive no request body, seller credentials or database URL. Without a DSN, the helper is a safe no-op and Supabase runtime logs remain available.
 
 ## Live order signal model
 

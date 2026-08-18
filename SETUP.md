@@ -57,14 +57,18 @@ The browser Supabase client is pinned in `v4.html` to `@supabase/supabase-js@2.5
 ### Server-side configuration used by the Edge Functions
 
 - `SUPABASE_URL` — supplied by the Supabase runtime.
-- `SUPABASE_DB_URL` — database connection string used by functions that need direct Postgres/Vault access. Treat as a secret.
+- `KARKALKAN_DB_POOLER_URL` — custom **transaction-mode pooler** connection string used by functions that need Postgres/Vault access. It must use port `6543`; direct `db.<project-ref>.supabase.co:5432` URLs are rejected at runtime. Copy the Transaction pooler value from Supabase Dashboard → Connect. Treat it as a secret.
 - `SUPABASE_PUBLISHABLE_KEYS` — JSON object containing the browser-safe/publishable key used by the server functions when creating user-scoped Supabase clients. The current code expects a `default` property.
+- `SENTRY_DSN` — optional until a Sentry project is created; when present, critical Edge Functions report safe failure codes and unhandled exceptions. Request bodies, marketplace credentials and default PII are not sent.
+- `SENTRY_ENVIRONMENT` — optional environment label; defaults to `production`.
 
 Example shape:
 
 ```text
 SUPABASE_PUBLISHABLE_KEYS={"default":"sb_publishable_REPLACE_ME"}
 ```
+
+Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself as a direct database URL, so application code must not use that default for Edge runtime SQL. The custom `KARKALKAN_DB_POOLER_URL` secret avoids the reserved prefix. The shared Postgres factory forces `prepare:false` because transaction pooling does not support prepared statements, and caps each Edge isolate at `max:1` client connection. A wrong/missing pooler URL produces `SERVER_CONFIG` instead of silently opening direct connections.
 
 ### Origin / CORS note for a buyer
 
