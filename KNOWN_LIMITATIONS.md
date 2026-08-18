@@ -1,6 +1,6 @@
 # KârKalkan — Known Limitations & Due-Diligence Disclosure
 
-Last reviewed: 2026-08-16
+Last reviewed: 2026-08-18
 
 This file separates the one outstanding product-validation item from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
 
@@ -41,3 +41,18 @@ Marketplace endpoints, financial semantics, authentication rules, rate limits an
 ## 8. No valuation guarantee — transaction disclosure
 
 Source code, deployment and documentation make the product transferable, but do not guarantee a particular acquisition price, user growth or revenue outcome.
+
+## 9. Very large-store synchronization — documented capacity boundary
+
+The current Trendyol workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
+
+Before onboarding stores whose selected sync window can exceed a worker ceiling, implement a resumable job design with:
+
+- a tenant-owned sync-job row containing stage, date window, page/cursor, retry count and lease expiry;
+- idempotent page writes plus a unique provider-row/event fingerprint;
+- a short worker invocation that commits its continuation cursor after each page or bounded batch;
+- `pg_cron`, Supabase Queues or an equivalent scheduler to resume pending jobs;
+- terminal `success`, `partial`, `failed` and dead-letter states with externally monitored error codes;
+- reconciliation that publishes financial results only after all required chunks for the window complete.
+
+This architecture is intentionally documented, not implemented yet. Raising `MAX_PAGES` alone is not an acceptable substitute because it increases timeout and retry risk without adding resumability.
