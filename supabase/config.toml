@@ -28,6 +28,9 @@ verify_jwt = true
 [functions.trendyol-sync]
 verify_jwt = true
 
+[functions.hepsiburada-sync]
+verify_jwt = true
+
 [functions.sync-history]
 verify_jwt = true
 

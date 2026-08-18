@@ -2,17 +2,19 @@
 
 Last reviewed: 2026-08-18
 
-This file separates the one outstanding product-validation item from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
+This file separates outstanding marketplace validation from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
 
-## 1. Trendyol production validation — outstanding
+## 1. Marketplace production validation — outstanding
 
 The Trendyol integration has been implemented against the Partner API flow used by the project. A complete end-to-end production validation with a real Trendyol seller account has not yet been recorded.
 
-**This is the only outstanding product-validation item currently recorded.**
+The Hepsiburada finance integration has been implemented against the official Basic Auth finance transaction and performance endpoints. The Edge Function is deployed and the schema migration is applied, but no authorized Hepsiburada merchant account was available for first-store reconciliation.
 
-A buyer or tester should validate the full path before claiming real-store production proof:
+A buyer or tester should validate each full path before claiming real-store production proof:
 
 `account -> store connection -> credentials -> sync -> sales/returns/financial data -> product cost -> profitability output`
+
+For Hepsiburada, compare the same 7-day period in KârKalkan and the merchant finance statement, including payment, return, commission, service fee, cargo and stoppage totals. Record any provider-specific transaction type that lands in the visible unclassified-adjustment list before declaring the integration fully validated.
 
 ## 2. Pre-revenue status — business disclosure
 
@@ -44,7 +46,7 @@ Source code, deployment and documentation make the product transferable, but do 
 
 ## 9. Very large-store synchronization — documented capacity boundary
 
-The current Trendyol workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
+The current Trendyol and Hepsiburada workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
 
 Before onboarding stores whose selected sync window can exceed a worker ceiling, implement a resumable job design with:
 

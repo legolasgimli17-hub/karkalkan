@@ -13,6 +13,7 @@ The production Supabase project contains the following application Edge Function
 | `marketplace-credentials` | JWT required | Provider-aware Vault credential handling for Trendyol, Hepsiburada and n11 | Yes |
 | `marketplace-import` | JWT required | Normalized, tenant-isolated CSV finance import for every provider | Yes |
 | `trendyol-sync` | JWT required | Core Trendyol reconciliation/synchronization | Yes |
+| `hepsiburada-sync` | JWT required | Hepsiburada finance transactions and product-performance synchronization | Yes |
 | `sync-history` | JWT required | Sync history | Yes |
 | `connection-health` | JWT required | Connection health/status | Yes |
 | `product-costs-bulk` | JWT required | Bulk product cost operations | Yes |
@@ -34,7 +35,7 @@ The production Supabase project contains the following application Edge Function
 
 ## Source completeness
 
-All 25 application Edge Function sources are checked into `supabase/functions/`.
+All 26 application Edge Function sources are checked into `supabase/functions/`.
 
 Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; `billing-webhook` likewise authenticates Paddle using its raw-body HMAC signature. All other active application functions require a valid Supabase JWT.
 
@@ -60,7 +61,7 @@ Every Edge Function that uses `postgres.js` reads the custom `KARKALKAN_DB_POOLE
 
 ## External error monitoring
 
-`_shared/observability.ts` provides pinned Sentry Deno integration. With `SENTRY_DSN` configured, `trendyol-sync` reports every `safeFail` code and critical workers report unexpected exceptions. Default PII is disabled and monitoring calls receive no request body, seller credentials or database URL. Without a DSN, the helper is a safe no-op and Supabase runtime logs remain available.
+`_shared/observability.ts` provides pinned Sentry Deno integration. With `SENTRY_DSN` configured, `trendyol-sync` and `hepsiburada-sync` report every `safeFail` code and critical workers report unexpected exceptions. Default PII is disabled and monitoring calls receive no request body, seller credentials or database URL. Without a DSN, the helper is a safe no-op and Supabase runtime logs remain available.
 
 ## Live order signal model
 

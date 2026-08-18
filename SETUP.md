@@ -79,6 +79,15 @@ The application never collects card numbers. `billing-checkout` creates a Paddle
 
 Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself as a direct database URL, so application code must not use that default for Edge runtime SQL. The custom `KARKALKAN_DB_POOLER_URL` secret avoids the reserved prefix. The shared Postgres factory forces `prepare:false` because transaction pooling does not support prepared statements, and caps each Edge isolate at `max:1` client connection. A wrong/missing pooler URL produces `SERVER_CONFIG` instead of silently opening direct connections.
 
+### Hepsiburada first-store activation
+
+1. In the Hepsiburada merchant panel, open **Bilgilerim → Entegrasyon → Entegratör Bilgileri**.
+2. Copy the merchant's UUID-shaped **Merchant ID**, integration username and the **Servis Anahtarı** created for the integrator. Do not send these values by chat or email.
+3. In KârKalkan, add a Hepsiburada store, enter the Merchant ID, and save the two credential fields. They are written only to Supabase Vault.
+4. Start with a 7-day sync. The worker reads the official `transactions/merchantid/{merchantId}` and finance-performance `orders/merchantid/{merchantId}` endpoints using Basic Auth and the required `User-Agent` header.
+5. Compare payment, return, commission, service fee, cargo and stoppage totals against the same merchant-statement period. Only after this reconciliation should the provider be promoted from API beta to live-verified.
+6. Rotate the service key immediately if it was exposed outside the merchant panel/KârKalkan credential form.
+
 ### Origin / CORS note for a buyer
 
 The checked-in marketplace functions trust the canonical production origin `https://karkalkan.vercel.app` and the current Vercel preview hostname pattern. If the buyer changes the public domain or Vercel team, update the `allowedOrigin` rules in the relevant Edge Functions before using the new origin. Keeping the transferred canonical production domain avoids changing the production-origin entry, but buyer preview URLs may still require updating the preview-host rule.
