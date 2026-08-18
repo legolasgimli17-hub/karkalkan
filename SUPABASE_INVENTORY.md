@@ -10,11 +10,15 @@ The production Supabase project contains the following application Edge Function
 | `dashboard-summary` | JWT required | Canonical dashboard cash / cost-coverage summary | Yes |
 | `product-costs` | JWT required | Product cost CRUD | Yes |
 | `trendyol-credentials` | JWT required | Secure Trendyol credential handling | Yes |
-| `marketplace-credentials` | JWT required | Provider-aware Vault credential handling for Trendyol, Hepsiburada and n11 | Yes |
+| `marketplace-credentials` | JWT required | Provider-aware Vault credential/OAuth-token status for Trendyol, Hepsiburada, n11 and Amazon | Yes |
 | `marketplace-import` | JWT required | Normalized, tenant-isolated CSV finance import for every provider | Yes |
 | `trendyol-sync` | JWT required | Core Trendyol reconciliation/synchronization | Yes |
 | `hepsiburada-sync` | JWT required | Hepsiburada finance transactions and product-performance synchronization | Yes |
 | `n11-sync` | JWT required | n11 shipment-package economics and approved-return synchronization; final cargo/statement reconciliation remains report-backed | Yes |
+| `amazon-auth-start` | JWT required | Creates the Amazon Turkey Seller Central consent URL with short-lived state | Yes |
+| `amazon-auth-login` | JWT required | Authenticated website Log-in URI handoff; validates Amazon callback host and binds authorization to a tenant connection | Yes |
+| `amazon-auth-callback` | Platform JWT disabled; one-use OAuth state required | Exchanges Amazon's short-lived authorization code and stores the refresh token in Vault | Yes |
+| `amazon-sync` | JWT required | Amazon Turkey Finances API v2024-06-19 transaction and product-profit synchronization | Yes |
 | `sync-history` | JWT required | Sync history | Yes |
 | `connection-health` | JWT required | Connection health/status | Yes |
 | `product-costs-bulk` | JWT required | Bulk product cost operations | Yes |
@@ -36,9 +40,9 @@ The production Supabase project contains the following application Edge Function
 
 ## Source completeness
 
-All 27 application Edge Function sources are checked into `supabase/functions/`.
+All 31 application Edge Function sources are checked into `supabase/functions/`.
 
-Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; `billing-webhook` likewise authenticates Paddle using its raw-body HMAC signature. All other active application functions require a valid Supabase JWT.
+Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; `billing-webhook` likewise authenticates Paddle using its raw-body HMAC signature. `amazon-auth-callback` accepts Amazon's redirect without a Supabase JWT but requires a valid, unexpired, one-use state bound to the user and connection. All other active application functions require a valid Supabase JWT.
 
 ## Canonical finance vocabulary
 
@@ -62,7 +66,7 @@ Every Edge Function that uses `postgres.js` reads the custom `KARKALKAN_DB_POOLE
 
 ## External error monitoring
 
-`_shared/observability.ts` provides pinned Sentry Deno integration. With `SENTRY_DSN` configured, `trendyol-sync`, `hepsiburada-sync` and `n11-sync` report every `safeFail` code and critical workers report unexpected exceptions. Default PII is disabled and monitoring calls receive no request body, seller credentials or database URL. Without a DSN, the helper is a safe no-op and Supabase runtime logs remain available.
+`_shared/observability.ts` provides pinned Sentry Deno integration. With `SENTRY_DSN` configured, `trendyol-sync`, `hepsiburada-sync`, `n11-sync`, `amazon-sync` and Amazon's OAuth workers report safe failure codes. Default PII is disabled and monitoring calls receive no request body, seller credentials, OAuth token or database URL. Without a DSN, the helper is a safe no-op and Supabase runtime logs remain available.
 
 ## Live order signal model
 

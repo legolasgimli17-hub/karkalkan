@@ -11,7 +11,7 @@ const els = {
   signInBtn: $('signInBtn'), signUpBtn: $('signUpBtn'), authMessage: $('authMessage'), appPanel: $('appPanel'), userEmail: $('userEmail'),
   refreshAllBtn: $('refreshAllBtn'), signOutBtn: $('signOutBtn'), marketplaceSelect: $('marketplaceSelect'), connectionName: $('connectionName'), sellerId: $('sellerId'),
   createConnectionBtn: $('createConnectionBtn'), connectionMessage: $('connectionMessage'), connectionSelect: $('connectionSelect'), connectionMeta: $('connectionMeta'),
-  credentialState: $('credentialState'), apiKey: $('apiKey'), apiSecret: $('apiSecret'), saveCredentialsBtn: $('saveCredentialsBtn'), credentialMessage: $('credentialMessage'),
+  credentialState: $('credentialState'), apiKey: $('apiKey'), apiSecret: $('apiSecret'), saveCredentialsBtn: $('saveCredentialsBtn'), oauthConnectBtn: $('oauthConnectBtn'), credentialMessage: $('credentialMessage'),
   rangeDays: $('rangeDays'), syncBtn: $('syncBtn'), syncMessage: $('syncMessage'), healthState: $('healthState'), healthMeta: $('healthMeta'),
   confidenceState: $('confidenceState'), coverageMeta: $('coverageMeta'), grossSales: $('grossSales'), grossReturns: $('grossReturns'),
   commissionCost: $('commissionCost'), sellerRevenue: $('sellerRevenue'), transactions: $('transactions'), worstProducts: $('worstProducts'),
@@ -206,6 +206,28 @@ function humanError(error) {
     'N11_HTTP_ERROR': 'n11 sipariş servisi isteği tamamlayamadı.',
     'N11_RETURN_HTTP_ERROR': 'n11 iade servisi isteği tamamlayamadı.',
     'N11_RETURN_API_FAILED': 'n11 iade servisi işlemi reddetti.',
+    'AMAZON_APP_NOT_CONFIGURED': 'Amazon teknik akışı hazır; yetkili işletme hesabının App ID ve LWA bilgileri henüz sunucuya tanımlanmadı.',
+    'AMAZON_AUTH_REQUIRED': 'Önce Amazon’a güvenli OAuth bağlantısı kur.',
+    'AMAZON_AUTH_START_FAILED': 'Amazon yetkilendirme işlemi başlatılamadı; hata güvenli şekilde kayda alındı.',
+    'AMAZON_LOGIN_REQUEST_INVALID': 'Amazon giriş yönlendirmesi doğrulanamadı. Bağlantıyı uygulamadan yeniden başlat.',
+    'AMAZON_LOGIN_HANDOFF_FAILED': 'Amazon izin akışı güvenli şekilde sürdürülemedi. Bağlantıyı yeniden başlat.',
+    'AMAZON_OAUTH_CANCELLED': 'Amazon bağlantı izni tamamlanmadı.',
+    'AMAZON_OAUTH_STATE_INVALID': 'Amazon bağlantı isteği geçersiz. Uygulamadan yeniden başlat.',
+    'AMAZON_OAUTH_STATE_EXPIRED': 'Amazon bağlantı isteğinin süresi doldu. Uygulamadan yeniden başlat.',
+    'AMAZON_OAUTH_STATE_FAILED': 'Amazon bağlantı isteği doğrulanamadı.',
+    'AMAZON_OAUTH_RESPONSE_INVALID': 'Amazon eksik bir yetkilendirme yanıtı döndürdü.',
+    'AMAZON_OAUTH_EXCHANGE_FAILED': 'Amazon izni güvenli erişim anahtarına dönüştürülemedi. Yeniden bağlanmayı dene.',
+    'AMAZON_REAUTH_REQUIRED': 'Amazon izni geçersiz veya yenilenmeli. Amazon’a yeniden bağlan.',
+    'AMAZON_FORBIDDEN': 'Amazon uygulamasında Finance and Accounting rolü veya bu mağaza için izin eksik.',
+    'AMAZON_RATE_LIMIT': 'Amazon istek limiti doldu. Bir süre sonra tekrar dene.',
+    'AMAZON_NETWORK': 'Amazon SP-API bağlantısı kurulamadı. Bir süre sonra tekrar dene.',
+    'AMAZON_TOKEN_NETWORK': 'Amazon güvenli erişim servisine ulaşılamadı.',
+    'AMAZON_TOKEN_HTTP_ERROR': 'Amazon güvenli erişim servisi isteği tamamlayamadı.',
+    'AMAZON_TOKEN_BAD_JSON': 'Amazon güvenli erişim servisi beklenmeyen yanıt döndürdü.',
+    'AMAZON_TOKEN_INVALID': 'Amazon güvenli erişim yanıtı geçersiz.',
+    'AMAZON_BAD_JSON': 'Amazon finans servisi beklenmeyen yanıt döndürdü.',
+    'AMAZON_HTTP_ERROR': 'Amazon finans servisi isteği tamamlayamadı.',
+    'AMAZON_MARKETPLACE_MISMATCH': 'Amazon Türkiye dışında bir mağaza verisi döndü; veri güvenliği için işlem durduruldu.',
     'SYNC_IN_PROGRESS': 'Bu mağaza için zaten bir senkron çalışıyor.',
     'SYNC_TOO_LARGE': 'Senkron veri sınırını aştı. Daha kısa aralık dene.',
     'ORIGIN_NOT_ALLOWED': 'Bu sayfanın adresine backend erişim izni yok.',
@@ -545,18 +567,35 @@ els.saveCredentialsBtn.addEventListener('click', async () => {
   }
 });
 
+els.oauthConnectBtn?.addEventListener('click', async () => {
+  if (!activeConnectionId) { setNotice(els.credentialMessage, 'Önce Amazon bağlantısını çalışma alanına ekleyip seç.', 'bad'); return; }
+  const connection = selectedConnection();
+  if (connection?.marketplace !== 'amazon') { setNotice(els.credentialMessage, 'Bu düğme yalnızca Amazon bağlantısı için kullanılır.', 'bad'); return; }
+  setBusy(els.oauthConnectBtn, true, 'Amazon açılıyor…');
+  setNotice(els.credentialMessage, 'Tek kullanımlık güvenli bağlantı hazırlanıyor…');
+  try {
+    const data = await functionRequest('amazon-auth-start', { method: 'POST', body: { connection_id: activeConnectionId } });
+    const target = new URL(String(data.authorizationUrl || ''));
+    if (target.protocol !== 'https:' || target.hostname !== 'sellercentral.amazon.com.tr' || target.pathname !== '/apps/authorize/consent') throw new Error('AMAZON_AUTH_START_FAILED');
+    location.assign(target.toString());
+  } catch (error) {
+    setNotice(els.credentialMessage, humanError(error), 'bad');
+    setBusy(els.oauthConnectBtn, false);
+  }
+});
+
 els.syncBtn.addEventListener('click', async () => {
   if (!activeConnectionId) { setNotice(els.syncMessage, 'Önce bağlantı seç.', 'bad'); return; }
   const connection = selectedConnection();
-  if (!['trendyol', 'hepsiburada', 'n11'].includes(connection?.marketplace)) {
+  if (!['trendyol', 'hepsiburada', 'n11', 'amazon'].includes(connection?.marketplace)) {
     document.getElementById('credentials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setNotice(els.syncMessage, `${providerCatalog.find((entry) => entry.key === connection?.marketplace)?.label || 'Bu kanal'} için standart raporu yükle; API erişimi hazır olduğunda aynı mağazada kesintisiz devam eder.`, 'good');
     return;
   }
   const days = Number(els.rangeDays.value);
   setBusy(els.syncBtn, true, 'Senkronlanıyor…');
-  const providerName = connection.marketplace === 'hepsiburada' ? 'Hepsiburada' : connection.marketplace === 'n11' ? 'n11' : 'Trendyol';
-  const syncFunction = connection.marketplace === 'hepsiburada' ? 'hepsiburada-sync' : connection.marketplace === 'n11' ? 'n11-sync' : 'trendyol-sync';
+  const providerName = connection.marketplace === 'hepsiburada' ? 'Hepsiburada' : connection.marketplace === 'n11' ? 'n11' : connection.marketplace === 'amazon' ? 'Amazon' : 'Trendyol';
+  const syncFunction = connection.marketplace === 'hepsiburada' ? 'hepsiburada-sync' : connection.marketplace === 'n11' ? 'n11-sync' : connection.marketplace === 'amazon' ? 'amazon-sync' : 'trendyol-sync';
   setNotice(els.syncMessage, `${providerName} finans verileri güvenli şekilde alınıyor…`);
   try {
     const data = await functionRequest(syncFunction, { method: 'POST', body: { connection_id: activeConnectionId, days } });
@@ -601,6 +640,35 @@ els.refreshAllBtn.addEventListener('click', async () => {
   finally { setBusy(els.refreshAllBtn, false); }
 });
 
+async function completeAmazonLoginHandoff(params) {
+  const amazonCallbackUri = params.get('amazon_callback_uri');
+  const amazonState = params.get('amazon_state');
+  const sellerId = params.get('selling_partner_id');
+  if (!amazonCallbackUri && !amazonState && !sellerId) return false;
+  const amazonConnections = connections.filter((item) => item.marketplace === 'amazon');
+  let connection = selectedConnection();
+  if (connection?.marketplace !== 'amazon' && amazonConnections.length === 1) {
+    connection = amazonConnections[0]; activeConnectionId = connection.id; sessionStorage.setItem(ACTIVE_CONNECTION_KEY, connection.id);
+  }
+  try {
+    if (!connection || connection.marketplace !== 'amazon' || !amazonCallbackUri || !amazonState || !sellerId) throw new Error('AMAZON_LOGIN_REQUEST_INVALID');
+    const data = await functionRequest('amazon-auth-login', { method: 'POST', body: { connection_id: connection.id, amazon_callback_uri: amazonCallbackUri, amazon_state: amazonState, selling_partner_id: sellerId, version: params.get('version') || '' } });
+    const target = new URL(String(data.continuationUrl || ''));
+    const allowedHosts = new Set(['sellercentral.amazon.com.tr', 'sellercentral.amazon.com', 'amazon.com']);
+    if (target.protocol !== 'https:' || !allowedHosts.has(target.hostname) || !target.pathname.startsWith('/apps/authorize/confirm/')) throw new Error('AMAZON_LOGIN_HANDOFF_FAILED');
+    history.replaceState(null, '', `${location.pathname}${location.hash}`);
+    location.assign(target.toString());
+    return true;
+  } catch (error) {
+    for (const key of ['amazon_callback_uri', 'amazon_state', 'selling_partner_id', 'version']) params.delete(key);
+    const query = params.toString();
+    history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
+    setNotice(els.credentialMessage, humanError(error), 'bad');
+    document.getElementById('credentials')?.scrollIntoView({ block: 'start' });
+    return false;
+  }
+}
+
 (async function boot() {
   session = parseStoredSession();
   if (!session) { renderSignedOut(); return; }
@@ -608,6 +676,21 @@ els.refreshAllBtn.addEventListener('click', async () => {
   try {
     await ensureAccessToken();
     await loadConnections();
+    const callbackParams = new URLSearchParams(location.search);
+    if (await completeAmazonLoginHandoff(callbackParams)) return;
+    const amazonResult = callbackParams.get('amazon');
+    if (amazonResult === 'connected') {
+      setNotice(els.credentialMessage, 'Amazon mağazası güvenli şekilde bağlandı. Finans verilerini artık eşitleyebilirsin.', 'good');
+      document.getElementById('credentials')?.scrollIntoView({ block: 'start' });
+    } else if (amazonResult === 'error') {
+      setNotice(els.credentialMessage, humanError(new Error(callbackParams.get('code') || 'AMAZON_OAUTH_EXCHANGE_FAILED')), 'bad');
+      document.getElementById('credentials')?.scrollIntoView({ block: 'start' });
+    }
+    if (amazonResult) {
+      callbackParams.delete('amazon'); callbackParams.delete('code');
+      const query = callbackParams.toString();
+      history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
+    }
   } catch (error) {
     clearSession();
     renderSignedOut();

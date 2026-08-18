@@ -5,7 +5,7 @@
     {key:'trendyol',label:'Trendyol',tier:'ready',mode:'api',sellerIdLabel:'Satıcı numarası',sellerIdRequired:true,credentialFields:[{key:'api_key',label:'API Key'},{key:'api_secret',label:'API Secret'}],capabilities:['Sipariş V2','Finans hareketleri','Kargo','Otomatik eşitleme'],note:'Entegrasyon hazır; ilk yetkili mağazada gerçek veri doğrulaması bekliyor.'},
     {key:'hepsiburada',label:'Hepsiburada',tier:'ready',mode:'api',sellerIdLabel:'Merchant ID (UUID)',sellerIdRequired:true,credentialFields:[{key:'username',label:'Entegrasyon kullanıcı adı'},{key:'password',label:'Servis anahtarı'}],capabilities:['Finans hareketleri','Ürün kârlılığı','Komisyon ve kesintiler','Otomatik eşitleme'],note:'Entegrasyon hazır; ilk yetkili mağazada gerçek veri doğrulaması bekliyor.'},
     {key:'n11',label:'n11',tier:'ready',mode:'api',sellerIdLabel:'Satıcı ID',sellerIdRequired:false,credentialFields:[{key:'app_key',label:'API anahtarı'},{key:'app_secret',label:'API şifresi'}],capabilities:['Siparişler','Onaylı iadeler','Komisyon ve hizmet oranları','Otomatik eşitleme'],note:'Entegrasyon hazır; kargo ve son ekstre kesintileri n11 ödeme detay raporuyla tamamlanır, ilk yetkili mağaza doğrulaması bekliyor.'},
-    {key:'amazon',label:'Amazon',tier:'gated',mode:'oauth',sellerIdLabel:'Seller ID',sellerIdRequired:false,credentialFields:[],capabilities:['SP-API','Finances API','OAuth'],note:'Amazon uygulama kaydı, rol onayı ve satıcı OAuth izni gerekir.'},
+    {key:'amazon',label:'Amazon',tier:'gated',mode:'oauth',sellerIdLabel:'Seller ID',sellerIdRequired:false,credentialFields:[],capabilities:['Güvenli OAuth','Finances API 2024','Ürün kârlılığı','Otomatik eşitleme'],note:'OAuth ve finans senkron altyapısı hazır. Canlı bağlantı için Amazon uygulama kaydı, Finance and Accounting rolü ve satıcı izni gerekir.'},
     {key:'flo',label:'FLO',tier:'import',mode:'file',sellerIdLabel:'Mağaza / iş ortağı kodu',sellerIdRequired:false,credentialFields:[],capabilities:['Rapor içe aktarma','Partner API geçişi'],note:'Partner erişimi veya standart finans raporu ile çalışır.'}
   ];
   const tierLabels={verified:'Canlı doğrulandı',ready:'Hazır · doğrulama bekliyor',beta:'Geliştiriliyor',gated:'Onay gerekli',import:'Rapor'};
@@ -40,19 +40,23 @@
     if(capabilities)capabilities.innerHTML=(provider.capabilities||[]).map((item)=>`<span>${escapeHtml(item)}</span>`).join('');
     const title=byId('credentialTitle'),description=byId('credentialDescription'),note=byId('credentialNote'),keyLabel=byId('apiKeyLabel'),secretLabel=byId('apiSecretLabel'),panel=document.querySelector('.credential-panel');
     if(title)title.textContent=`${provider.label} veri erişimi`;
-    if(description)description.textContent=provider.mode==='file'?'Standart raporla hemen başlayın; partner API erişimi açıldığında mağazayı yeniden kurmadan devam edin.':provider.mode==='oauth'?'OAuth bağlantısı yalnızca onaylı Amazon SP-API uygulamasıyla açılır.':'Kimlik bilgileri tarayıcıda tutulmaz; sunucu tarafındaki şifreli kasaya yazılır.';
+    if(description)description.textContent=provider.mode==='file'?'Standart raporla hemen başlayın; partner API erişimi açıldığında mağazayı yeniden kurmadan devam edin.':provider.mode==='oauth'?'Amazon izni güvenli OAuth ekranında verilir; satıcı şifresi KârKalkan’a girilmez.':'Kimlik bilgileri tarayıcıda tutulmaz; sunucu tarafındaki şifreli kasaya yazılır.';
     if(note)note.textContent=provider.note;
     const fields=provider.credentialFields||[];
     if(keyLabel)keyLabel.textContent=fields[0]?.label||'Harici yetkilendirme';
     if(secretLabel)secretLabel.textContent=fields[1]?.label||'Bu kanalda manuel anahtar yok';
     panel?.classList.toggle('is-gated',!fields.length);
     if(els.saveCredentialsBtn)els.saveCredentialsBtn.hidden=!fields.length;
-    if(els.syncBtn)els.syncBtn.textContent=provider.key==='trendyol'?'Trendyol’u eşitle':provider.key==='hepsiburada'?'Hepsiburada’yı eşitle':provider.key==='n11'?'n11’i eşitle':'Raporla veri getir';
+    const oauthButton=byId('oauthConnectBtn');
+    if(oauthButton)oauthButton.hidden=provider.key!=='amazon';
+    if(els.syncBtn)els.syncBtn.textContent=provider.key==='trendyol'?'Trendyol’u eşitle':provider.key==='hepsiburada'?'Hepsiburada’yı eşitle':provider.key==='n11'?'n11’i eşitle':provider.key==='amazon'?'Amazon’u eşitle':'Raporla veri getir';
   }
 
   function renderCredentialState(connection,value){
     const provider=getProvider(connection?.marketplace||'trendyol');
     renderActiveProvider(connection,provider);
+    const oauthButton=byId('oauthConnectBtn');
+    if(oauthButton&&provider.key==='amazon')oauthButton.textContent=value?.configured?'Amazon iznini yenile':'Amazon’a güvenli bağlan';
     if(value?.actionRequired&&els.credentialMessage)setNotice(els.credentialMessage,value.actionRequired,provider.mode==='file'?'good':'');
   }
 

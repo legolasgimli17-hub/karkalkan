@@ -34,6 +34,20 @@ verify_jwt = true
 [functions.n11-sync]
 verify_jwt = true
 
+[functions.amazon-auth-start]
+verify_jwt = true
+
+[functions.amazon-auth-login]
+verify_jwt = true
+
+# Amazon redirects the seller here without a Supabase JWT. The callback uses
+# a short-lived, one-use, SHA-256-hashed OAuth state before exchanging tokens.
+[functions.amazon-auth-callback]
+verify_jwt = false
+
+[functions.amazon-sync]
+verify_jwt = true
+
 [functions.sync-history]
 verify_jwt = true
 

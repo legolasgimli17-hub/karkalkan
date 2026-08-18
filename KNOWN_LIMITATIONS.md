@@ -12,6 +12,8 @@ The Hepsiburada finance integration has been implemented against the official Ba
 
 The n11 integration has been implemented against the official shipment-package REST API and approved-return SOAP API. It calculates order-level commission, service-fee and stoppage estimates from the provider fields, but n11 exposes final cargo and some account-statement adjustments through payment-detail reports rather than the public order API. No authorized n11 merchant account was available for first-store reconciliation.
 
+The Amazon Türkiye public-app OAuth handoff and Finances API v2024-06-19 worker are implemented. The flow validates one-use state, stores the LWA refresh token in Vault, calls the Europe endpoint for marketplace `A33AVAJ2PDY3EV`, and imports only non-deferred TRY transactions. No buyer-owned Amazon application credentials, role approval or authorized seller account were available for production reconciliation. Amazon financial events can lag by up to 48 hours, and item-level profit detail depends on item breakdown/context coverage in Amazon's response.
+
 A buyer or tester should validate each full path before claiming real-store production proof:
 
 `account -> store connection -> credentials -> sync -> sales/returns/financial data -> product cost -> profitability output`
@@ -19,6 +21,8 @@ A buyer or tester should validate each full path before claiming real-store prod
 For Hepsiburada, compare the same 7-day period in KârKalkan and the merchant finance statement, including payment, return, commission, service fee, cargo and stoppage totals. Record any provider-specific transaction type that lands in the visible unclassified-adjustment list before declaring the integration fully validated.
 
 For n11, compare a 7-day period against Seller Office and the payment-detail report. Automatic API results must remain labelled as order-based estimates until cargo and final statement adjustments are reconciled through that report.
+
+For Amazon, complete the draft OAuth flow first, then compare an older, closed 7-day window against the same Seller Central transaction/settlement period. Verify gross product charges, refunds, commission, fulfillment/delivery fees, other Amazon fees, transaction totals, product quantities and any visible unclassified top-level breakdown type before changing the provider from approval-gated to live-verified.
 
 ## 2. Pre-revenue status — business disclosure
 
@@ -50,7 +54,7 @@ Source code, deployment and documentation make the product transferable, but do 
 
 ## 9. Very large-store synchronization — documented capacity boundary
 
-The current Trendyol, Hepsiburada and n11 workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
+The current Trendyol, Hepsiburada, n11 and Amazon workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
 
 Before onboarding stores whose selected sync window can exceed a worker ceiling, implement a resumable job design with:
 

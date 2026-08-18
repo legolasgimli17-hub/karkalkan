@@ -31,6 +31,27 @@ Deno.serve(async(req:Request)=>{
   if(connErr)return json(500,{error:'DB_ERROR'},origin)
   if(!connection||!isMarketplace(connection.marketplace))return json(404,{error:'NOT_FOUND'},origin)
   const provider=PROVIDERS[connection.marketplace]
+  if(connection.marketplace==='amazon'){
+    const secretName=`kk.amazon.${connectionId}.refresh_token`
+    if(req.method==='GET'){
+      try{
+        const rows=await sql`select name from vault.secrets where name=${secretName} limit 1`
+        const configured=rows.length===1
+        return json(200,{configured,mode:'oauth',tier:provider.tier,fields:[],...(configured?{}:{actionRequired:provider.note})},origin)
+      }catch{return json(500,{error:'VAULT_READ_FAILED'},origin)}
+    }
+    if(req.method==='DELETE'){
+      try{
+        await sql.begin(async tx=>{
+          await tx`delete from vault.secrets where name=${secretName}`
+          await tx`delete from public.amazon_oauth_states where connection_id=${connectionId}::uuid and user_id=${user.id}::uuid`
+          await tx`update public.marketplace_connections set external_seller_id=null,status='pending',updated_at=now() where id=${connectionId}::uuid and user_id=${user.id}::uuid`
+        })
+        return json(200,{deleted:true},origin)
+      }catch{return json(500,{error:'VAULT_DELETE_FAILED'},origin)}
+    }
+    return json(405,{error:'METHOD_NOT_ALLOWED'},origin)
+  }
   if(!provider.credentialFields.length)return json(200,{configured:false,mode:provider.mode,tier:provider.tier,actionRequired:provider.note,fields:[]},origin)
   const names=provider.credentialFields.map(field=>`kk.${connection.marketplace}.${connectionId}.${field.vaultKey||field.key}`)
 
