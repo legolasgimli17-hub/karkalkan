@@ -46,6 +46,7 @@ Deno.serve(async(req:Request)=>{
     if(provider.sellerIdRequired&&!sellerId)return json({error:'INVALID_SELLER_ID'},400,origin)
     if(marketplace==='trendyol'&&!/^\d{1,20}$/.test(sellerId))return json({error:'INVALID_SELLER_ID'},400,origin)
     if(marketplace==='hepsiburada'&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sellerId))return json({error:'INVALID_HEPSIBURADA_MERCHANT_ID'},400,origin)
+    if(marketplace==='flo'&&!/^[A-Za-z0-9._-]{2,80}$/.test(sellerId))return json({error:'INVALID_FLO_SELLER_ID'},400,origin)
     const {data,error}=await admin.from('marketplace_connections').insert({
       user_id:user.id,marketplace,display_name:displayName,external_seller_id:sellerId||null,
       status:'pending',connection_mode:provider.mode,capability_tier:provider.tier

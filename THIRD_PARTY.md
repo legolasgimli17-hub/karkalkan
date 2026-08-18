@@ -13,6 +13,11 @@ The authenticated seller panel does not depend on a remotely loaded `@supabase/s
 
 - Paddle Billing — Merchant of Record and hosted checkout/customer portal. Card and invoice data are not collected by KârKalkan. Server-to-server requests use the Paddle API, and incoming events are accepted only after raw-body `Paddle-Signature` verification.
 - Production billing is intentionally dormant until the buyer/owner configures an approved Paddle account, checkout domain, webhook destination and recurring price IDs documented in `SETUP.md`.
+- Checkout is fail-closed: partial configuration never enables a plan button or transaction creation. Webhook timestamps use a five-second default replay window, configurable only within a bounded range.
+
+## Marketplace partner access
+
+- FLO automatic API access is merchant-specific and approval-gated. KârKalkan stores assigned partner credentials only in Supabase Vault and does not call an undocumented endpoint. The working fallback is the bounded normalized finance-report importer documented in `docs/FLO_PARTNER_ACTIVATION.md`.
 
 ## Supabase Edge Functions
 

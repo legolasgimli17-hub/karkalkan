@@ -42,13 +42,14 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - [`docs/SECURITY_ARCHITECTURE.md`](docs/SECURITY_ARCHITECTURE.md) — trust boundaries and implemented controls
 - [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — protected assets, threats and residual launch gates
 - [`docs/SECURITY_REVIEW_2026-08-18.md`](docs/SECURITY_REVIEW_2026-08-18.md) — latest review scope and evidence
+- [`docs/CONTROL_PLANE_SECURITY.md`](docs/CONTROL_PLANE_SECURITY.md) — owner-account MFA, recovery and provider activation gates
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — change, testing and secret-handling rules
 
 CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
 
 ## Backend reproducibility
 
-All 31 Supabase Edge Function sources are checked into `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state. Amazon Türkiye includes the complete public-app OAuth handoff and Finances API v2024-06-19 worker; activation still depends on buyer-owned Amazon application credentials and approval.
+All 31 Supabase Edge Function sources are checked into `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state. Amazon Türkiye includes the complete public-app OAuth handoff and Finances API v2024-06-19 worker; activation still depends on buyer-owned Amazon application credentials and approval. FLO supports bounded normalized finance-report import and a Vault-backed private-partner credential handoff; an automatic FLO worker is deliberately gated until FLO supplies the merchant-specific endpoint contract.
 
 The decision center's **Money Leak Radar** is an evidence-weighted financial-confidence system, not a generic store-health score. Non-applicable evidence is excluded from its denominator, and each gap is tied to an affected TL basis and a concrete action without presenting unknown amounts as proven loss.
 

@@ -1,5 +1,5 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
-import { paddleConfig, PLAN_CATALOG } from '../_shared/billing.ts'
+import { paddleConfig, paddleReadiness, PLAN_CATALOG } from '../_shared/billing.ts'
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('Origin')
@@ -10,14 +10,15 @@ Deno.serve(async(req:Request)=>{
   try{auth=await authenticate(req)}catch{return json(503,{error:'SERVER_CONFIG'},origin)}
   if(!auth)return json(401,{error:'UNAUTHORIZED'},origin)
   const config=paddleConfig()
+  const readiness=paddleReadiness(config)
   const [{data:subscription,error:subscriptionError},{count,error:countError}]=await Promise.all([
     auth.admin.from('billing_subscriptions').select('plan_key,status,currency,current_period_start,current_period_end,trial_end,scheduled_change,paddle_subscription_id').eq('user_id',auth.user.id).maybeSingle(),
     auth.admin.from('marketplace_connections').select('id',{count:'exact',head:true}).eq('user_id',auth.user.id)
   ])
   if(subscriptionError||countError)return json(500,{error:'DB_READ_FAILED'},origin)
-  const configuredPlans=PLAN_CATALOG.map(plan=>({...plan,checkoutConfigured:Boolean(config.prices[plan.key])}))
+  const configuredPlans=PLAN_CATALOG.map(plan=>({...plan,checkoutConfigured:readiness.configuredPrices[plan.key]}))
   return json(200,{
-    billingReady:Boolean(config.apiKey&&Object.values(config.prices).some(Boolean)),
+    billingReady:readiness.ready,
     environment:config.environment,
     subscription:subscription||{plan_key:'free',status:'inactive'},
     usage:{stores:count||0},

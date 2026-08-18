@@ -16,6 +16,8 @@ For a clean acquisition handover, use buyer-controlled accounts for:
 
 Do not reuse the seller's personal tokens.
 
+Before production ownership is transferred, complete the MFA, recovery-code and least-privilege checklist in `docs/CONTROL_PLANE_SECURITY.md`. These controls require the authorized human account owner; passwords, one-time codes and recovery codes must never be pasted into chat, source code or issues.
+
 ## Repository deployment
 
 1. Import the repository into Vercel.
@@ -66,6 +68,7 @@ The browser Supabase client is pinned in `v4.html` to `@supabase/supabase-js@2.5
 - `PADDLE_WEBHOOK_SECRET` — secret for the Paddle notification destination that points to `/functions/v1/billing-webhook`.
 - `PADDLE_CHECKOUT_URL` — Paddle-approved return/checkout domain, normally `https://karkalkan.vercel.app/uygulama#billing`.
 - `PADDLE_PRICE_STARTER_MONTHLY`, `PADDLE_PRICE_GROWTH_MONTHLY`, `PADDLE_PRICE_SCALE_MONTHLY` — Paddle recurring price IDs. The catalog amounts in Paddle must match the visible pricing before production is enabled.
+- `PADDLE_WEBHOOK_TOLERANCE_SECONDS` — accepted webhook timestamp skew, default `5`; values outside `5..120` fall back to `5`.
 - `AMAZON_SPAPI_APPLICATION_ID` — Amazon public SP-API application ID used in Seller Central consent URLs.
 - `AMAZON_LWA_CLIENT_ID` and `AMAZON_LWA_CLIENT_SECRET` — Login with Amazon credentials. Store only as Edge Function secrets.
 - `AMAZON_SPAPI_REDIRECT_URI` — exact registered redirect URI; for this project it is `https://<project-ref>.supabase.co/functions/v1/amazon-auth-callback`.
@@ -81,7 +84,7 @@ AMAZON_SPAPI_APPLICATION_ID=amzn1.sellerapps.app.REPLACE_ME
 AMAZON_SPAPI_APP_STAGE=draft
 ```
 
-The application never collects card numbers. `billing-checkout` creates a Paddle transaction and redirects to Paddle's hosted checkout. `billing-webhook` verifies the exact raw request body using `Paddle-Signature`, records an idempotency hash, and stores only safe subscription identifiers/state. Invoices, tax collection and payment-method changes stay in Paddle's hosted portal.
+The application never collects card numbers. `billing-checkout` creates a Paddle transaction and redirects to Paddle's hosted checkout. It remains closed unless the API key, webhook secret, HTTPS checkout URL and all three recurring price IDs are valid; this prevents charging a customer while entitlement provisioning is incomplete. `billing-webhook` verifies the exact raw request body using `Paddle-Signature`, enforces the short replay window, records an idempotency hash, and stores only safe subscription identifiers/state. Invoices, tax collection and payment-method changes stay in Paddle's hosted portal. Follow `docs/PADDLE_GO_LIVE.md` for the owner-only activation steps.
 
 Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself as a direct database URL, so application code must not use that default for Edge runtime SQL. The custom `KARKALKAN_DB_POOLER_URL` secret avoids the reserved prefix. The shared Postgres factory forces `prepare:false` because transaction pooling does not support prepared statements, and caps each Edge isolate at `max:1` client connection. A wrong/missing pooler URL produces `SERVER_CONFIG` instead of silently opening direct connections.
 
@@ -116,6 +119,18 @@ The code path is complete, but Amazon account creation, identity/business verifi
 6. Start with a 7-day sync. The worker calls the Europe endpoint for Turkey marketplace `A33AVAJ2PDY3EV`, imports released Finances API v2024-06-19 transactions and keeps unknown breakdowns visible in safe synchronization metadata.
 7. Compare the same period against Amazon settlement/transaction reports. Amazon states that financial events can lag by up to 48 hours, so do not compare a still-moving most-recent period as though it were final.
 8. After Amazon approves/publishes the application and the end-to-end reconciliation passes, set `AMAZON_SPAPI_APP_STAGE=published` and repeat the acceptance test.
+
+### FLO partner activation
+
+FLO partner access is private and granted per merchant. KârKalkan does not guess undocumented provider endpoints or response fields.
+
+1. Ask the FLO merchant/partner contact for the **Tedarikçi / mağaza ID**, **API kullanıcı adı**, **API şifresi**, current base URL, authentication scheme and the official finance/order response documentation for that merchant account.
+2. Create the FLO connection with the assigned ID. Store the API username and password only in KârKalkan's credential form; they are written to Supabase Vault and do not mark the connection as automatically verified.
+3. Until the official endpoint contract is supplied, export the merchant finance report and use KârKalkan's bounded standard-finance CSV path. This path is operational now and keeps the provider provenance as FLO.
+4. Give the endpoint documentation—not the password—to the integration maintainer. Implement the automatic worker against that exact contract, then perform the closed-period reconciliation described in `KNOWN_LIMITATIONS.md` before changing the provider from approval-gated to live-verified.
+5. Rotate the API password immediately if it was pasted into chat, email, an issue, source code or a committed environment file.
+
+The exact owner/provider handoff and the required evidence are recorded in `docs/FLO_PARTNER_ACTIVATION.md`.
 
 ### Origin / CORS note for a buyer
 
