@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1b222b">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="KârKalkan çerez, tarayıcı depolama ve analitik açıklaması.">
+  <link rel="canonical" href="https://karkalkan.vercel.app/cerezler">
+  <title>Çerez ve Analitik — KârKalkan</title>
+  <link rel="stylesheet" href="/legal.css?v=20260818">
+</head>
+<body>
+<main class="legal-shell">
+  <header class="legal-top">
+    <a class="legal-brand" href="/"><span>K</span>KârKalkan</a>
+    <nav aria-label="Hukuki belgeler"><a href="/gizlilik">Gizlilik</a><a href="/kvkk">KVKK</a><a href="/kullanim-kosullari">Kullanım Koşulları</a><a href="/uygulama">Uygulama</a></nav>
+  </header>
+
+  <section class="legal-hero">
+    <p class="legal-kicker">TARAYICI DEPOLAMA &amp; ANALİTİK</p>
+    <h1>Çerez ve Analitik Açıklaması</h1>
+    <p>KârKalkan reklam profili oluşturmak için üçüncü taraf reklam çerezleri kullanmayı amaçlamaz. Ürünün mevcut analitik ve oturum mimarisi aşağıdaki şekilde sınırlandırılmıştır.</p>
+    <div class="legal-status"><strong>Operatör bilgisi tamamlanmalı</strong>Bu açıklama teknik durumu belgeler; nihai hukuki sınıflandırma ve gerekirse açık rıza/tercih mekanizması, canlıya çıkış öncesi veri sorumlusu tarafından doğrulanmalıdır.</div>
+    <div class="legal-meta"><span>Sürüm: 18 Ağustos 2026</span><span>Reklam çerezi: yok</span><span>Vercel Analytics: çerezsiz</span></div>
+  </section>
+
+  <section class="legal-content">
+    <article class="legal-card"><h2>1. Vercel Web Analytics</h2><p>KârKalkan, ziyaret ve sayfa görünümü istatistikleri için Vercel Web Analytics kullanır. Vercel’in ürün dokümantasyonuna göre Web Analytics çerez kullanmaz; ziyaretçiyi günler veya farklı siteler arasında izlemek yerine gelen isteğin özelliklerinden günlük olarak yenilenen bir hash üretir ve verileri anonim/agrega istatistik amacıyla işler.</p><p>KârKalkan ayrıca uygulama rotasında query string ve fragment değerlerini analitik olayından temizleyerek OAuth/recovery gibi geçici URL değerlerinin analitiğe taşınmamasını hedefler.</p></article>
+
+    <article class="legal-card"><h2>2. KârKalkan onboarding analitiği</h2><p>Uygulama, kullanıcının ilk kurulumda hangi aşamada kaldığını anlayabilmek için yalnız düşük kardinaliteli olaylar üretir: mağaza bağlantısı, veri getirme, maliyet ekleme, sonuç inceleme ve tamamlanma. Plan bağımsız Supabase agregasında kullanıcı ID’si, mağaza ID’si, ürün ID’si, banka bilgisi veya finans tutarı saklanmaz; yalnız günlük toplu sayaç tutulur.</p></article>
+
+    <article class="legal-card"><h2>3. Zorunlu tarayıcı depolaması</h2><p>Giriş oturumunu sürdürmek, seçili mağazayı hatırlamak ve aynı tarayıcı sekmesinde bazı tekrar analitik olaylarını engellemek için <code>sessionStorage</code> veya benzeri birinci taraf tarayıcı depolama mekanizmaları kullanılabilir. Bunlar reklam profili oluşturmak için kullanılmaz. Oturum/kimlik doğrulama verisinin silinmesi kullanıcıyı sistemden çıkarabilir veya çalışma alanı seçimini sıfırlayabilir.</p></article>
+
+    <article class="legal-card"><h2>4. Ödeme sağlayıcısı ve dış siteler</h2><p>Paddle ödeme/abonelik akışı etkinleştirildiğinde kullanıcı güvenli ödeme veya müşteri portalı için sağlayıcının kendi alan adına yönlendirilebilir. Bu aşamada sağlayıcının kendi çerez ve gizlilik tercihleri geçerli olabilir. Benzer biçimde pazaryeri OAuth ekranları KârKalkan dışındaki alan adlarında çalışır.</p></article>
+
+    <article class="legal-card"><h2>5. Gelecekte değişiklik olursa</h2><p>KârKalkan’a reklam, davranışsal profil, oturum kaydı, heatmap veya zorunlu olmayan izleme SDK’sı eklenirse bu sayfa ve gerekli tercih/açık rıza mekanizması canlıya alınmadan önce güncellenmelidir. Yeni bir izleme teknolojisi “yalnız teknik değişiklik” sayılmamalıdır.</p></article>
+  </section>
+
+  <footer class="legal-footer"><span>© 2026 KârKalkan · Teknik analitik açıklaması.</span><div class="legal-links"><a href="/gizlilik">Gizlilik</a><a href="/kvkk">KVKK</a><a href="/kullanim-kosullari">Kullanım Koşulları</a></div></footer>
+</main>
+</body>
+</html>
