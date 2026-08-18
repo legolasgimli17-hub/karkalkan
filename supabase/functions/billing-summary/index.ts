@@ -25,7 +25,7 @@ Deno.serve(async(req:Request)=>{
     environment:config.environment,
     subscription:effectiveSubscription,
     usage:{stores,storeLimit:entitlement.stores,canCreateStore:stores<entitlement.stores},
-    entitlement:{planKey:entitlement.planKey,stores:entitlement.stores,orders:entitlement.orders,entitled:entitlement.entitled},
+    entitlement:{planKey:entitlement.planKey,stores:entitlement.stores,entitled:entitlement.entitled},
     plans:configuredPlans
   },origin)
 })
