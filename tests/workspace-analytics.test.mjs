@@ -23,6 +23,16 @@ test('workspace analytics reports only low-cardinality onboarding funnel state',
   assert.match(source,/targetStep/);
 });
 
+test('workspace funnel also uses the authenticated aggregate endpoint without blocking the UI',async()=>{
+  const source=await read('workspace-analytics.js');
+  for(const name of ['onboarding_stage_viewed','onboarding_completed','onboarding_next_clicked','onboarding_step_clicked'])assert.match(source,new RegExp(name));
+  assert.match(source,/functionRequest\('product-analytics', \{ method: 'POST', body: payload \}\)\.catch\(\(\) => \{\}\)/);
+  assert.match(source,/event_name: eventName/);
+  assert.match(source,/completed_steps:/);
+  assert.match(source,/target_step:/);
+  assert.doesNotMatch(source,/await functionRequest\('product-analytics'/);
+});
+
 test('workspace analytics never reads seller identity, finance values or auth tokens',async()=>{
   const source=await read('workspace-analytics.js');
   for(const forbidden of ['userEmail','authEmail','sellerId','external_seller_id','connectionId','access_token','refresh_token','grossSales','sellerRevenue','coveredProfit','costAmount']){
