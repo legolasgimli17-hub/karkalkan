@@ -95,6 +95,9 @@ verify_jwt = true
 [functions.billing-portal]
 verify_jwt = true
 
+[functions.bank-reconciliation]
+verify_jwt = true
+
 # Paddle signs the exact raw body; it does not send a Supabase JWT.
 [functions.billing-webhook]
 verify_jwt = false
