@@ -66,6 +66,10 @@ The browser Supabase client is pinned in `v4.html` to `@supabase/supabase-js@2.5
 - `PADDLE_WEBHOOK_SECRET` — secret for the Paddle notification destination that points to `/functions/v1/billing-webhook`.
 - `PADDLE_CHECKOUT_URL` — Paddle-approved return/checkout domain, normally `https://karkalkan.vercel.app/uygulama#billing`.
 - `PADDLE_PRICE_STARTER_MONTHLY`, `PADDLE_PRICE_GROWTH_MONTHLY`, `PADDLE_PRICE_SCALE_MONTHLY` — Paddle recurring price IDs. The catalog amounts in Paddle must match the visible pricing before production is enabled.
+- `AMAZON_SPAPI_APPLICATION_ID` — Amazon public SP-API application ID used in Seller Central consent URLs.
+- `AMAZON_LWA_CLIENT_ID` and `AMAZON_LWA_CLIENT_SECRET` — Login with Amazon credentials. Store only as Edge Function secrets.
+- `AMAZON_SPAPI_REDIRECT_URI` — exact registered redirect URI; for this project it is `https://<project-ref>.supabase.co/functions/v1/amazon-auth-callback`.
+- `AMAZON_SPAPI_APP_STAGE` — `draft` while using Amazon's beta authorization flow; set to `published` only after the application is approved/published.
 
 Example shape:
 
@@ -73,6 +77,8 @@ Example shape:
 SUPABASE_PUBLISHABLE_KEYS={"default":"sb_publishable_REPLACE_ME"}
 PADDLE_ENVIRONMENT=sandbox
 PADDLE_PRICE_STARTER_MONTHLY=pri_REPLACE_ME
+AMAZON_SPAPI_APPLICATION_ID=amzn1.sellerapps.app.REPLACE_ME
+AMAZON_SPAPI_APP_STAGE=draft
 ```
 
 The application never collects card numbers. `billing-checkout` creates a Paddle transaction and redirects to Paddle's hosted checkout. `billing-webhook` verifies the exact raw request body using `Paddle-Signature`, records an idempotency hash, and stores only safe subscription identifiers/state. Invoices, tax collection and payment-method changes stay in Paddle's hosted portal.
@@ -97,6 +103,19 @@ Supabase reserves the `SUPABASE_` prefix and supplies `SUPABASE_DB_URL` itself a
 5. Compare order totals, seller discounts, commission/service-rate calculations and approved returns with the same period in Seller Office.
 6. n11's public order API does not expose every final cargo and account-statement adjustment. Import the n11 payment-detail report through KârKalkan's standard finance report path before treating the result as final cash reconciliation.
 7. Rotate the API password immediately if it was exposed outside the merchant panel/KârKalkan credential form.
+
+### Amazon Türkiye application activation
+
+The code path is complete, but Amazon account creation, identity/business verification and production application registration must be completed by an authorized business account owner who meets Amazon's eligibility requirements.
+
+1. In Amazon's Solution Provider Portal, register a public seller application for the Turkey store and request the **Finance and Accounting** role. KârKalkan's financial flow does not request customer PII or restricted operations.
+2. Register `https://karkalkan.vercel.app/uygulama` as the website **Log-in URI**.
+3. Register `https://<project-ref>.supabase.co/functions/v1/amazon-auth-callback` as the exact **Redirect URI**.
+4. Save the assigned Application ID, LWA Client ID and LWA Client Secret only in Supabase Edge Function secrets using the names above. Keep `AMAZON_SPAPI_APP_STAGE=draft` during Amazon's beta test flow.
+5. In KârKalkan, create/select an Amazon connection and choose **Amazon’a güvenli bağlan**. The app validates Amazon's callback host, creates a one-use state, exchanges the five-minute authorization code server-side and stores only the refresh token in Supabase Vault.
+6. Start with a 7-day sync. The worker calls the Europe endpoint for Turkey marketplace `A33AVAJ2PDY3EV`, imports released Finances API v2024-06-19 transactions and keeps unknown breakdowns visible in safe synchronization metadata.
+7. Compare the same period against Amazon settlement/transaction reports. Amazon states that financial events can lag by up to 48 hours, so do not compare a still-moving most-recent period as though it were final.
+8. After Amazon approves/publishes the application and the end-to-end reconciliation passes, set `AMAZON_SPAPI_APP_STAGE=published` and repeat the acceptance test.
 
 ### Origin / CORS note for a buyer
 

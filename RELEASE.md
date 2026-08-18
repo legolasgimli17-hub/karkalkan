@@ -11,7 +11,7 @@ This baseline records the cleaned product state intended for product validation 
 - Canonical authenticated application route: `/uygulama`
 - API-free public example experience and free calculator
 - Simplified seller-facing language
-- Complete checked-in Supabase Edge Function source inventory (27/27)
+- Complete checked-in Supabase Edge Function source inventory (31/31)
 - Supabase migration history and per-function JWT configuration
 - Buyer setup, architecture, transfer, limitation and dependency documentation
 - Safe server configuration template
@@ -29,8 +29,9 @@ The outstanding marketplace product-validation items are:
 - Complete a real Trendyol seller-account end-to-end test and record the result.
 - Complete a real Hepsiburada seller-account finance/performance sync and reconcile the result against the merchant statement.
 - Complete a real n11 seller-account order/return sync and reconcile it with the n11 payment-detail report, including cargo and final statement adjustments.
+- Complete Amazon public-app approval, seller OAuth authorization and a closed-period Finances API v2024-06-19 reconciliation for Amazon Türkiye.
 
-Do not claim real-store Trendyol, Hepsiburada or n11 production proof until the corresponding test is completed.
+Do not claim real-store Trendyol, Hepsiburada, n11 or Amazon production proof until the corresponding test is completed.
 
 ## Platform note
 
