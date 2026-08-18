@@ -10,11 +10,15 @@ The Trendyol integration has been implemented against the Partner API flow used 
 
 The Hepsiburada finance integration has been implemented against the official Basic Auth finance transaction and performance endpoints. The Edge Function is deployed and the schema migration is applied, but no authorized Hepsiburada merchant account was available for first-store reconciliation.
 
+The n11 integration has been implemented against the official shipment-package REST API and approved-return SOAP API. It calculates order-level commission, service-fee and stoppage estimates from the provider fields, but n11 exposes final cargo and some account-statement adjustments through payment-detail reports rather than the public order API. No authorized n11 merchant account was available for first-store reconciliation.
+
 A buyer or tester should validate each full path before claiming real-store production proof:
 
 `account -> store connection -> credentials -> sync -> sales/returns/financial data -> product cost -> profitability output`
 
 For Hepsiburada, compare the same 7-day period in KârKalkan and the merchant finance statement, including payment, return, commission, service fee, cargo and stoppage totals. Record any provider-specific transaction type that lands in the visible unclassified-adjustment list before declaring the integration fully validated.
+
+For n11, compare a 7-day period against Seller Office and the payment-detail report. Automatic API results must remain labelled as order-based estimates until cargo and final statement adjustments are reconciled through that report.
 
 ## 2. Pre-revenue status — business disclosure
 
@@ -46,7 +50,7 @@ Source code, deployment and documentation make the product transferable, but do 
 
 ## 9. Very large-store synchronization — documented capacity boundary
 
-The current Trendyol and Hepsiburada workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
+The current Trendyol, Hepsiburada and n11 workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
 
 Before onboarding stores whose selected sync window can exceed a worker ceiling, implement a resumable job design with:
 

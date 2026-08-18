@@ -197,6 +197,15 @@ function humanError(error) {
     'HEPSIBURADA_NETWORK': 'Hepsiburada API bağlantısı kurulamadı. Bir süre sonra tekrar dene.',
     'HEPSIBURADA_BAD_JSON': 'Hepsiburada beklenmeyen bir yanıt döndürdü; hata kayda alındı.',
     'HEPSIBURADA_HTTP_ERROR': 'Hepsiburada finans servisi isteği tamamlayamadı.',
+    'N11_UNAUTHORIZED': 'n11 API anahtarı veya API şifresi reddedildi.',
+    'N11_FORBIDDEN': 'n11 bu mağaza için API erişimine izin vermedi.',
+    'N11_RATE_LIMIT': 'n11 istek limiti doldu. Bir süre sonra tekrar dene.',
+    'N11_NETWORK': 'n11 sipariş servisine bağlantı kurulamadı.',
+    'N11_RETURN_NETWORK': 'n11 iade servisine bağlantı kurulamadı.',
+    'N11_BAD_JSON': 'n11 sipariş servisi beklenmeyen bir yanıt döndürdü.',
+    'N11_HTTP_ERROR': 'n11 sipariş servisi isteği tamamlayamadı.',
+    'N11_RETURN_HTTP_ERROR': 'n11 iade servisi isteği tamamlayamadı.',
+    'N11_RETURN_API_FAILED': 'n11 iade servisi işlemi reddetti.',
     'SYNC_IN_PROGRESS': 'Bu mağaza için zaten bir senkron çalışıyor.',
     'SYNC_TOO_LARGE': 'Senkron veri sınırını aştı. Daha kısa aralık dene.',
     'ORIGIN_NOT_ALLOWED': 'Bu sayfanın adresine backend erişim izni yok.',
@@ -539,15 +548,15 @@ els.saveCredentialsBtn.addEventListener('click', async () => {
 els.syncBtn.addEventListener('click', async () => {
   if (!activeConnectionId) { setNotice(els.syncMessage, 'Önce bağlantı seç.', 'bad'); return; }
   const connection = selectedConnection();
-  if (!['trendyol', 'hepsiburada'].includes(connection?.marketplace)) {
+  if (!['trendyol', 'hepsiburada', 'n11'].includes(connection?.marketplace)) {
     document.getElementById('credentials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setNotice(els.syncMessage, `${providerCatalog.find((entry) => entry.key === connection?.marketplace)?.label || 'Bu kanal'} için standart raporu yükle; API erişimi hazır olduğunda aynı mağazada kesintisiz devam eder.`, 'good');
     return;
   }
   const days = Number(els.rangeDays.value);
   setBusy(els.syncBtn, true, 'Senkronlanıyor…');
-  const providerName = connection.marketplace === 'hepsiburada' ? 'Hepsiburada' : 'Trendyol';
-  const syncFunction = connection.marketplace === 'hepsiburada' ? 'hepsiburada-sync' : 'trendyol-sync';
+  const providerName = connection.marketplace === 'hepsiburada' ? 'Hepsiburada' : connection.marketplace === 'n11' ? 'n11' : 'Trendyol';
+  const syncFunction = connection.marketplace === 'hepsiburada' ? 'hepsiburada-sync' : connection.marketplace === 'n11' ? 'n11-sync' : 'trendyol-sync';
   setNotice(els.syncMessage, `${providerName} finans verileri güvenli şekilde alınıyor…`);
   try {
     const data = await functionRequest(syncFunction, { method: 'POST', body: { connection_id: activeConnectionId, days } });
