@@ -19,6 +19,12 @@ verify_jwt = true
 [functions.trendyol-credentials]
 verify_jwt = true
 
+[functions.marketplace-credentials]
+verify_jwt = true
+
+[functions.marketplace-import]
+verify_jwt = true
+
 [functions.trendyol-sync]
 verify_jwt = true
 
@@ -59,3 +65,16 @@ verify_jwt = true
 
 [functions.portfolio-summary]
 verify_jwt = true
+
+[functions.billing-summary]
+verify_jwt = true
+
+[functions.billing-checkout]
+verify_jwt = true
+
+[functions.billing-portal]
+verify_jwt = true
+
+# Paddle signs the exact raw body; it does not send a Supabase JWT.
+[functions.billing-webhook]
+verify_jwt = false

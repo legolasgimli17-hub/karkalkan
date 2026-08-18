@@ -9,6 +9,11 @@ This file records the runtime dependencies that should be reviewed during acquis
 
 The authenticated seller panel does not depend on a remotely loaded `@supabase/supabase-js` browser bundle; its Supabase Auth and Edge Function requests use the project's own JavaScript and `fetch`.
 
+## Billing
+
+- Paddle Billing — Merchant of Record and hosted checkout/customer portal. Card and invoice data are not collected by KârKalkan. Server-to-server requests use the Paddle API, and incoming events are accepted only after raw-body `Paddle-Signature` verification.
+- Production billing is intentionally dormant until the buyer/owner configures an approved Paddle account, checkout domain, webhook destination and recurring price IDs documented in `SETUP.md`.
+
 ## Supabase Edge Functions
 
 The checked-in Edge Functions use version-pinned npm imports where applicable, including:

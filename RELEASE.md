@@ -11,7 +11,7 @@ This baseline records the cleaned product state intended for product validation 
 - Canonical authenticated application route: `/uygulama`
 - API-free public example experience and free calculator
 - Simplified seller-facing language
-- Complete checked-in Supabase Edge Function source inventory (13/13)
+- Complete checked-in Supabase Edge Function source inventory (25/25)
 - Supabase migration history and per-function JWT configuration
 - Buyer setup, architecture, transfer, limitation and dependency documentation
 - Safe server configuration template

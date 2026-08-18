@@ -1,0 +1,65 @@
+:root{
+  --sale-bg:#20262e;
+  --sale-surface:#29313b;
+  --sale-surface-2:#303a46;
+  --sale-line:#46515f;
+  --sale-text:#f3f5f7;
+  --sale-muted:#c6cdd5;
+  --sale-green:#79e0b7;
+  --sale-blue:#79c7ff;
+  --sale-copper:#f2a65a;
+}
+
+.v4-body .muted,.v4-body small,.v4-body .card-help,.v4-body .section-head p,.v4-body .credential-panel p,.v4-body .import-panel p{color:var(--sale-muted)}
+.v4-body .panel{border-color:rgba(198,205,213,.18)}
+.section-proof{align-self:flex-start;border:1px solid rgba(121,224,183,.28);border-radius:999px;background:rgba(121,224,183,.08);color:#bff4df;font-size:.73rem;font-weight:760;letter-spacing:.04em;padding:.55rem .78rem;white-space:nowrap}
+.plan-chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid rgba(121,199,255,.3);border-radius:999px;background:rgba(121,199,255,.08);color:#cbe9ff;text-decoration:none;font-size:.78rem;font-weight:780;padding:.45rem .78rem}
+
+.provider-catalog{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.75rem;margin:1.15rem 0}
+.provider-card{appearance:none;position:relative;min-height:158px;border:1px solid rgba(198,205,213,.18);border-radius:18px;background:linear-gradient(155deg,rgba(48,58,70,.98),rgba(37,44,53,.98));color:var(--sale-text);text-align:left;padding:1rem;cursor:pointer;transition:border-color .18s ease,transform .18s ease,background .18s ease}
+.provider-card:hover,.provider-card.active{transform:translateY(-2px);border-color:rgba(121,199,255,.55);background:linear-gradient(155deg,rgba(54,65,78,.98),rgba(39,47,57,.98))}
+.provider-card:focus-visible{outline:3px solid rgba(121,199,255,.38);outline-offset:2px}
+.provider-logo{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.08);font-weight:850;letter-spacing:-.04em;margin-bottom:.85rem}
+.provider-card strong{display:block;font-size:.96rem;margin-bottom:.26rem}
+.provider-card small{display:block;font-size:.7rem;line-height:1.45;min-height:2em}
+.provider-state{position:absolute;top:.85rem;right:.85rem;border:1px solid transparent;border-radius:999px;font-size:.58rem;font-weight:850;letter-spacing:.08em;padding:.32rem .46rem;text-transform:uppercase}
+.provider-state.live{color:#bff4df;background:rgba(121,224,183,.1);border-color:rgba(121,224,183,.28)}
+.provider-state.beta{color:#cbe9ff;background:rgba(121,199,255,.1);border-color:rgba(121,199,255,.28)}
+.provider-state.gated{color:#ffdaa9;background:rgba(242,166,90,.1);border-color:rgba(242,166,90,.28)}
+.provider-state.import{color:#e0d5ff;background:rgba(172,142,255,.1);border-color:rgba(172,142,255,.28)}
+.connection-workbench{align-items:stretch}
+.capability-list{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}
+.capability-list span{border:1px solid rgba(198,205,213,.18);border-radius:999px;background:rgba(255,255,255,.035);color:#dce1e6;font-size:.66rem;padding:.34rem .48rem}
+
+.credential-layout{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:1rem}
+.credential-panel,.import-panel{min-height:100%}
+.credential-panel.is-gated #credentialFields,.credential-panel.is-gated #saveCredentialsBtn{display:none}
+.import-panel p{line-height:1.7;margin:.9rem 0 1rem}
+.import-badge{border:1px solid rgba(121,199,255,.3);border-radius:999px;background:rgba(121,199,255,.08);color:#cbe9ff;font-size:.67rem;font-weight:800;padding:.4rem .55rem}
+.import-actions{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem}
+.file-button{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:42px;border:1px solid rgba(198,205,213,.24);border-radius:10px;background:rgba(255,255,255,.045);color:#eef2f5;font-size:.8rem;font-weight:760;padding:.55rem .8rem;cursor:pointer}
+.file-button input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.import-preview{margin-top:.85rem;border:1px dashed rgba(198,205,213,.24);border-radius:12px;background:rgba(0,0,0,.09);color:var(--sale-muted);font-size:.73rem;line-height:1.55;padding:.75rem .85rem}
+
+.billing-overview{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;padding:1.15rem 1.25rem}
+.billing-overview>div{display:grid;gap:.2rem}
+.billing-overview strong{font-size:1.25rem;color:var(--sale-text)}
+.billing-overview small{color:var(--sale-muted)}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.pricing-card{position:relative;display:flex;flex-direction:column;min-height:354px;border:1px solid rgba(198,205,213,.18);border-radius:20px;background:linear-gradient(155deg,rgba(48,58,70,.98),rgba(37,44,53,.98));padding:1.25rem}
+.pricing-card.recommended{border-color:rgba(121,224,183,.48);box-shadow:0 20px 60px rgba(0,0,0,.14)}
+.pricing-card .recommended-label{position:absolute;top:1rem;right:1rem;border-radius:999px;background:rgba(121,224,183,.12);color:#bff4df;font-size:.61rem;font-weight:850;letter-spacing:.08em;padding:.38rem .52rem}
+.pricing-card h3{font-size:1.02rem;margin:0 0 .3rem}
+.pricing-card>p{min-height:3.2em;color:var(--sale-muted);font-size:.75rem;line-height:1.55;margin:.25rem 0 1rem}
+.pricing-price{display:flex;align-items:baseline;gap:.3rem;margin-bottom:1rem}
+.pricing-price strong{font-size:2rem;letter-spacing:-.05em}
+.pricing-price span{color:var(--sale-muted);font-size:.72rem}
+.pricing-features{display:grid;gap:.58rem;margin:0 0 1.1rem;padding:0;list-style:none}
+.pricing-features li{display:flex;gap:.48rem;color:#e1e6ea;font-size:.76rem}
+.pricing-features li::before{content:'✓';color:var(--sale-green);font-weight:850}
+.pricing-card .btn{margin-top:auto;width:100%}
+.pricing-card.current .btn{border-color:rgba(121,224,183,.28);color:#bff4df}
+.billing-trust{color:var(--sale-muted);font-size:.68rem;line-height:1.5;margin-top:.75rem;text-align:center}
+
+@media(max-width:1120px){.provider-catalog{grid-template-columns:repeat(3,minmax(0,1fr))}.pricing-grid{grid-template-columns:1fr 1fr}.pricing-card:last-child{grid-column:1/-1}.credential-layout{grid-template-columns:1fr}}
+@media(max-width:720px){.provider-catalog,.pricing-grid{grid-template-columns:1fr}.pricing-card:last-child{grid-column:auto}.provider-card{min-height:128px}.credential-layout{display:block}.import-panel{margin-top:.8rem}.billing-overview{align-items:flex-start;flex-direction:column}.section-proof{white-space:normal}.session-bar .plan-chip{display:none}}

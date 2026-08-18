@@ -9,7 +9,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   authPanel: $('authPanel'), authForm: $('authForm'), authEmail: $('authEmail'), authPassword: $('authPassword'),
   signInBtn: $('signInBtn'), signUpBtn: $('signUpBtn'), authMessage: $('authMessage'), appPanel: $('appPanel'), userEmail: $('userEmail'),
-  refreshAllBtn: $('refreshAllBtn'), signOutBtn: $('signOutBtn'), connectionName: $('connectionName'), sellerId: $('sellerId'),
+  refreshAllBtn: $('refreshAllBtn'), signOutBtn: $('signOutBtn'), marketplaceSelect: $('marketplaceSelect'), connectionName: $('connectionName'), sellerId: $('sellerId'),
   createConnectionBtn: $('createConnectionBtn'), connectionMessage: $('connectionMessage'), connectionSelect: $('connectionSelect'), connectionMeta: $('connectionMeta'),
   credentialState: $('credentialState'), apiKey: $('apiKey'), apiSecret: $('apiSecret'), saveCredentialsBtn: $('saveCredentialsBtn'), credentialMessage: $('credentialMessage'),
   rangeDays: $('rangeDays'), syncBtn: $('syncBtn'), syncMessage: $('syncMessage'), healthState: $('healthState'), healthMeta: $('healthMeta'),
@@ -21,6 +21,7 @@ const els = {
 
 let session = null;
 let connections = [];
+let providerCatalog = [];
 let activeConnectionId = '';
 let refreshPromise = null;
 
@@ -170,6 +171,19 @@ function humanError(error) {
     'User already registered': 'Bu email ile zaten hesap var.',
     'CONNECTION_EXISTS': 'Bu mağaza bağlantısı zaten eklenmiş.',
     'INVALID_SELLER_ID': 'Satıcı ID yalnızca rakamlardan oluşmalı.',
+    'INVALID_MARKETPLACE': 'Desteklenmeyen satış kanalı seçildi.',
+    'INVALID_CREDENTIALS': 'Bağlantı alanlarını eksiksiz doldur.',
+    'VAULT_READ_FAILED': 'Şifreli bağlantı durumu okunamadı.',
+    'VAULT_WRITE_FAILED': 'Bağlantı bilgileri şifreli kasaya kaydedilemedi.',
+    'INVALID_IMPORT_SIZE': 'Rapor 1–5.000 satır arasında olmalı.',
+    'INVALID_IMPORT_ROW': 'Rapor satırlarından biri geçersiz. Şablondaki biçimi kullan.',
+    'NEGATIVE_IMPORT_VALUE': 'Satış, iade ve kesinti sütunları pozitif tutar olmalı.',
+    'IMPORT_FAILED': 'Rapor içe aktarılamadı. Dönem ve satırları kontrol et.',
+    'BILLING_NOT_CONFIGURED': 'Güvenli ödeme hesabı henüz satışa açılmadı.',
+    'SUBSCRIPTION_ALREADY_EXISTS': 'Aktif aboneliğin var; değişiklik için fatura portalını kullan.',
+    'BILLING_CUSTOMER_NOT_FOUND': 'Henüz yönetilecek bir abonelik bulunmuyor.',
+    'PADDLE_CHECKOUT_URL_MISSING': 'Güvenli ödeme bağlantısı oluşturulamadı.',
+    'PADDLE_PORTAL_URL_MISSING': 'Fatura portalı açılamadı.',
     'CREDENTIALS_MISSING': 'Önce Trendyol API bilgilerini kaydet.',
     'TRENDYOL_UNAUTHORIZED': 'Trendyol API bilgileri reddedildi. Anahtarları kontrol et.',
     'TRENDYOL_FORBIDDEN': 'Trendyol bu API erişimine izin vermedi.',
@@ -243,12 +257,17 @@ function renderConnectionMeta() {
     return;
   }
   const last = item.last_sync_at ? new Date(item.last_sync_at).toLocaleString('tr-TR') : 'henüz yok';
-  els.connectionMeta.textContent = `Pazar: ${item.marketplace} · Satıcı: ${item.external_seller_id || '—'} · Durum: ${item.status || '—'} · Son sync: ${last}`;
+  const provider = providerCatalog.find((entry) => entry.key === item.marketplace);
+  const tierMap = { live: 'Canlı', beta: 'Beta', gated: 'Onay gerekli', import: 'Rapor bağlantısı' };
+  els.connectionMeta.textContent = `${provider?.label || item.marketplace} · ${item.external_seller_id || 'Kod yok'} · ${tierMap[item.capability_tier] || item.status || '—'} · Son veri: ${last}`;
+  window.KKSaleReady?.renderActiveProvider?.(item, provider);
 }
 
 async function loadConnections({ preserve = true } = {}) {
   const data = await functionRequest('marketplace-connections');
   connections = Array.isArray(data.connections) ? data.connections : [];
+  providerCatalog = Array.isArray(data.providers) ? data.providers : providerCatalog;
+  window.KKSaleReady?.renderProviders?.();
   const stored = preserve ? sessionStorage.getItem(ACTIVE_CONNECTION_KEY) : '';
   if (!activeConnectionId && stored && connections.some((x) => x.id === stored)) activeConnectionId = stored;
   if (!activeConnectionId && connections.length === 1) activeConnectionId = connections[0].id;
@@ -364,13 +383,17 @@ async function refreshConnectionData() {
   resetDashboardOnly();
   const days = String(els.rangeDays.value || '30');
   const [credentialResult, summaryResult, healthResult, historyResult] = await Promise.allSettled([
-    functionRequest('trendyol-credentials', { query: { connection_id: activeConnectionId } }),
+    functionRequest('marketplace-credentials', { query: { connection_id: activeConnectionId } }),
     functionRequest('dashboard-summary', { query: { connection_id: activeConnectionId, days } }),
     functionRequest('connection-health', { query: { connection_id: activeConnectionId } }),
     functionRequest('sync-history', { query: { connection_id: activeConnectionId, limit: '10' } })
   ]);
 
-  if (credentialResult.status === 'fulfilled') els.credentialState.textContent = credentialResult.value.configured ? 'Güvenli şekilde kayıtlı' : 'Henüz kaydedilmedi';
+  if (credentialResult.status === 'fulfilled') {
+    const value = credentialResult.value;
+    els.credentialState.textContent = value.configured ? 'Güvenli şekilde kayıtlı' : value.actionRequired ? 'Harici onay / rapor gerekiyor' : 'Henüz kaydedilmedi';
+    window.KKSaleReady?.renderCredentialState?.(selectedConnection(), value);
+  }
   else els.credentialState.textContent = `Kontrol edilemedi: ${humanError(credentialResult.reason)}`;
 
   if (summaryResult.status === 'fulfilled') renderDashboard(summaryResult.value);
@@ -448,20 +471,22 @@ els.signOutBtn.addEventListener('click', async () => {
 });
 
 els.createConnectionBtn.addEventListener('click', async () => {
+  const marketplace = cleanText(els.marketplaceSelect?.value || 'trendyol', 20);
+  const provider = providerCatalog.find((entry) => entry.key === marketplace);
   const displayName = cleanText(els.connectionName.value, 120);
-  const sellerId = cleanText(els.sellerId.value, 20);
-  if (!displayName || !/^\d{1,20}$/.test(sellerId)) {
-    setNotice(els.connectionMessage, 'Bağlantı adı ve yalnızca rakamlardan oluşan Satıcı ID gir.', 'bad');
+  const sellerId = cleanText(els.sellerId.value, 120);
+  if (!displayName || provider?.sellerIdRequired && !sellerId || marketplace === 'trendyol' && !/^\d{1,20}$/.test(sellerId)) {
+    setNotice(els.connectionMessage, `${provider?.sellerIdLabel || 'Satıcı kodu'} ve mağaza adını kontrol et.`, 'bad');
     return;
   }
   setBusy(els.createConnectionBtn, true, 'Oluşturuluyor…');
   setNotice(els.connectionMessage);
   try {
-    const data = await functionRequest('marketplace-connections', { method: 'POST', body: { marketplace: 'trendyol', display_name: displayName, external_seller_id: sellerId } });
+    const data = await functionRequest('marketplace-connections', { method: 'POST', body: { marketplace, display_name: displayName, external_seller_id: sellerId || null } });
     activeConnectionId = data?.connection?.id || '';
     if (activeConnectionId) sessionStorage.setItem(ACTIVE_CONNECTION_KEY, activeConnectionId);
     els.connectionName.value = ''; els.sellerId.value = '';
-    setNotice(els.connectionMessage, 'Bağlantı oluşturuldu.', 'good');
+    setNotice(els.connectionMessage, `${provider?.label || 'Kanal'} çalışma alanına eklendi.`, 'good');
     await loadConnections({ preserve: false });
   } catch (error) {
     setNotice(els.connectionMessage, humanError(error), 'bad');
@@ -481,15 +506,19 @@ els.connectionSelect.addEventListener('change', async () => {
 
 els.saveCredentialsBtn.addEventListener('click', async () => {
   if (!activeConnectionId) { setNotice(els.credentialMessage, 'Önce bağlantı seç.', 'bad'); return; }
+  const connection = selectedConnection();
+  const provider = providerCatalog.find((entry) => entry.key === connection?.marketplace);
+  const fields = Array.isArray(provider?.credentialFields) ? provider.credentialFields : [];
+  if (!fields.length) { setNotice(els.credentialMessage, provider?.note || 'Bu kanal farklı bir yetkilendirme akışı kullanıyor.', 'bad'); return; }
   const apiKey = cleanText(els.apiKey.value, 220);
   const apiSecret = cleanText(els.apiSecret.value, 320);
   if (apiKey.length < 6 || apiSecret.length < 6) { setNotice(els.credentialMessage, 'API Key ve API Secret alanlarını doldur.', 'bad'); return; }
   setBusy(els.saveCredentialsBtn, true, 'Kaydediliyor…');
   setNotice(els.credentialMessage);
   try {
-    await functionRequest('trendyol-credentials', { method: 'POST', body: { connection_id: activeConnectionId, api_key: apiKey, api_secret: apiSecret } });
+    await functionRequest('marketplace-credentials', { method: 'POST', body: { connection_id: activeConnectionId, credentials: { [fields[0].key]: apiKey, [fields[1].key]: apiSecret } } });
     els.apiKey.value = ''; els.apiSecret.value = '';
-    setNotice(els.credentialMessage, 'API bilgileri Vault’a güvenli şekilde kaydedildi.', 'good');
+    setNotice(els.credentialMessage, `${provider?.label || 'Kanal'} bilgileri Vault’a güvenli şekilde kaydedildi. İlk veri alışında erişim ayrıca doğrulanır.`, 'good');
     await loadConnections();
   } catch (error) {
     setNotice(els.credentialMessage, humanError(error), 'bad');
@@ -500,6 +529,12 @@ els.saveCredentialsBtn.addEventListener('click', async () => {
 
 els.syncBtn.addEventListener('click', async () => {
   if (!activeConnectionId) { setNotice(els.syncMessage, 'Önce bağlantı seç.', 'bad'); return; }
+  const connection = selectedConnection();
+  if (connection?.marketplace !== 'trendyol') {
+    document.getElementById('credentials')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setNotice(els.syncMessage, `${providerCatalog.find((entry) => entry.key === connection?.marketplace)?.label || 'Bu kanal'} için standart raporu yükle; API erişimi hazır olduğunda aynı mağazada kesintisiz devam eder.`, 'good');
+    return;
+  }
   const days = Number(els.rangeDays.value);
   setBusy(els.syncBtn, true, 'Senkronlanıyor…');
   setNotice(els.syncMessage, 'Trendyol verileri güvenli şekilde alınıyor…');

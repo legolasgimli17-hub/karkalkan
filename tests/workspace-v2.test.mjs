@@ -54,3 +54,17 @@ test('same-page simulator and competitor demo are interactive and privacy scoped
   assert.match(css,/--p-muted: #c0c7d1/);
   assert.doesNotMatch(js,/fetch\s*\(|XMLHttpRequest|functionRequest/);
 });
+
+test('sale-ready workspace exposes honest provider states, import path and subscription center',async()=>{
+  const [landing,app,js,css]=await Promise.all([read('index.html'),read('v4.html'),read('sale-ready.js'),read('sale-ready.css')]);
+  for(const provider of ['Trendyol','Hepsiburada','n11','Amazon','FLO'])assert.match(landing,new RegExp(provider));
+  assert.match(app,/id="providerCatalog"/);
+  assert.match(app,/id="marketplaceImportFile"/);
+  assert.match(app,/id="billing"/);
+  assert.match(app,/Supabase Vault/);
+  assert.match(js,/Simülasyon|fallbackProviders/);
+  assert.match(js,/billing-checkout/);
+  assert.match(js,/marketplace-import/);
+  assert.match(css,/\.provider-catalog/);
+  assert.match(css,/\.pricing-grid/);
+});

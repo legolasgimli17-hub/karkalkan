@@ -10,6 +10,8 @@ The production Supabase project contains the following application Edge Function
 | `dashboard-summary` | JWT required | Canonical dashboard cash / cost-coverage summary | Yes |
 | `product-costs` | JWT required | Product cost CRUD | Yes |
 | `trendyol-credentials` | JWT required | Secure Trendyol credential handling | Yes |
+| `marketplace-credentials` | JWT required | Provider-aware Vault credential handling for Trendyol, Hepsiburada and n11 | Yes |
+| `marketplace-import` | JWT required | Normalized, tenant-isolated CSV finance import for every provider | Yes |
 | `trendyol-sync` | JWT required | Core Trendyol reconciliation/synchronization | Yes |
 | `sync-history` | JWT required | Sync history | Yes |
 | `connection-health` | JWT required | Connection health/status | Yes |
@@ -23,14 +25,18 @@ The production Supabase project contains the following application Edge Function
 | `decision-center` | JWT required | Explainable financial-data confidence and money-leak evidence radar | Yes |
 | `operating-expenses` | JWT required | Tenant-isolated operating-expense ledger | Yes |
 | `portfolio-summary` | JWT required | Multi-store cash, cost coverage and operating-contribution summary | Yes |
+| `billing-summary` | JWT required | Tenant subscription, usage and plan catalog | Yes |
+| `billing-checkout` | JWT required | Paddle hosted-checkout transaction creation | Yes |
+| `billing-portal` | JWT required | Temporary Paddle customer-portal session creation | Yes |
+| `billing-webhook` | Paddle raw-body signature; platform JWT disabled | Idempotent subscription/customer lifecycle ingestion | Yes |
 | `v4-auth` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 | `v4-beta` | JWT required | Retired endpoint; returns HTTP 410 | Yes |
 
 ## Source completeness
 
-All 19 deployed Edge Function sources are checked into `supabase/functions/`.
+All 25 application Edge Function sources are checked into `supabase/functions/`.
 
-Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; it accepts a callback only when the supplied `x-api-key` hashes to the per-connection secret hash stored server-side. All other active application functions require a valid Supabase JWT.
+Per-function JWT verification settings are recorded in `supabase/config.toml`. `marketplace-connections` performs its own bearer-token validation. `order-events` is intentionally callable without a Supabase JWT because the external marketplace callback does not possess one; `billing-webhook` likewise authenticates Paddle using its raw-body HMAC signature. All other active application functions require a valid Supabase JWT.
 
 ## Canonical finance vocabulary
 
