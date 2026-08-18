@@ -50,7 +50,7 @@ Financial summary endpoints do not rely on the Data API's first response page fo
 
 ## Edge database connection safety
 
-Every Edge Function that uses `postgres.js` obtains its client from `_shared/postgres.ts`. The factory accepts only Supabase transaction-pooler hosts on port `6543`, forces `prepare:false` and caps each isolate at `max:1`. A direct `:5432` URL is rejected with a configuration error before a connection is opened.
+Every Edge Function that uses `postgres.js` reads the custom `KARKALKAN_DB_POOLER_URL` secret and obtains its client from `_shared/postgres.ts`. Supabase's platform-provided `SUPABASE_DB_URL` remains a reserved direct connection and is intentionally not used. The factory accepts only Supabase transaction-pooler hosts on port `6543`, forces `prepare:false` and caps each isolate at `max:1`. A direct `:5432` URL is rejected with a configuration error before a connection is opened.
 
 ## External error monitoring
 

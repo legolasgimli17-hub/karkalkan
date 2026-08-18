@@ -1,7 +1,7 @@
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { captureMonitoringException } from '../_shared/observability.ts'
 
-const DB_URL=Deno.env.get('SUPABASE_DB_URL')||''
+const DB_URL=Deno.env.get('KARKALKAN_DB_POOLER_URL')||''
 const sql=createTransactionPool(DB_URL)
 
 function json(s:number,b:unknown){return new Response(JSON.stringify(b),{status:s,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff'}})}

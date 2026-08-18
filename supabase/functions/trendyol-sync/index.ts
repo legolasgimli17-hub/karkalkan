@@ -4,7 +4,7 @@ import { captureSafeFailure } from '../_shared/observability.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
-const DB_URL=Deno.env.get('SUPABASE_DB_URL')||''
+const DB_URL=Deno.env.get('KARKALKAN_DB_POOLER_URL')||''
 const sql=createTransactionPool(DB_URL)
 const DAY_MS=86_400_000,PAGE_SIZE=1000,MAX_PAGES=100,PACING_MS=250,INSERT_BATCH=300
 const ORDER_PAGE_SIZE=200,ORDER_MAX_PAGES=50,ORDER_WINDOW_DAYS=14,CLAIM_PAGE_SIZE=200,CLAIM_MAX_PAGES=100,CLAIM_LOOKBACK_DAYS=60

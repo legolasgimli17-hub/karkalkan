@@ -6,7 +6,7 @@ import { captureMonitoringException } from '../_shared/observability.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
-const DB_URL=Deno.env.get('SUPABASE_DB_URL')||''
+const DB_URL=Deno.env.get('KARKALKAN_DB_POOLER_URL')||''
 const sql=createTransactionPool(DB_URL)
 const DAY_MS=86_400_000,FIN_PAGE_SIZE=1000,FIN_MAX_PAGES=100,CARGO_PAGE_SIZE=500,CARGO_MAX_PAGES=100,MAX_INVOICES=500,PACING_MS=200,INSERT_BATCH=500
 const fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'})

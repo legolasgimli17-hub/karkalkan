@@ -3,7 +3,7 @@ import { createTransactionPool } from '../_shared/postgres.ts'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
-const DB_URL=Deno.env.get('SUPABASE_DB_URL')||''
+const DB_URL=Deno.env.get('KARKALKAN_DB_POOLER_URL')||''
 const sql=createTransactionPool(DB_URL)
 const CATEGORIES=new Set(['ads','packaging','rent','payroll','software','other']),MAX_LEDGER=5000
 function allowedOrigin(o:string|null){if(!o)return true;if(o==='https://karkalkan.vercel.app'||o===PROJECT_ORIGIN)return true;try{const u=new URL(o);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
