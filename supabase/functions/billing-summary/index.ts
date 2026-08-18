@@ -1,5 +1,5 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
-import { paddleConfig, paddleReadiness, PLAN_CATALOG } from '../_shared/billing.ts'
+import { paddleConfig, paddleReadiness, PLAN_CATALOG, planEntitlements } from '../_shared/billing.ts'
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('Origin')
@@ -16,12 +16,16 @@ Deno.serve(async(req:Request)=>{
     auth.admin.from('marketplace_connections').select('id',{count:'exact',head:true}).eq('user_id',auth.user.id)
   ])
   if(subscriptionError||countError)return json(500,{error:'DB_READ_FAILED'},origin)
+  const effectiveSubscription=subscription||{plan_key:'free',status:'inactive'}
+  const entitlement=planEntitlements(effectiveSubscription.plan_key,effectiveSubscription.status)
+  const stores=count||0
   const configuredPlans=PLAN_CATALOG.map(plan=>({...plan,checkoutConfigured:readiness.configuredPrices[plan.key]}))
   return json(200,{
     billingReady:readiness.ready,
     environment:config.environment,
-    subscription:subscription||{plan_key:'free',status:'inactive'},
-    usage:{stores:count||0},
+    subscription:effectiveSubscription,
+    usage:{stores,storeLimit:entitlement.stores,canCreateStore:stores<entitlement.stores},
+    entitlement:{planKey:entitlement.planKey,stores:entitlement.stores,orders:entitlement.orders,entitled:entitlement.entitled},
     plans:configuredPlans
   },origin)
 })
