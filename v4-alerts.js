@@ -236,3 +236,11 @@ if (typeof activeConnectionId === 'string' && activeConnectionId) loadRuleAlerts
   });
   document.body.append(script);
 })();
+
+(function loadKarkalkanDashboardExport(){
+  if(document.querySelector('script[data-karkalkan-dashboard-export]'))return;
+  const script=document.createElement('script');
+  script.src='/dashboard-export.js';
+  script.dataset.karkalkanDashboardExport='1';
+  document.body.append(script);
+})();
