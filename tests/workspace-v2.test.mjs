@@ -12,6 +12,9 @@ test('root index is the unified finance workspace',async()=>{
   assert.match(html,/class="bridge-grid"/);
   assert.match(html,/id="productRows"/);
   assert.match(html,/id="riskCards"/);
+  assert.match(html,/id="rakipler"/);
+  assert.match(html,/id="hesaplayici"/);
+  assert.match(html,/product-2026\.css/);
 });
 
 test('public demo and private workspace share one product language',async()=>{
@@ -31,4 +34,23 @@ test('workspace demo keeps finance values interactive without calculating produc
   assert.match(js,/salesPoints/);
   assert.match(js,/renderWorkspace/);
   assert.doesNotMatch(js,/SUPABASE_SERVICE_ROLE_KEY|service_role|api_secret/i);
+});
+
+test('legacy calculator and demo routes return to the unified workspace',async()=>{
+  const config=JSON.parse(await read('vercel.json'));
+  const redirects=new Map(config.redirects.map(item=>[item.source,item.destination]));
+  assert.equal(redirects.get('/hesapla'),'/#hesaplayici');
+  assert.equal(redirects.get('/hesapla.html'),'/#hesaplayici');
+  assert.equal(redirects.get('/demo'),'/#genel');
+  assert.equal(config.rewrites.some(item=>item.source==='/hesapla'),false);
+});
+
+test('same-page simulator and competitor demo are interactive and privacy scoped',async()=>{
+  const [html,app,js,css]=await Promise.all([read('index.html'),read('v4.html'),read('product-2026.js'),read('product-2026.css')]);
+  assert.match(html,/Tahmini sipariş katkısı/);
+  assert.match(app,/Simülasyon · gerçek rakip verisi değildir/);
+  assert.match(js,/mountQuickSimulator/);
+  assert.match(js,/mountCompetitorFilters/);
+  assert.match(css,/--p-muted: #c0c7d1/);
+  assert.doesNotMatch(js,/fetch\s*\(|XMLHttpRequest|functionRequest/);
 });

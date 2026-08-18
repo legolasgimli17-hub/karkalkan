@@ -2,14 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/hesapla",
-      "destination": "/hesapla.html"
-    },
-    {
-      "source": "/demo",
-      "destination": "/demo.html"
-    },
-    {
       "source": "/uygulama",
       "destination": "/v4.html"
     },
@@ -19,6 +11,26 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/hesapla",
+      "destination": "/#hesaplayici",
+      "permanent": true
+    },
+    {
+      "source": "/hesapla.html",
+      "destination": "/#hesaplayici",
+      "permanent": true
+    },
+    {
+      "source": "/demo",
+      "destination": "/#genel",
+      "permanent": true
+    },
+    {
+      "source": "/demo.html",
+      "destination": "/#genel",
+      "permanent": true
+    },
     {
       "source": "/v4.html",
       "destination": "/uygulama",
