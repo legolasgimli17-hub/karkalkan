@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1b222b">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Hesap ve Veri Yönetimi — KârKalkan</title>
+  <link rel="stylesheet" href="/legal.css?v=20260818">
+  <link rel="stylesheet" href="/hesap.css?v=20260819">
+</head>
+<body>
+<main class="legal-shell account-shell">
+  <header class="legal-top"><a class="legal-brand" href="/"><span>K</span>KârKalkan</a><nav><a href="/uygulama">Uygulama</a><a href="/gizlilik">Gizlilik</a><a href="/kvkk">KVKK</a></nav></header>
+  <section class="legal-hero">
+    <p class="legal-kicker">HESAP &amp; VERİ YÖNETİMİ</p>
+    <h1>Hesabını yönet</h1>
+    <p>Hesap kapatma işlemi geri alınamaz. KârKalkan hesabına bağlı mağaza, finans, maliyet, senkron ve banka mutabakat verileri silinir.</p>
+  </section>
+  <section class="legal-content">
+    <article class="legal-card">
+      <h2>Oturum durumu</h2>
+      <p id="accountIdentity">Oturum kontrol ediliyor…</p>
+      <a class="account-link" href="/uygulama#billing">Abonelik ve fatura merkezine git</a>
+    </article>
+    <article class="legal-card danger-card">
+      <h2>Hesabı kalıcı olarak kapat</h2>
+      <p>Aktif, deneme, gecikmiş veya duraklatılmış bir abonelik varsa önce aboneliğini ödeme portalından sona erdirmen gerekir.</p>
+      <div class="account-field"><label for="deleteEmail">Hesap e-postanı tekrar yaz</label><input id="deleteEmail" type="email" autocomplete="email" maxlength="254"></div>
+      <div class="account-field"><label for="deleteConfirmation">Onay için <strong>HESABIMI SİL</strong> yaz</label><input id="deleteConfirmation" type="text" autocomplete="off" maxlength="40"></div>
+      <button id="deleteAccountBtn" class="danger-button" type="button">Hesabı ve verileri kalıcı olarak sil</button>
+      <div id="accountMessage" class="account-message" role="status"></div>
+    </article>
+  </section>
+</main>
+<script src="/hesap.js?v=20260819"></script>
+</body>
+</html>
