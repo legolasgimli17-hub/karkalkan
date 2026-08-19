@@ -6,6 +6,10 @@
       "destination": "/v4.html"
     },
     {
+      "source": "/hesap",
+      "destination": "/hesap.html"
+    },
+    {
       "source": "/gizlilik",
       "destination": "/gizlilik.html"
     },
@@ -53,6 +57,11 @@
       "permanent": true
     },
     {
+      "source": "/hesap.html",
+      "destination": "/hesap",
+      "permanent": true
+    },
+    {
       "source": "/gizlilik.html",
       "destination": "/gizlilik",
       "permanent": true
@@ -84,6 +93,13 @@
       "source": "/uygulama",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/hesap",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]
     },
     {
