@@ -1,12 +1,12 @@
 # KârKalkan — Known Limitations & Due-Diligence Disclosure
 
-Last reviewed: 2026-08-18
+Last reviewed: 2026-08-19
 
 This file separates outstanding marketplace validation from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
 
 ## 1. Marketplace production validation — outstanding
 
-The Trendyol integration has been implemented against the Partner API flow used by the project. A complete end-to-end production validation with a real Trendyol seller account has not yet been recorded.
+The Trendyol integration has been implemented against the Partner API flow used by the project. A complete end-to-end production validation with a real Trendyol seller account has not yet been recorded. The authenticated workspace now treats Trendyol as a two-stage financial pipeline: core settlements/order/claim enrichment followed by Other Financials for Platform Service Fee, Stoppage and cargo-invoice evidence. This architecture must still be reconciled against a real seller statement before the integration is described as production-validated. The required evidence and pass criteria are version-controlled in [`docs/TRENDYOL_REAL_STORE_VALIDATION.md`](docs/TRENDYOL_REAL_STORE_VALIDATION.md).
 
 The Hepsiburada finance integration has been implemented against the official Basic Auth finance transaction and performance endpoints. The Edge Function is deployed and the schema migration is applied, but no authorized Hepsiburada merchant account was available for first-store reconciliation.
 
@@ -19,6 +19,8 @@ FLO's operational path is the bounded normalized finance-report importer. The ap
 A buyer or tester should validate each full path before claiming real-store production proof:
 
 `account -> store connection -> credentials -> sync -> sales/returns/financial data -> product cost -> profitability output`
+
+For Trendyol, follow [`docs/TRENDYOL_REAL_STORE_VALIDATION.md`](docs/TRENDYOL_REAL_STORE_VALIDATION.md). Do not change the public provider state from “Hazır · doğrulama bekliyor” to a verified state until the sanitized reconciliation record required by that protocol exists.
 
 For Hepsiburada, compare the same 7-day period in KârKalkan and the merchant finance statement, including payment, return, commission, service fee, cargo and stoppage totals. Record any provider-specific transaction type that lands in the visible unclassified-adjustment list before declaring the integration fully validated.
 
@@ -46,7 +48,7 @@ If a Trendyol test/stage workflow requires a fixed outbound IP, the current serv
 
 ## 6. Version naming — historical provenance
 
-Historical source filenames and database migration names can contain `v4`. They are historical implementation identifiers, not separate products. Public-facing navigation uses the single product name **KârKalkan**. Historical migrations should not be renamed after they have been applied because migration history is part of database provenance.
+Historical source filenames and database migration names can contain labels such as `v4`. They are historical implementation identifiers, not separate applications. Public-facing navigation uses the single product name **KârKalkan**. Historical migrations should not be renamed after they have been applied because migration history is part of database provenance.
 
 ## 7. Marketplace/API change risk — maintenance disclosure
 
