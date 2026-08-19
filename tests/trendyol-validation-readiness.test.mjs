@@ -37,8 +37,9 @@ test('validation protocol stays fail-honest until real seller evidence exists',a
   assert.match(runbook,/no unexplained material financial delta remains/i);
   assert.match(runbook,/Do \*\*not\*\* define a universal percentage tolerance/i);
   assert.match(limitations,/Marketplace production validation — outstanding/i);
+  assert.match(limitations,/complete end-to-end production validation with a real Trendyol seller account has not yet been recorded/i);
   assert.match(limitations,/TRENDYOL_REAL_STORE_VALIDATION\.md/);
-  assert.doesNotMatch(limitations,/Trendyol[^\n]*production[- ]validated/i);
+  assert.match(limitations,/Do not change the public provider state[\s\S]*to a verified state until the sanitized reconciliation record/i);
 });
 
 test('validation evidence rules forbid public credentials and raw seller/customer records',async()=>{
