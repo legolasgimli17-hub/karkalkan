@@ -32,9 +32,22 @@ async function ecbObservations(currencies:Set<string>,minDay:string,maxDay:strin
   return parseEcb(await response.text())
 }
 function makeResolver(observations:RateObservation[]){
-  const byCurrency=new Map<string,RateObservation[]>();for(const obs of observations){const list=byCurrency.get(obs.currency)||[];list.push(obs);byCurrency.set(obs.currency,list)}for(const list of byCurrency.values())list.sort((a,b)=>a.date.localeCompare(b.date))
-  const units=(cur:string,target:string)=>{if(cur==='EUR')return {date:target,value:1};const list=byCurrency.get(cur)||[];let match:RateObservation|undefined;for(const obs of list){if(obs.date>target)break;match=obs}if(!match)throw new Error(`FX_RATE_MISSING_${cur}_${target}`);return {date:match.date,value:match.unitsPerEur}}
-  return (cur:string,target:string):FxRate=>{if(cur==='TRY')return {rateDate:target,rateToTry:1};const src=units(cur,target),tryRate=units('TRY',target);return {rateDate:src.date<tryRate.date?src.date:tryRate.date,rateToTry:tryRate.value/src.value}}
+  const byCurrency=new Map<string,Map<string,number>>()
+  for(const obs of observations){const dates=byCurrency.get(obs.currency)||new Map<string,number>();dates.set(obs.date,obs.unitsPerEur);byCurrency.set(obs.currency,dates)}
+  const tryDates=byCurrency.get('TRY')||new Map<string,number>()
+  return (cur:string,target:string):FxRate=>{
+    if(cur==='TRY')return {rateDate:target,rateToTry:1}
+    if(cur==='EUR'){
+      const rateDate=[...tryDates.keys()].filter(day=>day<=target).sort().reverse()[0]
+      if(!rateDate)throw new Error(`FX_RATE_MISSING_TRY_${target}`)
+      return {rateDate,rateToTry:Number(tryDates.get(rateDate))}
+    }
+    const sourceDates=byCurrency.get(cur)||new Map<string,number>(),rateDate=[...sourceDates.keys()].filter(day=>day<=target&&tryDates.has(day)).sort().reverse()[0]
+    if(!rateDate)throw new Error(`FX_RATE_MISSING_${cur}_${target}`)
+    const source=Number(sourceDates.get(rateDate)),tryRate=Number(tryDates.get(rateDate))
+    if(!Number.isFinite(source)||source<=0||!Number.isFinite(tryRate)||tryRate<=0)throw new Error(`FX_RATE_MISSING_${cur}_${target}`)
+    return {rateDate,rateToTry:tryRate/source}
+  }
 }
 async function callCore(req:Request,body:unknown){
   const projectUrl=Deno.env.get('SUPABASE_URL')||'',publishable=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default,authorization=req.headers.get('Authorization')||'';if(!projectUrl||!publishable||!authorization)throw new Error('SERVER_CONFIG')
@@ -69,7 +82,7 @@ Deno.serve(async(req:Request)=>{
   try{
     for(const row of rows){const transactionRate=rate(row.currency,row.day),settlementRate=row.settlement_day?rate(row.currency,row.settlement_day):null,convert=(value:number)=>round2(value*transactionRate.rateToTry);const originalNet=row.seller_revenue??round2(row.gross_sales-row.gross_returns-row.commission_cost-row.discount_cost-row.coupon_cost),variance=settlementRate?round2(originalNet*(settlementRate.rateToTry-transactionRate.rateToTry)):0;totalVariance=round2(totalVariance+variance)
       converted.push({day:row.day,external_product_id:row.external_product_id,sku:row.sku??null,product_name:row.product_name??null,sales_units:row.sales_units,return_units:row.return_units,gross_sales:convert(row.gross_sales),gross_returns:convert(row.gross_returns),commission_cost:convert(row.commission_cost),discount_cost:convert(row.discount_cost),coupon_cost:convert(row.coupon_cost),...(row.seller_revenue===undefined?{}:{seller_revenue:convert(Number(row.seller_revenue))})})
-      const key=`${row.day}\u0000${row.currency}\u0000${row.settlement_day||''}`,current=groups.get(key)||{day:row.day,settlement_day:row.settlement_day,original_currency:row.currency,transaction_rate_date:transactionRate.rateDate,transaction_rate_to_try:transactionRate.rateToTry,settlement_rate_date:settlementRate?.rateDate||null,settlement_rate_to_try:settlementRate?.rateToTry||null,original_gross_sales:0,original_gross_returns:0,original_commission_cost:0,original_discount_cost:0,original_coupon_cost:0,original_seller_revenue:0,converted_gross_sales_try:0,converted_gross_returns_try:0,converted_commission_cost_try:0,converted_discount_cost_try:0,converted_coupon_cost_try:0,converted_seller_revenue_try:0,fx_reference_variance_try:0,row_count:0,sellerRevenueKnown:true}
+      const key=`${row.day}\u0000${row.currency}\u0000${row.settlement_day||''}`,current=groups.get(key)||{day:row.day,settlement_day:row.settlement_day,original_currency:row.currency,transaction_rate_date:transactionRate.rateDate,transaction_rate_to_try:transactionRate.rateToTry,settlement_rate_date:settlementRate?.rateDate||null,settlement_rate_to_try:settlementRate?.rateToTry||null,original_gross_sales:0,original_gross_returns:0,original_commission_cost:0,original_discount_cost:0,original_coupon_cost:0,original_seller_revenue:0,converted_gross_sales_try:0,converted_gross_returns_try:0,converted_commission_cost_try:0,converted_discount_cost_try:0,converted_coupon_cost_try:0,converted_seller_revenue_try:0,fx_reference_variance_try:0,row_count:0}
       current.original_gross_sales+=row.gross_sales;current.original_gross_returns+=row.gross_returns;current.original_commission_cost+=row.commission_cost;current.original_discount_cost+=row.discount_cost;current.original_coupon_cost+=row.coupon_cost;current.original_seller_revenue+=originalNet;current.converted_gross_sales_try+=convert(row.gross_sales);current.converted_gross_returns_try+=convert(row.gross_returns);current.converted_commission_cost_try+=convert(row.commission_cost);current.converted_discount_cost_try+=convert(row.discount_cost);current.converted_coupon_cost_try+=convert(row.coupon_cost);current.converted_seller_revenue_try+=convert(originalNet);current.fx_reference_variance_try+=variance;current.row_count++;groups.set(key,current)
     }
   }catch(error){const code=clean((error as Error).message,140)||'FX_RATE_MISSING';return json(409,{error:code},origin)}
