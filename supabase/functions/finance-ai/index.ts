@@ -5,6 +5,8 @@ import { consumeRateLimit, readJsonBody, requestError, isUuid } from '../_shared
 const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'',{max_lifetime:60})
 const MAX_QUESTION=500
 const ALLOWED_DAYS=new Set([7,30])
+// Verified against the OpenAI API documentation on 2026-08-21.
+// The Responses API contract below uses Structured Outputs via text.format=json_schema.
 const DEFAULT_MODEL='gpt-5.6-luna'
 const PII_PATTERNS=[/[A-Z]{2}\d{2}[A-Z0-9]{10,30}/i,/\bTR\d{24}\b/i,/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i,/\b\d{10,13}\b/]
 
@@ -30,6 +32,17 @@ async function callInternal(req:Request,name:string,query:Record<string,string>)
   try{payload=await response.json()}catch{/* fixed internal endpoint may return empty error */}
   if(!response.ok)throw new Error(String(payload?.error||`INTERNAL_${name}_${response.status}`))
   return payload
+}
+
+function publicReadiness(readiness:any){
+  return {
+    readyForAi:readiness?.readyForAi===true,
+    gates:{
+      trendyol:Boolean(readiness?.gates?.trendyol?.ready),
+      billing:Boolean(readiness?.gates?.billing?.ready),
+      legal:Boolean(readiness?.gates?.legal?.ready)
+    }
+  }
 }
 
 function buildEvidence(dashboard:any,decision:any){
@@ -160,6 +173,10 @@ Deno.serve(async(req:Request)=>{
   if(!auth)return json(401,{error:'UNAUTHORIZED'},origin)
   if(!sql)return json(503,{error:'SERVER_MISCONFIGURED'},origin)
 
+  let readiness:any
+  try{readiness=await callInternal(req,'launch-readiness',{})}catch{return json(503,{error:'AI_READINESS_CHECK_FAILED'},origin)}
+  if(readiness?.readyForAi!==true)return json(409,{error:'AI_NOT_READY',readiness:publicReadiness(readiness)},origin)
+
   try{if(!(await consumeRateLimit(sql,'finance-ai',auth.user.id,30,3600)))return json(429,{error:'RATE_LIMITED'},origin)}catch{return json(500,{error:'RATE_LIMIT_FAILED'},origin)}
 
   let body:any
@@ -185,6 +202,7 @@ Deno.serve(async(req:Request)=>{
     return json(200,{
       mode:model.mode,aiConfigured:model.aiConfigured,model:model.model,warning:model.warning,
       rangeDays:days,confidenceScore:Number(decision?.confidenceScore||0),analysis:model.analysis,evidence,
+      readiness:{readyForAi:true},
       guardrails:{deterministicNumbers:true,rawOrdersSentToModel:false,customerDataSentToModel:false,credentialsSentToModel:false,autonomousFinancialActions:false,modelStorageRequested:false},
       disclaimer:'KârKalkan AI finansal hesap yapmaz; yalnız KârKalkan motorunun ürettiği kanıtları açıklar. Muhasebe, vergi veya yatırım danışmanlığı değildir.'
     },origin)

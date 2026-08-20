@@ -9,6 +9,8 @@
     'En riskli ürünler hangileri ve neden?',
     'Veri güvenim karar vermek için yeterli mi?'
   ];
+  let aiReady=false;
+  let readinessChecked=false;
 
   function addStyle(){
     if(document.getElementById(STYLE_ID))return;
@@ -35,6 +37,8 @@
       AI_INPUT_MAY_CONTAIN_PERSONAL_DATA:'Müşteri e-postası, IBAN, telefon veya benzeri kişisel veriyi AI sorusuna yazma.',
       DATA_TOO_LARGE:'Bu dönem AI bağlamına güvenli şekilde sığmıyor. Daha kısa dönem seç.',
       AI_CONTEXT_FAILED:'Finans kanıt paketi hazırlanamadı. Önce mağaza verisini yenile.',NOT_FOUND:'Seçili mağaza bulunamadı.',
+      AI_NOT_READY:'AI canlı kullanım kapısı henüz açılmadı. Önce doğrulama adımlarını tamamla.',
+      AI_READINESS_CHECK_FAILED:'AI hazırlık durumu güvenli şekilde doğrulanamadı; özellik kapalı tutuldu.',
       RATE_LIMITED:'Saatlik AI analiz sınırına ulaşıldı. Finans motoru ve diğer KârKalkan özellikleri çalışmaya devam eder.',
       RATE_LIMIT_FAILED:'AI kullanım sınırı güvenli şekilde doğrulanamadı; istek durduruldu.'
     };return map[code]||'Finans analizi şu anda tamamlanamadı.';
@@ -44,12 +48,12 @@
     const dashboard=document.getElementById('dashboard');if(!dashboard)return null;
     const section=document.createElement('section');section.id=SECTION_ID;section.className='section finance-ai-section';
     section.innerHTML=`<div class="finance-ai-shell">
-      <div class="finance-ai-head"><div><p class="eyebrow">AI · KANITLI FİNANS ANALİSTİ</p><h2>Kanıta bağlı finans asistanı</h2><p>KârKalkan önce finansı kendi deterministic motorunda hesaplar. AI yalnız bu kanıt paketini açıklar; ham sipariş, müşteri veya bağlantı anahtarı modele gönderilmez.</p></div><div class="finance-ai-badges"><span id="financeAiMode" class="finance-ai-badge">Hazırlanıyor</span><span id="financeAiConfidence" class="finance-ai-badge">Güven —</span></div></div>
+      <div class="finance-ai-head"><div><p class="eyebrow">AI · KANITLI FİNANS ANALİSTİ</p><h2>Kanıta bağlı finans asistanı</h2><p>KârKalkan önce finansı kendi deterministic motorunda hesaplar. AI yalnız bu kanıt paketini açıklar; ham sipariş, müşteri veya bağlantı anahtarı modele gönderilmez.</p></div><div class="finance-ai-badges"><span id="financeAiMode" class="finance-ai-badge">Hazırlık kontrolü</span><span id="financeAiConfidence" class="finance-ai-badge">Güven —</span></div></div>
       <div class="finance-ai-guardrails"><div><strong>Deterministic rakam</strong><span>Model finans hesabı yapmaz.</span></div><div><strong>Kanıt zorunlu</strong><span>Her bulgu kaynak ID taşır.</span></div><div><strong>PII dışarıda</strong><span>Ham sipariş/müşteri verisi gönderilmez.</span></div><div><strong>Aksiyon kontrollü</strong><span>AI geri döndürülemez finans işlemi yapmaz.</span></div></div>
       <div id="financeAiPresets" class="finance-ai-presets"></div>
-      <form id="financeAiForm" class="finance-ai-form"><textarea id="financeAiQuestion" maxlength="500" placeholder="Örn. Bu dönemde kârı en çok hangi kesinti bozuyor?"></textarea><button id="financeAiAsk" type="submit">Kanıtla analiz et</button></form>
+      <form id="financeAiForm" class="finance-ai-form"><textarea id="financeAiQuestion" maxlength="500" disabled placeholder="Örn. Bu dönemde kârı en çok hangi kesinti bozuyor?"></textarea><button id="financeAiAsk" type="submit" disabled>Hazırlık kontrol ediliyor…</button></form>
       <p class="finance-ai-note">Müşteri adı, e-posta, telefon, IBAN veya başka kişisel veri yazma. Bu alan finansal özet soruları içindir.</p>
-      <div id="financeAiStatus" class="finance-ai-status finance-ai-hidden" role="status"></div>
+      <div id="financeAiStatus" class="finance-ai-status" role="status">AI canlı kullanım kapısı doğrulanıyor…</div>
       <div id="financeAiResult" class="finance-ai-result finance-ai-hidden"><article class="finance-ai-answer"><h3>Analiz</h3><p id="financeAiSummary" class="finance-ai-summary"></p><p id="financeAiConfidenceNote" class="finance-ai-confidence"></p><div id="financeAiFindings" class="finance-ai-list"></div><h3 class="finance-ai-actions-title">Önerilen sıra</h3><div id="financeAiActions" class="finance-ai-list"></div><div id="financeAiUnanswered" class="finance-ai-unanswered finance-ai-hidden"></div><p id="financeAiDisclaimer" class="finance-ai-disclaimer"></p></article><aside class="finance-ai-evidence"><h3>Kanıt paketi</h3><div id="financeAiEvidence" class="finance-ai-evidence-grid"></div></aside></div>
     </div>`;
     dashboard.insertAdjacentElement('afterend',section);
@@ -59,6 +63,35 @@
     const el=document.getElementById('financeAiStatus');if(!el)return;el.textContent=text;el.className=`finance-ai-status${kind?` ${kind}`:''}`;
   }
   function hideStatus(){document.getElementById('financeAiStatus')?.classList.add('finance-ai-hidden')}
+  function setControls(enabled){
+    const question=document.getElementById('financeAiQuestion'),button=document.getElementById('financeAiAsk');
+    if(question)question.disabled=!enabled;
+    if(button){button.disabled=!enabled;button.textContent=enabled?'Kanıtla analiz et':'AI kapısı kapalı'}
+    document.querySelectorAll('.finance-ai-preset').forEach(node=>{node.disabled=!enabled});
+  }
+  function readinessMessage(data){
+    const missing=[];
+    if(data?.gates?.trendyol?.ready!==true)missing.push('gerçek Trendyol mutabakatı');
+    if(data?.gates?.billing?.ready!==true)missing.push('production ödeme doğrulaması');
+    if(data?.gates?.legal?.ready!==true)missing.push('hukuki operatör/onay');
+    return missing.length?`AI canlı kullanım kapısı kapalı: ${missing.join(', ')} tamamlanmalı.`:'AI canlı kullanım kapısı henüz açılmadı.';
+  }
+  async function loadReadiness(){
+    const fn=requestFn();
+    if(!fn){readinessChecked=true;aiReady=false;setControls(false);setStatus('AI hazırlık durumu doğrulanamadı; özellik güvenli şekilde kapalı tutuldu.','bad');return}
+    setControls(false);setStatus('AI canlı kullanım kapısı doğrulanıyor…');
+    try{
+      const data=await fn('launch-readiness',{method:'GET'});
+      readinessChecked=true;aiReady=data?.readyForAi===true;
+      setControls(aiReady);
+      const mode=document.getElementById('financeAiMode');
+      if(mode){mode.textContent=aiReady?'Readiness doğrulandı':'Readiness kapalı';mode.className=`finance-ai-badge ${aiReady?'good':'warn'}`}
+      if(aiReady)setStatus('Gerçek mağaza doğrulaması, production ödeme kanıtı ve hukuki gate tamamlandı; AI çağrısı açıldı.','good');
+      else setStatus(readinessMessage(data),'bad');
+    }catch{
+      readinessChecked=true;aiReady=false;setControls(false);setStatus('AI hazırlık durumu güvenli şekilde doğrulanamadı; özellik kapalı tutuldu.','bad');
+    }
+  }
   function evidenceMap(items){return new Map((Array.isArray(items)?items:[]).map(item=>[String(item.id),item]))}
   function citations(ids,map){return (Array.isArray(ids)?ids:[]).map(id=>{const item=map.get(String(id));if(!item)return '';return `<span class="finance-ai-citation" title="${escapeHtml(item.source)}">${escapeHtml(item.label)} · ${escapeHtml(item.value)}</span>`}).join('')}
   function renderItems(target,items,map,type){
@@ -85,18 +118,20 @@
   }
   async function ask(question){
     const fn=requestFn();if(!fn){setStatus('Uygulama API katmanı hazır değil.','bad');return}
+    if(!readinessChecked||!aiReady){setControls(false);setStatus('AI canlı kullanım kapısı açılmadan analiz isteği gönderilemez.','bad');return}
     const id=connectionId();if(!id){setStatus('Önce bir mağaza seç.','bad');return}
     const button=document.getElementById('financeAiAsk');button.disabled=true;button.textContent='Kanıt paketi hazırlanıyor…';
     document.getElementById('financeAiResult').classList.add('finance-ai-hidden');setStatus('Deterministic finans motoru ve veri güveni okunuyor…');
-    try{const data=await fn('finance-ai',{method:'POST',body:{connection_id:id,days:days(),question}});render(data)}catch(error){setStatus(humanError(String(error?.message||'')),'bad')}finally{button.disabled=false;button.textContent='Kanıtla analiz et'}
+    try{const data=await fn('finance-ai',{method:'POST',body:{connection_id:id,days:days(),question}});render(data)}catch(error){if(String(error?.message||'')==='AI_NOT_READY'){aiReady=false;setControls(false)}setStatus(humanError(String(error?.message||'')),'bad')}finally{if(aiReady){button.disabled=false;button.textContent='Kanıtla analiz et'}}
   }
   function init(){
     addStyle();addNav();if(!shell())return;
     const presetRoot=document.getElementById('financeAiPresets'),question=document.getElementById('financeAiQuestion');
-    PRESETS.forEach(text=>{const button=document.createElement('button');button.type='button';button.className='finance-ai-preset';button.textContent=text;button.addEventListener('click',()=>{question.value=text;void ask(text)});presetRoot.appendChild(button)});
-    document.getElementById('financeAiForm')?.addEventListener('submit',event=>{event.preventDefault();const text=String(question.value||'').trim();if(text.length<3){setStatus('Sorunu biraz daha açık yaz.','bad');return}void ask(text)});
-    document.getElementById('connectionSelect')?.addEventListener('change',()=>{document.getElementById('financeAiResult')?.classList.add('finance-ai-hidden');hideStatus()});
-    document.getElementById('rangeDays')?.addEventListener('change',()=>{document.getElementById('financeAiResult')?.classList.add('finance-ai-hidden');hideStatus()});
+    PRESETS.forEach(text=>{const button=document.createElement('button');button.type='button';button.className='finance-ai-preset';button.textContent=text;button.disabled=true;button.addEventListener('click',()=>{if(!aiReady)return;question.value=text;void ask(text)});presetRoot.appendChild(button)});
+    document.getElementById('financeAiForm')?.addEventListener('submit',event=>{event.preventDefault();if(!aiReady){setStatus('AI canlı kullanım kapısı açılmadan analiz isteği gönderilemez.','bad');return}const text=String(question.value||'').trim();if(text.length<3){setStatus('Sorunu biraz daha açık yaz.','bad');return}void ask(text)});
+    document.getElementById('connectionSelect')?.addEventListener('change',()=>{document.getElementById('financeAiResult')?.classList.add('finance-ai-hidden');if(aiReady)hideStatus()});
+    document.getElementById('rangeDays')?.addEventListener('change',()=>{document.getElementById('financeAiResult')?.classList.add('finance-ai-hidden');if(aiReady)hideStatus()});
+    void loadReadiness();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
