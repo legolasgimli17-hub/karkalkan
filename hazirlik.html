@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#1b222b">
+  <title>Yayına Hazırlık — KârKalkan</title>
+  <link rel="stylesheet" href="/legal.css?v=20260818">
+  <link rel="stylesheet" href="/hazirlik.css?v=20260821">
+</head>
+<body>
+<main class="legal-shell readiness-shell">
+  <header class="legal-top"><a class="legal-brand" href="/"><span>K</span>KârKalkan</a><nav><a href="/uygulama">Uygulama</a><a href="/hesap">Hesap</a><a href="/kvkk">KVKK</a></nav></header>
+  <section class="legal-hero"><p class="legal-kicker">GO-LIVE READINESS</p><h1>AI öncesi son kapılar</h1><p>Bu ekran gerçek mağaza, ödeme ve hukuki hazırlık kanıtlarını sunucudan okur. Yeşil olmayan bir gate gizlenmez.</p></section>
+  <section class="readiness-grid" aria-live="polite">
+    <article class="legal-card readiness-card" id="gateTrendyol"><span class="gate-chip">Kontrol ediliyor</span><h2>Trendyol gerçek mağaza</h2><p id="gateTrendyolText">Bağlantı ve mutabakat kanıtı okunuyor…</p></article>
+    <article class="legal-card readiness-card" id="gateBilling"><span class="gate-chip">Kontrol ediliyor</span><h2>Paddle canlı ödeme</h2><p id="gateBillingText">Checkout, webhook ve subscription kanıtı okunuyor…</p></article>
+    <article class="legal-card readiness-card" id="gateLegal"><span class="gate-chip">Kontrol ediliyor</span><h2>Hukuki go-live</h2><p id="gateLegalText">Operatör ve başvuru kanalı kontrol ediliyor…</p></article>
+  </section>
+  <section class="legal-content">
+    <article class="legal-card"><h2>Genel durum</h2><p id="overallReadiness">Hazırlık durumu okunuyor…</p><button id="refreshReadiness" class="readiness-button" type="button">Durumu yenile</button></article>
+    <article class="legal-card"><h2>Trendyol 7 günlük mutabakat</h2><p>Aktif Trendyol mağazanın kapanmış 7 günlük kaynak raporundaki toplamları gir. KârKalkan kendi verisini sunucudan hesaplar; yalnız sent farkı kalmayan kayıt “matched” olur.</p><p id="activeConnectionText" class="readiness-note"></p>
+      <form id="reconciliationForm" class="reconciliation-form">
+        <div class="period-row"><label>Başlangıç<input id="periodStart" type="date" required></label><label>Bitiş<input id="periodEnd" type="date" required></label></div>
+        <div class="totals-grid">
+          <label>Brüt satış<input data-total="gross_sales" type="number" step="0.01" required></label>
+          <label>Brüt iade<input data-total="gross_returns" type="number" step="0.01" required></label>
+          <label>Komisyon<input data-total="commission_cost" type="number" step="0.01" required></label>
+          <label>İndirim<input data-total="discount_cost" type="number" step="0.01" required></label>
+          <label>Kupon<input data-total="coupon_cost" type="number" step="0.01" required></label>
+          <label>Satıcı hakedişi<input data-total="seller_revenue" type="number" step="0.01" required></label>
+          <label>Platform hizmet bedeli<input data-total="platform_service_fee_cost" type="number" step="0.01" required></label>
+          <label>Stopaj net<input data-total="stoppage_net" type="number" step="0.01" required></label>
+          <label>Kargo<input data-total="cargo_cost" type="number" step="0.01" required></label>
+        </div>
+        <button id="runReconciliation" class="readiness-button" type="submit">7 günü uzlaştır</button>
+      </form>
+      <pre id="reconciliationResult" class="reconciliation-result" hidden></pre>
+    </article>
+  </section>
+</main>
+<script src="/hazirlik.js?v=20260821"></script>
+</body>
+</html>

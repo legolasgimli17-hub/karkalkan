@@ -10,6 +10,10 @@
       "destination": "/hesap.html"
     },
     {
+      "source": "/hazirlik",
+      "destination": "/hazirlik.html"
+    },
+    {
       "source": "/gizlilik",
       "destination": "/gizlilik.html"
     },
@@ -62,6 +66,11 @@
       "permanent": true
     },
     {
+      "source": "/hazirlik.html",
+      "destination": "/hazirlik",
+      "permanent": true
+    },
+    {
       "source": "/gizlilik.html",
       "destination": "/gizlilik",
       "permanent": true
@@ -97,6 +106,13 @@
     },
     {
       "source": "/hesap",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
+      "source": "/hazirlik",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" },
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
