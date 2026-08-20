@@ -1,6 +1,8 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
-import { readJsonBody, requestError, isUuid } from '../_shared/request-security.ts'
+import { createTransactionPool } from '../_shared/postgres.ts'
+import { consumeRateLimit, readJsonBody, requestError, isUuid } from '../_shared/request-security.ts'
 
+const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'',{max_lifetime:60})
 const MAX_QUESTION=500
 const ALLOWED_DAYS=new Set([7,30])
 const DEFAULT_MODEL='gpt-5.6-luna'
@@ -156,6 +158,9 @@ Deno.serve(async(req:Request)=>{
   let auth
   try{auth=await authenticate(req)}catch{return json(503,{error:'SERVER_CONFIG'},origin)}
   if(!auth)return json(401,{error:'UNAUTHORIZED'},origin)
+  if(!sql)return json(503,{error:'SERVER_MISCONFIGURED'},origin)
+
+  try{if(!(await consumeRateLimit(sql,'finance-ai',auth.user.id,30,3600)))return json(429,{error:'RATE_LIMITED'},origin)}catch{return json(500,{error:'RATE_LIMIT_FAILED'},origin)}
 
   let body:any
   try{body=await readJsonBody(req,8*1024)}catch(error){const failure=requestError(error);return json(failure.status,{error:failure.code},origin)}
