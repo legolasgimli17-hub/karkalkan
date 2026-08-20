@@ -1,131 +1,37 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    {
-      "source": "/uygulama",
-      "destination": "/v4.html"
-    },
-    {
-      "source": "/hesap",
-      "destination": "/hesap.html"
-    },
-    {
-      "source": "/gizlilik",
-      "destination": "/gizlilik.html"
-    },
-    {
-      "source": "/kvkk",
-      "destination": "/kvkk.html"
-    },
-    {
-      "source": "/cerezler",
-      "destination": "/cerezler.html"
-    },
-    {
-      "source": "/kullanim-kosullari",
-      "destination": "/kullanim-kosullari.html"
-    },
-    {
-      "source": "/api/health",
-      "destination": "/health.json"
-    }
+    { "source": "/uygulama", "destination": "/v4.html" },
+    { "source": "/hesap", "destination": "/hesap.html" },
+    { "source": "/hazirlik", "destination": "/hazirlik.html" },
+    { "source": "/gizlilik", "destination": "/gizlilik.html" },
+    { "source": "/kvkk", "destination": "/kvkk.html" },
+    { "source": "/cerezler", "destination": "/cerezler.html" },
+    { "source": "/kullanim-kosullari", "destination": "/kullanim-kosullari.html" },
+    { "source": "/api/health", "destination": "/health.json" }
   ],
   "redirects": [
-    {
-      "source": "/hesapla",
-      "destination": "/#hesaplayici",
-      "permanent": true
-    },
-    {
-      "source": "/hesapla.html",
-      "destination": "/#hesaplayici",
-      "permanent": true
-    },
-    {
-      "source": "/demo",
-      "destination": "/#genel",
-      "permanent": true
-    },
-    {
-      "source": "/demo.html",
-      "destination": "/#genel",
-      "permanent": true
-    },
-    {
-      "source": "/v4.html",
-      "destination": "/uygulama",
-      "permanent": true
-    },
-    {
-      "source": "/hesap.html",
-      "destination": "/hesap",
-      "permanent": true
-    },
-    {
-      "source": "/gizlilik.html",
-      "destination": "/gizlilik",
-      "permanent": true
-    },
-    {
-      "source": "/kvkk.html",
-      "destination": "/kvkk",
-      "permanent": true
-    },
-    {
-      "source": "/cerezler.html",
-      "destination": "/cerezler",
-      "permanent": true
-    },
-    {
-      "source": "/kullanim-kosullari.html",
-      "destination": "/kullanim-kosullari",
-      "permanent": true
-    }
+    { "source": "/hesapla", "destination": "/#hesaplayici", "permanent": true },
+    { "source": "/hesapla.html", "destination": "/#hesaplayici", "permanent": true },
+    { "source": "/demo", "destination": "/#genel", "permanent": true },
+    { "source": "/demo.html", "destination": "/#genel", "permanent": true },
+    { "source": "/v4.html", "destination": "/uygulama", "permanent": true },
+    { "source": "/hesap.html", "destination": "/hesap", "permanent": true },
+    { "source": "/hazirlik.html", "destination": "/hazirlik", "permanent": true },
+    { "source": "/gizlilik.html", "destination": "/gizlilik", "permanent": true },
+    { "source": "/kvkk.html", "destination": "/kvkk", "permanent": true },
+    { "source": "/cerezler.html", "destination": "/cerezler", "permanent": true },
+    { "source": "/kullanim-kosullari.html", "destination": "/kullanim-kosullari", "permanent": true }
   ],
   "headers": [
-    {
-      "source": "/api/health",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0" }
-      ]
-    },
-    {
-      "source": "/uygulama",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0" }
-      ]
-    },
-    {
-      "source": "/hesap",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, max-age=0" },
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-      ]
-    },
-    {
-      "source": "/gizlilik",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-      ]
-    },
-    {
-      "source": "/kvkk",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-      ]
-    },
-    {
-      "source": "/cerezler",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-      ]
-    },
-    {
-      "source": "/kullanim-kosullari",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-      ]
-    },
+    { "source": "/api/health", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }] },
+    { "source": "/uygulama", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }] },
+    { "source": "/hesap", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }, { "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/hazirlik", "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }, { "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/gizlilik", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/kvkk", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/cerezler", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/kullanim-kosullari", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     {
       "source": "/(.*)",
       "headers": [
