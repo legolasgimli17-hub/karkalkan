@@ -40,12 +40,13 @@ Deno.serve(async(req:Request)=>{
   const hasSubscriptionWebhook=[...eventTypes].some(type=>type.startsWith('subscription.'))
   const hasTransactionCompletion=eventTypes.has('transaction.completed')||eventTypes.has('transaction.paid')
   const hasLiveSubscription=(billingSubscriptions||[]).some((row:any)=>VALIDATED_STATUSES.has(String(row.status||''))&&String(row.paddle_subscription_id||''))
-  const billingProven=Boolean(billingConfig.ready&&config.environment==='production'&&hasSubscriptionWebhook&&hasLiveSubscription)
+  const billingProven=Boolean(billingConfig.ready&&config.environment==='production'&&hasTransactionCompletion&&hasSubscriptionWebhook&&hasLiveSubscription)
 
   const legalOperator=String(Deno.env.get('KARKALKAN_LEGAL_OPERATOR_NAME')||'').trim()
   const legalContact=String(Deno.env.get('KARKALKAN_LEGAL_CONTACT_EMAIL')||'').trim().toLowerCase()
   const legalApprovedAt=String(Deno.env.get('KARKALKAN_LEGAL_APPROVED_AT')||'').trim()
-  const legalApproved=Boolean(legalOperator&&validEmail(legalContact)&&/^\d{4}-\d{2}-\d{2}/.test(legalApprovedAt))
+  const legalPagesFinal=String(Deno.env.get('KARKALKAN_LEGAL_PAGES_FINAL')||'').trim().toLowerCase()==='true'
+  const legalApproved=Boolean(legalOperator&&validEmail(legalContact)&&/^\d{4}-\d{2}-\d{2}/.test(legalApprovedAt)&&legalPagesFinal)
 
   const trendYolProven=Boolean(matchedEvidence)
   return json(200,{
@@ -68,13 +69,14 @@ Deno.serve(async(req:Request)=>{
         subscriptionWebhookSeen:hasSubscriptionWebhook,
         transactionCompletionSeen:hasTransactionCompletion,
         liveSubscriptionSeen:hasLiveSubscription,
-        nextAction:!billingConfig.ready?'CONFIGURE_PADDLE':config.environment!=='production'?'SWITCH_PADDLE_TO_PRODUCTION':!hasSubscriptionWebhook||!hasLiveSubscription?'COMPLETE_REAL_CHECKOUT':'DONE'
+        nextAction:!billingConfig.ready?'CONFIGURE_PADDLE':config.environment!=='production'?'SWITCH_PADDLE_TO_PRODUCTION':!hasTransactionCompletion||!hasSubscriptionWebhook||!hasLiveSubscription?'COMPLETE_REAL_CHECKOUT':'DONE'
       },
       legal:{
         ready:legalApproved,
         operatorConfigured:Boolean(legalOperator),
         applicationChannelConfigured:validEmail(legalContact),
         approvedAtConfigured:/^\d{4}-\d{2}-\d{2}/.test(legalApprovedAt),
+        publicPagesFinal:legalPagesFinal,
         nextAction:legalApproved?'DONE':'COMPLETE_OPERATOR_AND_LEGAL_SIGNOFF'
       }
     }
