@@ -40,6 +40,7 @@ alter table public.marketplace_fx_import_batches enable row level security;
 revoke all on table public.marketplace_fx_import_batches from anon, authenticated;
 
 create table if not exists public.marketplace_fx_import_daily (
+  id bigint generated always as identity primary key,
   batch_id uuid not null references public.marketplace_fx_import_batches(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   connection_id uuid not null,
@@ -65,13 +66,14 @@ create table if not exists public.marketplace_fx_import_daily (
   converted_seller_revenue_try numeric(20,2),
   fx_reference_variance_try numeric(20,2) not null default 0,
   row_count integer not null default 0 check (row_count > 0),
-  primary key (batch_id, day, original_currency, settlement_day),
   constraint marketplace_fx_import_daily_connection_owner_fkey
     foreign key (connection_id, user_id)
     references public.marketplace_connections(id, user_id)
     on delete cascade
 );
 
+create unique index if not exists marketplace_fx_import_daily_batch_bucket_uidx
+  on public.marketplace_fx_import_daily(batch_id, day, original_currency, coalesce(settlement_day, date '0001-01-01'));
 create index if not exists marketplace_fx_import_daily_user_day_idx
   on public.marketplace_fx_import_daily(user_id, day desc);
 create index if not exists marketplace_fx_import_daily_connection_day_idx
