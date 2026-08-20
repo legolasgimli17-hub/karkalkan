@@ -14,6 +14,13 @@
     if(document.getElementById(STYLE_ID))return;
     const link=document.createElement('link');link.id=STYLE_ID;link.rel='stylesheet';link.href='/finance-ai.css?v=20260821';document.head.appendChild(link);
   }
+  function addNav(){
+    const nav=document.querySelector('.side-nav');
+    if(!nav||nav.querySelector('a[href="#financeAi"]'))return;
+    const dashboardLink=nav.querySelector('a[href="#dashboard"]');
+    const link=document.createElement('a');link.href='#financeAi';link.innerHTML='<span>AI</span> Finans analisti';
+    dashboardLink?.insertAdjacentElement('afterend',link);
+  }
   function requestFn(){
     if(typeof globalThis.functionRequest==='function')return globalThis.functionRequest;
     try{if(typeof functionRequest==='function')return functionRequest}catch{/* unavailable */}
@@ -27,7 +34,9 @@
       INVALID_CONNECTION:'Önce analiz edilecek mağazayı seç.',AI_QUESTION_REQUIRED:'Sorunu biraz daha açık yaz.',
       AI_INPUT_MAY_CONTAIN_PERSONAL_DATA:'Müşteri e-postası, IBAN, telefon veya benzeri kişisel veriyi AI sorusuna yazma.',
       DATA_TOO_LARGE:'Bu dönem AI bağlamına güvenli şekilde sığmıyor. Daha kısa dönem seç.',
-      AI_CONTEXT_FAILED:'Finans kanıt paketi hazırlanamadı. Önce mağaza verisini yenile.',NOT_FOUND:'Seçili mağaza bulunamadı.'
+      AI_CONTEXT_FAILED:'Finans kanıt paketi hazırlanamadı. Önce mağaza verisini yenile.',NOT_FOUND:'Seçili mağaza bulunamadı.',
+      RATE_LIMITED:'Saatlik AI analiz sınırına ulaşıldı. Finans motoru ve diğer KârKalkan özellikleri çalışmaya devam eder.',
+      RATE_LIMIT_FAILED:'AI kullanım sınırı güvenli şekilde doğrulanamadı; istek durduruldu.'
     };return map[code]||'Finans analizi şu anda tamamlanamadı.';
   }
   function shell(){
@@ -35,13 +44,13 @@
     const dashboard=document.getElementById('dashboard');if(!dashboard)return null;
     const section=document.createElement('section');section.id=SECTION_ID;section.className='section finance-ai-section';
     section.innerHTML=`<div class="finance-ai-shell">
-      <div class="finance-ai-head"><div><p class="eyebrow">02 · KANITLI AI FİNANS ANALİSTİ</p><h2>Rakam uydurmayan finans asistanı</h2><p>KârKalkan önce finansı kendi deterministic motorunda hesaplar. AI yalnız bu kanıt paketini açıklar; ham sipariş, müşteri veya bağlantı anahtarı modele gönderilmez.</p></div><div class="finance-ai-badges"><span id="financeAiMode" class="finance-ai-badge">Hazırlanıyor</span><span id="financeAiConfidence" class="finance-ai-badge">Güven —</span></div></div>
+      <div class="finance-ai-head"><div><p class="eyebrow">AI · KANITLI FİNANS ANALİSTİ</p><h2>Kanıta bağlı finans asistanı</h2><p>KârKalkan önce finansı kendi deterministic motorunda hesaplar. AI yalnız bu kanıt paketini açıklar; ham sipariş, müşteri veya bağlantı anahtarı modele gönderilmez.</p></div><div class="finance-ai-badges"><span id="financeAiMode" class="finance-ai-badge">Hazırlanıyor</span><span id="financeAiConfidence" class="finance-ai-badge">Güven —</span></div></div>
       <div class="finance-ai-guardrails"><div><strong>Deterministic rakam</strong><span>Model finans hesabı yapmaz.</span></div><div><strong>Kanıt zorunlu</strong><span>Her bulgu kaynak ID taşır.</span></div><div><strong>PII dışarıda</strong><span>Ham sipariş/müşteri verisi gönderilmez.</span></div><div><strong>Aksiyon kontrollü</strong><span>AI geri döndürülemez finans işlemi yapmaz.</span></div></div>
       <div id="financeAiPresets" class="finance-ai-presets"></div>
       <form id="financeAiForm" class="finance-ai-form"><textarea id="financeAiQuestion" maxlength="500" placeholder="Örn. Bu dönemde kârı en çok hangi kesinti bozuyor?"></textarea><button id="financeAiAsk" type="submit">Kanıtla analiz et</button></form>
       <p class="finance-ai-note">Müşteri adı, e-posta, telefon, IBAN veya başka kişisel veri yazma. Bu alan finansal özet soruları içindir.</p>
       <div id="financeAiStatus" class="finance-ai-status finance-ai-hidden" role="status"></div>
-      <div id="financeAiResult" class="finance-ai-result finance-ai-hidden"><article class="finance-ai-answer"><h3>Analiz</h3><p id="financeAiSummary" class="finance-ai-summary"></p><p id="financeAiConfidenceNote" class="finance-ai-confidence"></p><div id="financeAiFindings" class="finance-ai-list"></div><h3 style="margin-top:18px">Önerilen sıra</h3><div id="financeAiActions" class="finance-ai-list"></div><div id="financeAiUnanswered" class="finance-ai-unanswered finance-ai-hidden"></div><p id="financeAiDisclaimer" class="finance-ai-disclaimer"></p></article><aside class="finance-ai-evidence"><h3>Kanıt paketi</h3><div id="financeAiEvidence" class="finance-ai-evidence-grid"></div></aside></div>
+      <div id="financeAiResult" class="finance-ai-result finance-ai-hidden"><article class="finance-ai-answer"><h3>Analiz</h3><p id="financeAiSummary" class="finance-ai-summary"></p><p id="financeAiConfidenceNote" class="finance-ai-confidence"></p><div id="financeAiFindings" class="finance-ai-list"></div><h3 class="finance-ai-actions-title">Önerilen sıra</h3><div id="financeAiActions" class="finance-ai-list"></div><div id="financeAiUnanswered" class="finance-ai-unanswered finance-ai-hidden"></div><p id="financeAiDisclaimer" class="finance-ai-disclaimer"></p></article><aside class="finance-ai-evidence"><h3>Kanıt paketi</h3><div id="financeAiEvidence" class="finance-ai-evidence-grid"></div></aside></div>
     </div>`;
     dashboard.insertAdjacentElement('afterend',section);
     return section;
@@ -57,7 +66,7 @@
   }
   function render(data){
     const analysis=data?.analysis||{},map=evidenceMap(data?.evidence);
-    document.getElementById('financeAiMode').textContent=data.mode==='ai_with_evidence'?`AI + kanıt · ${data.model||'model'}`:'Kanıt motoru · AI yedeği';
+    document.getElementById('financeAiMode').textContent=data.mode==='ai_with_evidence'?`AI + kanıt · ${data.model||'model'}`:'Kanıt motoru · AI kapalı/yedek';
     document.getElementById('financeAiMode').className=`finance-ai-badge ${data.mode==='ai_with_evidence'?'good':'warn'}`;
     document.getElementById('financeAiConfidence').textContent=`Güven ${Number(data.confidenceScore||0)}/100`;
     document.getElementById('financeAiConfidence').className=`finance-ai-badge ${Number(data.confidenceScore||0)>=70?'good':'warn'}`;
@@ -82,7 +91,7 @@
     try{const data=await fn('finance-ai',{method:'POST',body:{connection_id:id,days:days(),question}});render(data)}catch(error){setStatus(humanError(String(error?.message||'')),'bad')}finally{button.disabled=false;button.textContent='Kanıtla analiz et'}
   }
   function init(){
-    addStyle();if(!shell())return;
+    addStyle();addNav();if(!shell())return;
     const presetRoot=document.getElementById('financeAiPresets'),question=document.getElementById('financeAiQuestion');
     PRESETS.forEach(text=>{const button=document.createElement('button');button.type='button';button.className='finance-ai-preset';button.textContent=text;button.addEventListener('click',()=>{question.value=text;void ask(text)});presetRoot.appendChild(button)});
     document.getElementById('financeAiForm')?.addEventListener('submit',event=>{event.preventDefault();const text=String(question.value||'').trim();if(text.length<3){setStatus('Sorunu biraz daha açık yaz.','bad');return}void ask(text)});
