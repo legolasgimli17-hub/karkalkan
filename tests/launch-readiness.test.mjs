@@ -30,12 +30,13 @@ test('launch readiness stays fail-closed until real-store, live billing and lega
   const source=await read('supabase/functions/launch-readiness/index.ts');
   assert.match(source,/readyForAi:trendYolProven&&billingProven&&legalApproved/);
   assert.match(source,/config\.environment==='production'/);
-  assert.match(source,/subscriptionWebhookSeen/);
-  assert.match(source,/liveSubscriptionSeen/);
+  assert.match(source,/hasTransactionCompletion&&hasSubscriptionWebhook&&hasLiveSubscription/);
   assert.match(source,/marketplace_validation_evidence/);
   assert.match(source,/KARKALKAN_LEGAL_OPERATOR_NAME/);
   assert.match(source,/KARKALKAN_LEGAL_CONTACT_EMAIL/);
   assert.match(source,/KARKALKAN_LEGAL_APPROVED_AT/);
+  assert.match(source,/KARKALKAN_LEGAL_PAGES_FINAL/);
+  assert.match(source,/legalPagesFinal/);
 });
 
 test('readiness page is private-indexed, same-origin and exposes no privileged keys',async()=>{
