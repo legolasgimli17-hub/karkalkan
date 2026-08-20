@@ -2,11 +2,12 @@
 
 (() => {
   // Static workspace scripts are intentionally same-origin and CSP constrained.
-  // Load provider-specific orchestration and the evidence-bound finance analyst
+  // Load provider-specific orchestration and evidence-bound product modules
   // after v4.js has installed the shared auth/function helpers. Failure here
   // must not break the core workspace.
   void import('/trendyol-sync-pipeline.js?v=20260819').catch(() => {});
   void import('/finance-ai.js?v=20260821').catch(() => {});
+  void import('/smart-csv.js?v=20260821').catch(() => {});
 
   const ONBOARDING_STAGES = new Set(['store', 'data', 'cost', 'decision', 'complete']);
   const TARGET_STEPS = new Set(['store', 'data', 'cost', 'decision']);

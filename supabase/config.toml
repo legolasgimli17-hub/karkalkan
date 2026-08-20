@@ -25,6 +25,9 @@ verify_jwt = true
 [functions.marketplace-import]
 verify_jwt = true
 
+[functions.csv-schema-mapper]
+verify_jwt = true
+
 [functions.trendyol-sync]
 verify_jwt = true
 
