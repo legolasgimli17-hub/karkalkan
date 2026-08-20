@@ -21,8 +21,8 @@
     <p class="legal-kicker">GÜVEN &amp; ŞEFFAFLIK</p>
     <h1>Gizlilik Politikası</h1>
     <p>Bu politika KârKalkan’ın hangi veri türlerini kullandığını, bunları neden kullandığını ve ürünün veri azaltma yaklaşımını açıklar. KVKK kapsamındaki zorunlu aydınlatma için ayrıca <a href="/kvkk">KVKK Aydınlatma Metni</a> yayımlanmıştır.</p>
-    <div class="legal-status"><strong>Yayın öncesi zorunlu alan eksik</strong>KârKalkan’ın işletmecisinin gerçek kişi/tüzel kişi kimliği, tebligata elverişli iletişim kanalı ve yurt dışı aktarım mekanizmaları doğrulanmadan bu metin nihai hukuki metin olarak kabul edilmemelidir.</div>
-    <div class="legal-meta"><span>Sürüm: 18 Ağustos 2026</span><span>Ürün: KârKalkan</span><span>Durum: hazırlık metni</span></div>
+    <div class="legal-status"><strong>Yayın öncesi zorunlu alan eksik</strong>KârKalkan’ın işletmecisinin gerçek kişi/tüzel kişi kimliği, başvuruya elverişli iletişim kanalı ve uygulanacak yurt dışı aktarım mekanizmaları doğrulanmadan bu metin nihai hukuki metin olarak kabul edilmemelidir.</div>
+    <div class="legal-meta"><span>Sürüm: 21 Ağustos 2026</span><span>Ürün: KârKalkan</span><span>Durum: hazırlık metni</span></div>
   </section>
 
   <section class="legal-content">
@@ -30,8 +30,9 @@
       <ul>
         <li><strong>Hesap verileri:</strong> e-posta adresi, hesap kimliği, oturum ve doğrulama kayıtları. Parolalar uygulama tarafından düz metin olarak saklanmaz.</li>
         <li><strong>Mağaza bağlantı verileri:</strong> mağaza adı, pazaryeri/satıcı tanımlayıcıları, bağlantı durumu ve senkron geçmişi. API/partner kimlik bilgileri tarayıcıda kalıcı tutulmak yerine sunucu tarafındaki şifreli kasa akışında yönetilir.</li>
-        <li><strong>Finans ve ürün verileri:</strong> satış, iade, komisyon, kargo, stopaj, platform kesintileri, ürün kodları, maliyet girdileri ve bunlardan türetilen kârlılık göstergeleri.</li>
+        <li><strong>Finans ve ürün verileri:</strong> satış, iade, komisyon, kargo, stopaj, platform kesintileri, ürün kodları, maliyet girdileri ve bunlardan türetilen kârlılık/veri güveni göstergeleri.</li>
         <li><strong>Banka mutabakat verileri:</strong> içe aktarılan hareketlerden mutabakat için gerekli asgari alanlar. KârKalkan tam IBAN/hesap numarası toplamamayı, açıklama metnini azaltmayı ve ham banka referansını tek yönlü parmak iziyle temsil etmeyi hedefler.</li>
+        <li><strong>AI analiz girdisi:</strong> kullanıcı tarafından isteğe bağlı olarak yazılan en fazla 500 karakterlik kısa finans sorusu ve bu soruya yanıt vermek için sunucu tarafından oluşturulan azaltılmış/agrega finans kanıt paketi.</li>
         <li><strong>Teknik güvenlik kayıtları:</strong> güvenli hata kodları, rate-limit sayaçları ve işlev/ortam etiketleri. Hata izleme etkinse varsayılan PII gönderimi kapalı ve iz örnekleme oranı sıfır olacak şekilde yapılandırılmıştır.</li>
         <li><strong>Analitik:</strong> sayfa görüntüleme ve düşük kardinaliteli onboarding aşamaları. KârKalkan’ın kendi onboarding agregasında kullanıcı, mağaza, ürün, banka veya finans tutarı tutulmaz.</li>
       </ul>
@@ -42,28 +43,44 @@
         <li>Hesap açmak, giriş ve parola kurtarma süreçlerini yürütmek.</li>
         <li>Yetkili pazaryeri verilerini çekmek, standart raporları içe aktarmak ve mağaza finansını tek modele dönüştürmek.</li>
         <li>Kârlılık, maliyet kapsamı, finansal veri güveni, risk sinyali ve mutabakat adayları üretmek.</li>
+        <li>İsteğe bağlı AI Finans Analisti çağrısında KârKalkan finans motorunun zaten hesapladığı rakamları açıklamak ve bulgu/önerileri kanıt kimliklerine bağlamak.</li>
         <li>Abonelik ve faturalandırma akışını etkinleştirmek; ödeme kartı verisini KârKalkan’ın kendi sistemine almadan ödeme sağlayıcısına yönlendirmek.</li>
-        <li>Hizmet güvenliğini korumak, kötüye kullanımı sınırlamak, hataları teşhis etmek ve ürünün hangi onboarding aşamalarında takıldığını toplu olarak anlamak.</li>
+        <li>Hizmet güvenliğini korumak, kötüye kullanımı sınırlamak, hataları teşhis etmek ve ürünün onboarding aşamalarını toplu olarak anlamak.</li>
       </ul>
     </article>
 
-    <article class="legal-card"><h2>3. Hangi hizmet sağlayıcılar devreye girebilir?</h2>
+    <article class="legal-card"><h2>3. AI Finans Analisti nasıl çalışır?</h2>
+      <p>KârKalkan’ın AI katmanı genel amaçlı bir veritabanı sohbeti değildir. Finans rakamlarının hesaplama otoritesi mevcut deterministik finans motorudur. Model yalnız bu motorun ürettiği sınırlı bir “kanıt paketi” üzerinden açıklama üretir.</p>
+      <ul>
+        <li>Gönderilebilecek kanıtlar; toplam satış, iade, komisyon, kargo, platform hizmet bedeli, stopaj, satıcıya kalan tutar, veri güven skoru, sınırlı ürün agregaları ve veri boşluğu/risk sinyalleriyle sınırlandırılmıştır.</li>
+        <li>Ham sipariş satırları, müşteri kayıtları, banka açıklamaları, pazaryeri API anahtarları/OAuth belirteçleri ve service-role sırları model bağlamına eklenmemesi için sunucu tarafında ayrılmıştır.</li>
+        <li>Kullanıcıdan AI soru alanına üçüncü kişilere ait ad, e-posta, telefon, IBAN veya benzeri kişisel veri yazmaması istenir; belirgin kalıplar sunucu tarafında reddedilir.</li>
+        <li>Her model bulgusu/önerisi mevcut kanıt kimliğine referans vermelidir. Geçersiz referanslı cevap kullanılmaz ve ürün deterministik kanıt özetine geri döner.</li>
+        <li>AI’a fiyat değiştirme, para transferi, muhasebe kaydı gönderme veya başka geri döndürülemez finansal işlem aracı verilmez.</li>
+        <li>AI sağlayıcısı yapılandırılmamış veya erişilemiyorsa temel KârKalkan ürünü çalışmaya devam eder ve açıkça “kanıt motoru / AI kapalı” modu gösterilir.</li>
+      </ul>
+    </article>
+
+    <article class="legal-card"><h2>4. Hangi hizmet sağlayıcılar devreye girebilir?</h2>
       <table class="legal-table"><thead><tr><th>Hizmet</th><th>Rol</th><th>Veri sınırı</th></tr></thead><tbody>
         <tr><td>Supabase</td><td>Kimlik doğrulama, veritabanı, Vault ve Edge Functions altyapısı</td><td>Hesap ve mağaza çalışma alanı verileri; erişim rol/yetki kontrolleriyle sınırlandırılır.</td></tr>
         <tr><td>Vercel</td><td>Web barındırma ve Web Analytics</td><td>Web Analytics çerez kullanmadan anonim/agrega ziyaret verisi üretmek üzere yapılandırılmıştır.</td></tr>
+        <tr><td>OpenAI API</td><td>Yalnız gerçek operatör tarafından etkinleştirilirse, kanıta bağlı finans açıklaması</td><td>Kısa kullanıcı sorusu + azaltılmış/agrega finans kanıt paketi. Ham sipariş, müşteri kayıtları ve bağlantı sırları model bağlamına gönderilmemesi için ürün sınırı uygulanır. İsteklerde <code>store:false</code> talep edilir; sağlayıcının güncel veri işleme/saklama hükümleri yine de canlıya çıkıştan önce incelenmelidir.</td></tr>
         <tr><td>Paddle</td><td>Etkinleştirildiğinde ödeme, abonelik ve müşteri portalı</td><td>Kart verisi KârKalkan sunucularına alınmaz; ödeme arayüzü sağlayıcı tarafında yürütülür.</td></tr>
-        <tr><td>Have I Been Pwned Pwned Passwords</td><td>Yeni parola için bilinen sızıntı kontrolü</td><td>Parolanın kendisi veya tam özeti yerine k-anonimlik için SHA-1 özetinin ilk beş karakteri kullanılır.</td></tr>
+        <tr><td>Have I Been Pwned Pwned Passwords</td><td>Yeni/sıfırlanan parola için bilinen sızıntı kontrolü</td><td>Parolanın kendisi veya tam özeti yerine k-anonimlik için SHA-1 özetinin ilk beş karakteri kullanılır.</td></tr>
         <tr><td>Sentry</td><td>Etkinleştirilmişse sınırlı hata izleme</td><td>Güvenli hata kodları/teknik etiketler; varsayılan PII gönderimi kapalıdır.</td></tr>
         <tr><td>Trendyol, Hepsiburada, n11, Amazon, FLO</td><td>Kullanıcının yetkilendirdiği ticaret kanalları</td><td>Yalnız seçili entegrasyonun çalışması için gerekli mağaza/finans verileri ve bağlantı bilgileri.</td></tr>
       </tbody></table>
-      <p class="legal-note">Yurt dışına veri aktarımı söz konusuysa, yalnızca güncel KVKK m.9 rejimine uygun aktarım mekanizması doğrulandıktan sonra canlı kullanım yapılmalıdır.</p>
+      <p class="legal-note">Yurt dışına kişisel veri aktarımı söz konusuysa, ilgili sağlayıcı yalnızca güncel KVKK m.9 şartlarına uygun aktarım mekanizması gerçek operatör tarafından doğrulandıktan sonra ticari olarak etkinleştirilmelidir.</p>
     </article>
 
-    <article class="legal-card"><h2>4. Saklama ve silme</h2><p>Veriler; hizmetin sunulması, güvenliğin sağlanması, uyuşmazlıkların yönetilmesi ve uygulanabilir yasal yükümlülüklerin karşılanması için gerekli olduğu sürece tutulur. Sabit bir saklama süresi henüz bütün veri kategorileri için tanımlanmamıştır. Canlı satıştan önce veri envanterindeki her kategori için amaç, hukuki sebep ve saklama/imha süresi ayrıca onaylanmalıdır.</p><p>Oturum açmış kullanıcı, mevcut ürün akışında <a href="/hesap">Hesap ve Veri Yönetimi</a> sayfasından hesabını kalıcı olarak kapatma işlemini başlatabilir. Aktif bir abonelik varsa önce abonelik sona erdirilmelidir.</p></article>
+    <article class="legal-card"><h2>5. Saklama ve silme</h2><p>Veriler; hizmetin sunulması, güvenliğin sağlanması, uyuşmazlıkların yönetilmesi ve uygulanabilir yasal yükümlülüklerin karşılanması için gerekli olduğu sürece tutulur. Sabit saklama süresi henüz bütün veri kategorileri için tanımlanmamıştır. Canlı satıştan önce veri envanterindeki her kategori için amaç, hukuki sebep ve saklama/imha süresi ayrıca onaylanmalıdır.</p><p>Bu AI uygulamasında KârKalkan kendi veritabanında kalıcı sohbet geçmişi tutmaz. Model API çağrısında <code>store:false</code> talep edilir; harici sağlayıcının güncel teknik/kontrat kaynaklı log ve retention uygulamaları ayrıca incelenmelidir.</p><p>Oturum açmış kullanıcı <a href="/hesap">Hesap ve Veri Yönetimi</a> sayfasından hesabını kalıcı olarak kapatma işlemini başlatabilir. Aktif bir abonelik varsa önce abonelik sona erdirilmelidir.</p></article>
 
-    <article class="legal-card"><h2>5. Güvenlik yaklaşımı</h2><p>KârKalkan; tenant/hesap izolasyonu, Row Level Security, en az ayrıcalık, şifreli secret kasası, sınırlandırılmış istek gövdeleri, rate-limit, sıkı Content Security Policy ve güvenli hata telemetrisi gibi kontroller kullanır. Hiçbir teknik kontrol mutlak güvenlik garantisi değildir; güvenlik olayı şüphesinde erişim anahtarları döndürülmeli ve olay müdahale süreci işletilmelidir.</p></article>
+    <article class="legal-card"><h2>6. Güvenlik yaklaşımı</h2><p>KârKalkan; tenant/hesap izolasyonu, Row Level Security, en az ayrıcalık, şifreli secret kasası, sınırlandırılmış istek gövdeleri, rate-limit, sıkı Content Security Policy ve güvenli hata telemetrisi gibi kontroller kullanır. AI endpoint’i ayrıca hesap başına kullanım sınırı, kısa soru sınırı, kişisel veri kalıbı reddi ve model çıktısı kanıt doğrulaması uygular. Hiçbir teknik kontrol mutlak güvenlik garantisi değildir.</p></article>
 
-    <article class="legal-card"><h2>6. Haklar ve iletişim</h2><p>KVKK kapsamındaki başvuru hakları ve başvuru yöntemi <a href="/kvkk">KVKK Aydınlatma Metni</a> içinde açıklanır. Nihai metinde veri sorumlusunun kimliği ve başvuru adresi şu alanlara yazılmalıdır:</p><p><span class="legal-placeholder">VERİ SORUMLUSU UNVANI/KİMLİĞİ</span> · <span class="legal-placeholder">KVKK BAŞVURU E-POSTASI/ADRESİ</span></p></article>
+    <article class="legal-card"><h2>7. Otomatik karar ve kullanıcı kontrolü</h2><p>AI Finans Analisti açıklama/karar desteği sağlar; kullanıcı adına bağlayıcı veya geri döndürülemez finansal işlem gerçekleştirmez. Veri güven skoru düşük olduğunda ürün ticari öneri yerine veri kapsamının iyileştirilmesini önceliklendirir. Muhasebe, vergi, hukuk veya yatırım kararlarında kaynak kayıtları ve gerektiğinde yetkili uzman görüşü ayrıca kontrol edilmelidir.</p></article>
+
+    <article class="legal-card"><h2>8. Haklar ve iletişim</h2><p>KVKK kapsamındaki başvuru hakları ve başvuru yöntemi <a href="/kvkk">KVKK Aydınlatma Metni</a> içinde açıklanır. Nihai metinde veri sorumlusunun kimliği ve başvuru adresi şu alanlara yazılmalıdır:</p><p><span class="legal-placeholder">VERİ SORUMLUSU UNVANI/KİMLİĞİ</span> · <span class="legal-placeholder">KVKK BAŞVURU E-POSTASI/KEP/ADRESİ</span></p></article>
   </section>
 
   <footer class="legal-footer"><span>© 2026 KârKalkan · Bu sayfa hukuki hazırlık metnidir.</span><div class="legal-links"><a href="/hesap">Hesap ve Veri</a><a href="/kvkk">KVKK</a><a href="/cerezler">Çerez ve Analitik</a><a href="/kullanim-kosullari">Kullanım Koşulları</a></div></footer>

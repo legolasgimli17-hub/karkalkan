@@ -15,12 +15,13 @@ test('KVKK disclosure stays separate from generic privacy policy and covers mand
   const kvkk=await read('kvkk.html');
   const privacy=await read('gizlilik.html');
   assert.notEqual(kvkk,privacy);
-  for(const phrase of ['Veri sorumlusu','İşlenen veri kategorileri, amaçlar ve hukuki sebepler','Toplama yöntemi','Aktarım yapılan alıcı grupları ve amaçlar','Yurt dışına aktarım','KVKK m.11 kapsamındaki haklarınız','Başvuru yöntemi']){
+  for(const phrase of ['Veri sorumlusu','İşlenen veri kategorileri, amaçlar ve öngörülen hukuki sebepler','Toplama yöntemi','Aktarım yapılan alıcı grupları ve amaçlar','Yurt dışına aktarım','KVKK m.11 kapsamındaki haklarınız','Başvuru yöntemi']){
     assert.match(kvkk,new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'));
   }
   assert.match(kvkk,/m\.5\/2\(c\)/i);
   assert.match(kvkk,/m\.5\/2\(f\)/i);
   assert.match(kvkk,/KVKK m\.9/i);
+  assert.match(kvkk,/gerçek veri envanteri.*doğrulan/i);
 });
 
 test('legal pages fail honest while operator identity and application channel are unknown',async()=>{
@@ -64,9 +65,9 @@ test('Vercel routes legal pages through canonical clean paths without relaxing C
   assert.doesNotMatch(vercel,/script-src[^;]*unsafe-inline/i);
 });
 
-test('go-live gate includes the unresolved high-risk legal checks',async()=>{
+test('go-live gate includes unresolved high-risk legal and AI-provider checks',async()=>{
   const gate=await read('docs/LEGAL_GO_LIVE.md');
-  for(const item of ['Identify the data controller','Approve the KVKK processing inventory','Map and legalize international transfers','Processor/vendor review','Account lifecycle','Billing and consumer/commercial terms','Cookie/analytics re-check']){
+  for(const item of ['Identify the data controller','Approve the KVKK processing inventory','Map and legalize international transfers','Processor/vendor review','AI provider activation review','Account lifecycle','Billing and consumer/commercial terms','Cookie/analytics re-check']){
     assert.match(gate,new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'));
   }
   assert.match(gate,/Do not change the status text/i);

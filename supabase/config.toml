@@ -80,6 +80,9 @@ verify_jwt = true
 [functions.decision-center]
 verify_jwt = true
 
+[functions.finance-ai]
+verify_jwt = true
+
 [functions.operating-expenses]
 verify_jwt = true
 
