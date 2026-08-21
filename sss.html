@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="KârKalkan hakkında sık sorulan sorular: veri güvenliği, pazar yeri bağlantıları, hesaplama kapsamı ve ürün sınırları.">
+  <title>Sık Sorulan Sorular · KârKalkan</title>
+  <link rel="stylesheet" href="/trust.css?v=20260821">
+</head>
+<body>
+  <div class="trust-wrap">
+    <nav class="trust-nav" aria-label="Ana navigasyon">
+      <a class="trust-brand" href="/">KârKalkan</a>
+      <div class="trust-links"><a href="/durum">Sistem durumu</a><a href="/gizlilik">Gizlilik</a><a href="/kullanim-kosullari">Kullanım koşulları</a><a href="/uygulama">Uygulamaya gir</a></div>
+    </nav>
+    <header class="trust-hero">
+      <div class="trust-kicker">ÜRÜN GERÇEKLERİ · SSS</div>
+      <h1>KârKalkan ne yapar, ne yapmaz?</h1>
+      <p>KârKalkan pazar yeri finans verisini, ürün maliyetlerini ve bilinen kesintileri tek yerde görünür kılmak için tasarlanmıştır. Aşağıdaki cevaplar pazarlama iddiası değil, mevcut ürün davranışını anlatır.</p>
+    </header>
+    <main class="faq-list">
+      <article class="faq-item"><h2>KârKalkan banka hesabıma veya pazar yeri hesabıma para taşır mı?</h2><p>Hayır. KârKalkan finans analizi ve mutabakat için veri işler; para transferi yapmaz, ödeme talimatı vermez ve banka hesabını yönetmez.</p></article>
+      <article class="faq-item"><h2>Pazar yeri API anahtarları tarayıcıda tutuluyor mu?</h2><p>Desteklenen API bağlantılarında gizli bağlantı bilgileri sunucu tarafındaki şifreli kasa akışına kaydedilir. Tarayıcıya servis rolü veya backend secret key gönderilmez.</p></article>
+      <article class="faq-item"><h2>AI kâr veya finans rakamlarını hesaplıyor mu?</h2><p>Hayır. Yetkili finans rakamları deterministic kod ve veritabanı hesaplarıyla üretilir. AI kullanılan alanlarda görevi açıklama, sınıflandırma veya şema eşleme ile sınırlıdır; sayısal finans otoritesi değildir.</p></article>
+      <article class="faq-item"><h2>CSV dosyamın tüm satırları AI servisine gönderiliyor mu?</h2><p>Akıllı CSV eşleştiricide ham satırlar modele gönderilmez. Şema önerisi için yalnız kolon adları ve toplulaştırılmış veri tipi oranları kullanılabilir; AI readiness kapalıysa eşleme deterministic kalır.</p></article>
+      <article class="faq-item"><h2>Çoklu para birimi nasıl çalışıyor?</h2><p>Çoklu-para CSV akışında orijinal tutarlar audit kanıtı olarak korunur ve TRY normalizasyonu ECB referans oranlarıyla yapılır. ECB referans kuru banka veya ödeme sağlayıcısının gerçekleşmiş kuru olarak sunulmaz.</p></article>
+      <article class="faq-item"><h2>Gösterilen “kâr” her zaman kesin net şirket kârı mı?</h2><p>Hayır. Ürün maliyeti kapsamı tam değilse KârKalkan katkı sonucunu kesinleştirmez. Maliyet bilinen satırlarda ürün katkısı hesaplanabilir; mağaza seviyesi giderler ayrıca tanımlanmışsa dönem örtüşmesine göre hesaba katılır. Vergi/muhasebe beyannamesi yerine geçmez.</p></article>
+      <article class="faq-item"><h2>Trendyol entegrasyonu gerçek mağaza üzerinde tamamen doğrulandı mı?</h2><p>Ürün içindeki iki aşamalı Trendyol finans pipeline’ı ve doğrulama runbook’u hazırdır; ancak kamuya açık olarak “gerçek satıcı mutabakatı tamamlandı” iddiası yalnız aynı mağazanın resmi raporuyla kapalı dönem reconciliation geçerse yapılmalıdır.</p></article>
+      <article class="faq-item"><h2>Ödeme altyapısı canlı olarak kanıtlandı mı?</h2><p>Paddle entegrasyon kodu güvenli ve fail-closed tasarlanmıştır. Canlı checkout → webhook → abonelik → portal/iptal yaşam döngüsü gerçek üretim hesabı ile doğrulanmadan “production payment verified” iddiası yapılmaz.</p></article>
+      <article class="faq-item"><h2>Hesabımı ve verilerimi silebilir miyim?</h2><p>Uygulamadaki hesap yönetimi akışı oturum sahibi kullanıcı için hesap ve kullanıcıya bağlı verilerin silinmesini destekler. Aktif veya ödeme durumu engel oluşturan aboneliklerde işlem önce abonelik durumunun çözülmesini ister.</p></article>
+      <article class="faq-item"><h2>KârKalkan muhasebe veya yatırım tavsiyesi verir mi?</h2><p>Hayır. Ürün operasyonel finans görünürlüğü sağlar; yasal muhasebe kaydı, vergi beyanı, yatırım tavsiyesi veya banka ekstresinin hukuki doğrulaması değildir.</p></article>
+      <div class="trust-callout">Ürün durumu değiştikçe bu sayfanın da kodla birlikte güncellenmesi gerekir. Kanıtlanmamış entegrasyon veya dış servis davranışı “hazır” olarak yazılmamalıdır.</div>
+    </main>
+    <footer class="trust-footer">KârKalkan · <a href="/durum">Sistem durumu</a> · <a href="/gizlilik">Gizlilik</a></footer>
+  </div>
+</body>
+</html>
