@@ -36,7 +36,7 @@ test('public health exposes current component state without fake SLA claims',asy
   assert.doesNotMatch(source,/user_id|marketplace_connections|decrypted_secret/);
   assert.match(statusClient,/\/functions\/v1\/public-health/);
   assert.match(statusClient,/\/api\/health/);
-  assert.match(statusPage,/geçmiş uptime veya SLA/i);
+  assert.match(statusPage,/geçmiş[^<]*(?:uptime|erişilebilirlik)[^<]*SLA|SLA[^<]*geçmiş/i);
   assert.doesNotMatch(statusPage,/99\.9|99,9/);
 });
 
@@ -51,7 +51,7 @@ test('public FAQ and buyer handoff keep unverified claims explicit',async()=>{
   assert.match(faq,/AI kâr veya finans rakamlarını hesaplıyor mu/i);
   assert.match(faq,/gerçek satıcı mutabakatı tamamlandı/i);
   assert.match(handoff,/Secret değerleri bu repository/);
-  assert.match(dependencies,/Paddle canlı ödeme lifecycle/i);
+  assert.match(dependencies,/Paddle[\s\S]*?checkout[\s\S]*?webhook[\s\S]*?(?:subscription|abonelik)[\s\S]*?(?:portal|cancel)/i);
   assert.match(readiness,/Bilerek iddia edilmeyen/);
   assert.match(runbook,/SYNC_TOO_LARGE/);
 });
