@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="KârKalkan canlı sistem bileşenleri için anlık durum kontrolü.">
+  <title>Sistem Durumu · KârKalkan</title>
+  <link rel="stylesheet" href="/trust.css?v=20260821">
+  <script src="/status.js?v=20260821" defer></script>
+</head>
+<body>
+  <div class="trust-wrap">
+    <nav class="trust-nav" aria-label="Ana navigasyon">
+      <a class="trust-brand" href="/">KârKalkan</a>
+      <div class="trust-links"><a href="/sss">SSS</a><a href="/gizlilik">Gizlilik</a><a href="/uygulama">Uygulamaya gir</a></div>
+    </nav>
+    <header class="trust-hero">
+      <div class="trust-kicker">CANLI KONTROL · GEÇMİŞ SLA İDDİASI YOK</div>
+      <h1 id="overallStatus">Kontrol ediliyor…</h1>
+      <p>Bu sayfa mevcut web dağıtımını, Edge Function runtime’ını ve veritabanı bağlantısını anlık olarak kontrol eder. Geçmiş erişilebilirlik yüzdesi veya SLA sunmaz.</p>
+      <div class="status-meta" id="statusCheckedAt">Kontrol hazırlanıyor.</div>
+    </header>
+    <main class="trust-grid">
+      <section class="trust-card wide">
+        <div class="trust-badge"><span class="trust-dot"></span> Anlık bileşen kontrolü</div>
+        <div class="status-board" aria-live="polite">
+          <div class="status-item"><span><i class="trust-dot"></i> Web dağıtımı</span><strong id="webStatus">Kontrol ediliyor</strong></div>
+          <div class="status-item"><span><i class="trust-dot"></i> API runtime</span><strong id="runtimeStatus">Kontrol ediliyor</strong></div>
+          <div class="status-item"><span><i class="trust-dot"></i> Veritabanı</span><strong id="databaseStatus">Kontrol ediliyor</strong></div>
+        </div>
+      </section>
+      <section class="trust-card"><h2>Bu kontrol neyi kanıtlar?</h2><p>İstek anında temel web dosyasının, public health Edge Function’ının ve basit veritabanı sorgusunun cevap verebildiğini gösterir.</p></section>
+      <section class="trust-card"><h2>Neyi kanıtlamaz?</h2><p>Her pazar yeri API’sinin o anda erişilebilir olduğunu, geçmiş uptime oranını, ödeme sağlayıcısının durumunu veya belirli bir mağazanın senkronizasyon başarısını garanti etmez.</p></section>
+      <section class="trust-card wide"><h2>Ürün gerçeği</h2><p>Provider kaynaklı hata ile KârKalkan altyapı hatası aynı şey değildir. Mağaza bağlantı sağlığı ve son sync sonucu oturum açıldıktan sonra bağlantı bazında ayrıca gösterilir.</p></section>
+    </main>
+    <footer class="trust-footer">KârKalkan · <a href="/sss">SSS</a> · Bu sayfa ölçülmemiş uptime yüzdesi yayınlamaz.</footer>
+  </div>
+</body>
+</html>

@@ -14,6 +14,14 @@
       "destination": "/hazirlik.html"
     },
     {
+      "source": "/sss",
+      "destination": "/sss.html"
+    },
+    {
+      "source": "/durum",
+      "destination": "/durum.html"
+    },
+    {
       "source": "/gizlilik",
       "destination": "/gizlilik.html"
     },
@@ -71,6 +79,16 @@
       "permanent": true
     },
     {
+      "source": "/sss.html",
+      "destination": "/sss",
+      "permanent": true
+    },
+    {
+      "source": "/durum.html",
+      "destination": "/durum",
+      "permanent": true
+    },
+    {
       "source": "/gizlilik.html",
       "destination": "/gizlilik",
       "permanent": true
@@ -100,6 +118,12 @@
     },
     {
       "source": "/uygulama",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/durum",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, max-age=0" }
       ]

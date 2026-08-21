@@ -13,6 +13,13 @@ verify_jwt = true
 [functions.dashboard-summary]
 verify_jwt = true
 
+[functions.weekly-finance-summary]
+verify_jwt = true
+
+# Public status probe returns only runtime/database component state and no user data.
+[functions.public-health]
+verify_jwt = false
+
 [functions.product-costs]
 verify_jwt = true
 
