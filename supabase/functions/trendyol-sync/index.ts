@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createTransactionPool } from "../_shared/postgres.ts";
 import { captureSafeFailure } from "../_shared/observability.ts";
 import { readJsonBody, requestError } from "../_shared/request-security.ts";
+import { resolveSyncRange } from "../_shared/sync-range.ts";
 
 const PROJECT_URL = Deno.env.get("SUPABASE_URL") || "";
 const PROJECT_ORIGIN = (() => {
@@ -135,12 +136,6 @@ function dayKey(ms: unknown) {
     m = g("month"),
     d = g("day");
   return y && m && d ? `${y}-${m}-${d}` : null;
-}
-function rangeForDays(days: number) {
-  const p = dayFormatter.formatToParts(new Date()),
-    g = (t: string) => Number(p.find((x) => x.type === t)?.value),
-    today = Date.UTC(g("year"), g("month") - 1, g("day")) - 3 * 60 * 60 * 1000;
-  return { start: today - (days - 1) * DAY_MS, end: Date.now() };
 }
 function windows(start: number, end: number, maxDays = 15) {
   const out: { start: number; end: number }[] = [];
@@ -525,11 +520,11 @@ Deno.serve(async (req: Request) => {
     const failure = requestError(error);
     return json(failure.status, { error: failure.code }, origin);
   }
-  const connectionId = String(body?.connection_id || ""),
-    days = Number(body?.days || 30);
+  const connectionId = String(body?.connection_id || "");
+  const range = resolveSyncRange(body, { allowedDays: [7, 30], maxExplicitDays: 3 });
   if (!validUuid(connectionId))
     return json(400, { error: "INVALID_CONNECTION" }, origin);
-  if (![7, 30].includes(days))
+  if (!range)
     return json(400, { error: "INVALID_RANGE" }, origin);
   const { data: connection, error: ce } = await sb
     .from("marketplace_connections")
@@ -543,9 +538,7 @@ Deno.serve(async (req: Request) => {
   if (!/^\d{1,20}$/.test(sellerId))
     return json(400, { error: "INVALID_SELLER_ID" }, origin);
   const lockToken = uuid(),
-    { start, end } = rangeForDays(days),
-    startDay = dayKey(start)!,
-    endDay = dayKey(end)!;
+    { start, end, startDay, endDay } = range;
   let runId: string | null = null,
     lockHeld = false;
   const safeFail = async (code: string, status = "failed", cause?: unknown) => {
@@ -976,7 +969,7 @@ Deno.serve(async (req: Request) => {
       {
         ok: true,
         ...summary,
-        rangeDays: days,
+        rangeDays: range.rangeDays,
         startDay,
         endDay,
         importedTransactions: imported,

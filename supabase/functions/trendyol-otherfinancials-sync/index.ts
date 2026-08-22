@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { createTransactionPool } from "../_shared/postgres.ts";
 import { captureMonitoringException } from "../_shared/observability.ts";
 import { readJsonBody, requestError } from "../_shared/request-security.ts";
+import { resolveSyncRange } from "../_shared/sync-range.ts";
 
 const PROJECT_URL = Deno.env.get("SUPABASE_URL") || "";
 const PROJECT_ORIGIN = (() => {
@@ -115,12 +116,6 @@ function dayKey(ms: unknown) {
     d = g("day");
   return y && m && d ? `${y}-${m}-${d}` : null;
 }
-function rangeForDays(days: number) {
-  const p = fmt.formatToParts(new Date()),
-    g = (t: string) => Number(p.find((x) => x.type === t)?.value),
-    today = Date.UTC(g("year"), g("month") - 1, g("day")) - 3 * 60 * 60 * 1000;
-  return { start: today - (days - 1) * DAY_MS, end: Date.now() };
-}
 function windows(start: number, end: number, maxDays = 15) {
   const out: { start: number; end: number }[] = [];
   for (let cur = start; cur <= end; ) {
@@ -233,11 +228,11 @@ Deno.serve(async (req: Request) => {
     const failure = requestError(error);
     return json(failure.status, { error: failure.code }, origin);
   }
-  const connectionId = String(body?.connection_id || ""),
-    days = Number(body?.days || 30);
+  const connectionId = String(body?.connection_id || "");
+  const range = resolveSyncRange(body, { allowedDays: [7, 30], maxExplicitDays: 3 });
   if (!validUuid(connectionId))
     return json(400, { error: "INVALID_CONNECTION" }, origin);
-  if (![7, 30].includes(days))
+  if (!range)
     return json(400, { error: "INVALID_RANGE" }, origin);
   const { data: conn, error: ce } = await sb
     .from("marketplace_connections")
@@ -251,9 +246,7 @@ Deno.serve(async (req: Request) => {
   if (!/^\d{1,20}$/.test(sellerId))
     return json(400, { error: "INVALID_SELLER_ID" }, origin);
   const lockToken = uuid(),
-    { start, end } = rangeForDays(days),
-    startDay = dayKey(start)!,
-    endDay = dayKey(end)!;
+    { start, end, startDay, endDay } = range;
   let lockHeld = false;
   try {
     const locked =
@@ -582,7 +575,7 @@ Deno.serve(async (req: Request) => {
           await tx`insert into public.marketplace_daily_financials(connection_id,user_id,day,currency,cargo_cost,other_financial_coverage) values(${connectionId}::uuid,${user.id}::uuid,${day}::date,'TRY',${c},'cargo') on conflict (connection_id,day,currency) do update set cargo_cost=excluded.cargo_cost,other_financial_coverage=case when public.marketplace_daily_financials.platform_service_fee_cost<>0 then 'platform_service_fee_and_cargo' else 'cargo' end,updated_at=now()`;
       }
       if (cargoOk && orderMapOk) {
-        await tx`delete from public.marketplace_order_product_map where connection_id=${connectionId}::uuid and user_id=${user.id}::uuid`;
+        await tx`delete from public.marketplace_order_product_map where connection_id=${connectionId}::uuid and user_id=${user.id}::uuid and order_day between ${startDay}::date and ${endDay}::date`;
         const maps = [...orderProducts.values()];
         for (let i = 0; i < maps.length; i += INSERT_BATCH) {
           const b = maps.slice(i, i + INSERT_BATCH);
@@ -614,7 +607,7 @@ Deno.serve(async (req: Request) => {
         coverage: cargoOk
           ? "platform_service_fee_stoppage_and_cargo"
           : "platform_service_fee_and_stoppage",
-        rangeDays: days,
+        rangeDays: range.rangeDays,
         startDay,
         endDay,
         platformServiceFeeRows: platformRows,
