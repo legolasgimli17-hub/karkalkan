@@ -129,6 +129,18 @@ verify_jwt = true
 [functions.trendyol-reconciliation]
 verify_jwt = true
 
+# Developer management endpoints require the signed-in user's Supabase JWT.
+[functions.developer-api-keys]
+verify_jwt = true
+
+[functions.developer-webhooks]
+verify_jwt = true
+
+# Public API authenticates its own high-entropy, SHA-256-hashed kk_live_ keys.
+# Supabase JWT verification must remain disabled or external server clients could not call it.
+[functions.public-api-v1]
+verify_jwt = false
+
 # Paddle signs the exact raw body; it does not send a Supabase JWT.
 [functions.billing-webhook]
 verify_jwt = false
