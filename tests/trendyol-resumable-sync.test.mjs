@@ -18,6 +18,12 @@ test('resumable sync state is server-only, owner-bound and chunked', async () =>
   assert.match(migration, /auxiliary_summary jsonb/);
 });
 
+test('resumable sync foreign keys retain covering indexes', async () => {
+  const migration = await read('supabase/migrations/20260822000200_resumable_sync_fk_indexes.sql');
+  assert.match(migration, /marketplace_sync_jobs_connection_owner_idx[\s\S]*?marketplace_sync_jobs\(connection_id, user_id\)/i);
+  assert.match(migration, /marketplace_sync_job_chunks_user_idx[\s\S]*?marketplace_sync_job_chunks\(user_id\)/i);
+});
+
 test('shared range resolver preserves 7 and 30 day behavior while bounding explicit chunks', async () => {
   const source = await read('supabase/functions/_shared/sync-range.ts');
   assert.match(source, /allowedDays \|\| \[7, 30\]/);
