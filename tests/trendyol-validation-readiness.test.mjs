@@ -14,14 +14,18 @@ test('workspace loads the provider-specific Trendyol pipeline without relaxing o
 });
 
 test('Trendyol complete sync runs core finance before other financials and cargo evidence',async()=>{
-  const pipeline=await read('trendyol-sync-pipeline.js');
-  const core=pipeline.indexOf("functionRequest('trendyol-sync'");
-  const auxiliary=pipeline.indexOf("functionRequest('trendyol-otherfinancials-sync'");
-  assert.ok(core>0,'core Trendyol sync must be present');
+  const [pipeline,orchestrator]=await Promise.all([
+    read('trendyol-sync-pipeline.js'),
+    read('supabase/functions/trendyol-resumable-sync/index.ts')
+  ]);
+  const core=orchestrator.indexOf("providerCall('trendyol-sync'");
+  const auxiliary=orchestrator.indexOf("providerCall('trendyol-otherfinancials-sync'");
+  assert.ok(core>0,'core Trendyol sync must be present in the resumable orchestrator');
   assert.ok(auxiliary>core,'other-financial stage must run only after core sync');
+  assert.match(pipeline,/functionRequest\('trendyol-resumable-sync'/);
   assert.doesNotMatch(pipeline,/functionRequest\('trendyol-cargo-sync'/);
-  assert.match(pipeline,/auxiliary\?\.cargoOk !== true \|\| auxiliary\?\.orderMapOk !== true/);
-  assert.match(pipeline,/Finans kapsamını tam saymadan yeniden deneyin/);
+  assert.match(orchestrator,/cargoOk === true && auxiliary\.data\?\.orderMapOk === true/);
+  assert.match(orchestrator,/AUXILIARY_INCOMPLETE/);
   assert.match(pipeline,/Trendyol tam senkron tamamlandı/);
 });
 
