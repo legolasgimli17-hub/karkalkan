@@ -21,9 +21,10 @@ test('API key manager returns a secret once but stores only SHA-256 hash',async(
   const source=await read('supabase/functions/developer-api-keys/index.ts');
   assert.match(source,/kk_live_/);
   assert.match(source,/crypto\.subtle\.digest\('SHA-256'/);
-  assert.match(source,/insert into public\.developer_api_keys\(user_id,name,key_prefix,key_hash,scopes,expires_at\)/i);
+  const insertColumns=source.match(/insert into public\.developer_api_keys\(([^)]+)\)/i)?.[1]||'';
+  assert.equal(insertColumns,'user_id,name,key_prefix,key_hash,scopes,expires_at');
+  assert.doesNotMatch(insertColumns,/secret/i);
   assert.match(source,/secret,warning:/);
-  assert.doesNotMatch(source,/insert into public\.developer_api_keys[\s\S]*?secret[,)]/i);
   assert.match(source,/revoked_at=coalesce\(revoked_at,now\(\)\)/i);
   assert.match(source,/MAX_ACTIVE_KEYS=5/);
 });
@@ -64,12 +65,23 @@ test('outbound webhooks are Vault-backed, HMAC signed and do not follow redirect
   assert.doesNotMatch(delivery,/console\.log\([^\n]*secret/i);
 });
 
-test('resumable Trendyol emits a non-blocking signed completion event',async()=>{
+test('resumable Trendyol emits only non-blocking terminal sync events',async()=>{
   const source=await read('supabase/functions/trendyol-resumable-sync/index.ts');
   assert.match(source,/_shared\/outbound-webhooks\.ts/);
+  assert.equal((source.match(/'sync\.failed'/g)||[]).length,2);
+  assert.equal((source.match(/'sync\.completed'/g)||[]).length,1);
   assert.match(source,/deliverOutboundEvent\(sql, auth\.user\.id, 'sync\.completed'/);
   assert.match(source,/marketplace: 'trendyol'/);
   assert.match(source,/importedTransactions/);
+  assert.match(source,/\.catch\(\(\) => \{\}\)/);
+});
+
+test('matched reconciliation emits an event only after evidence persistence succeeds',async()=>{
+  const source=await read('supabase/functions/trendyol-reconciliation/index.ts');
+  const writeIndex=source.indexOf("VALIDATION_EVIDENCE_WRITE_FAILED");
+  const emitIndex=source.indexOf("'reconciliation.matched'");
+  assert.ok(writeIndex>0&&emitIndex>writeIndex);
+  assert.match(source,/if\(matched&&sql\)await deliverOutboundEvent/);
   assert.match(source,/\.catch\(\(\) => \{\}\)/);
 });
 
