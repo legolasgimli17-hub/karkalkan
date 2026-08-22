@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read=path=>readFile(path,'utf8');
+const nonBlockingCatch=/\.catch\(\(\)\s*=>\s*\{\}\)/;
 
 test('developer platform tables are server-only and owner-bound',async()=>{
   const migration=await read('supabase/migrations/20260822000300_developer_platform.sql');
@@ -73,7 +74,7 @@ test('resumable Trendyol emits only non-blocking terminal sync events',async()=>
   assert.match(source,/deliverOutboundEvent\(sql, auth\.user\.id, 'sync\.completed'/);
   assert.match(source,/marketplace: 'trendyol'/);
   assert.match(source,/importedTransactions/);
-  assert.match(source,/\.catch\(\(\) => \{\}\)/);
+  assert.match(source,nonBlockingCatch);
 });
 
 test('matched reconciliation emits an event only after evidence persistence succeeds',async()=>{
@@ -82,7 +83,7 @@ test('matched reconciliation emits an event only after evidence persistence succ
   const emitIndex=source.indexOf("'reconciliation.matched'");
   assert.ok(writeIndex>0&&emitIndex>writeIndex);
   assert.match(source,/if\(matched&&sql\)await deliverOutboundEvent/);
-  assert.match(source,/\.catch\(\(\) => \{\}\)/);
+  assert.match(source,nonBlockingCatch);
 });
 
 test('CORS source is transferable and contains no personal Vercel team hostname',async()=>{
