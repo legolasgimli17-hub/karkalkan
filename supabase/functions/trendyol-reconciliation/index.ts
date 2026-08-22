@@ -1,6 +1,9 @@
 import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/edge-auth.ts'
 import { readJsonBody, requestError, isUuid } from '../_shared/request-security.ts'
+import { createTransactionPool } from '../_shared/postgres.ts'
+import { deliverOutboundEvent } from '../_shared/outbound-webhooks.ts'
 
+const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'')
 const FIELDS=['gross_sales','gross_returns','commission_cost','discount_cost','coupon_cost','seller_revenue','platform_service_fee_cost','stoppage_net','cargo_cost'] as const
 const dayFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Istanbul',year:'numeric',month:'2-digit',day:'2-digit'})
 
@@ -62,5 +65,9 @@ Deno.serve(async(req:Request)=>{
     user_id:auth.user.id,connection_id:connectionId,marketplace:'trendyol',period_start:start.text,period_end:end.text,status,evidence_summary:summary,updated_at:new Date().toISOString()
   },{onConflict:'user_id,connection_id,period_start,period_end'})
   if(writeError)return json(500,{error:'VALIDATION_EVIDENCE_WRITE_FAILED'},origin)
+
+  if(matched&&sql)await deliverOutboundEvent(sql,auth.user.id,'reconciliation.matched',{
+    marketplace:'trendyol',connectionId,periodStart:start.text,periodEnd:end.text,method:'closed_7_day_aggregate_reconciliation'
+  }).catch(()=>{})
   return json(200,{status,period:{start:start.text,end:end.text},karkalkanTotals,sourceTotals,deltas,matched},origin)
 })
