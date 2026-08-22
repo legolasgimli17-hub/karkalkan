@@ -1,0 +1,36 @@
+name: Resumable Sync Bootstrap
+
+on:
+  push:
+    branches:
+      - agent/trendyol-resumable-sync
+
+permissions:
+  contents: write
+
+jobs:
+  patch-provider-ranges:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/trendyol-resumable-sync
+          fetch-depth: 1
+      - name: Apply exact provider patch
+        run: python3 scripts/apply-resumable-sync-range-patch.py
+      - name: Run resumable regression gate
+        run: node --test tests/trendyol-resumable-sync.test.mjs
+      - name: Check patch hygiene
+        run: git diff --check
+      - name: Remove one-shot bootstrap files
+        run: rm -- .github/workflows/resumable-sync-bootstrap.yml scripts/apply-resumable-sync-range-patch.py
+      - name: Commit verified provider patch
+        run: |
+          git config user.name "karkalkan-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add -- supabase/functions/trendyol-sync/index.ts supabase/functions/trendyol-otherfinancials-sync/index.ts .github/workflows/resumable-sync-bootstrap.yml scripts/apply-resumable-sync-range-patch.py
+          git diff --cached --check
+          git commit -m "Bound Trendyol sync to resumable date chunks"
+          git push origin HEAD:agent/trendyol-resumable-sync
