@@ -2,6 +2,7 @@ import { allowedOrigin, authenticate, json, responseHeaders } from '../_shared/e
 import { createTransactionPool } from '../_shared/postgres.ts'
 import { consumeRateLimit, isUuid, readJsonBody, requestError } from '../_shared/request-security.ts'
 import { resolveSyncRange } from '../_shared/sync-range.ts'
+import { deliverOutboundEvent } from '../_shared/outbound-webhooks.ts'
 
 const PROJECT_URL = Deno.env.get('SUPABASE_URL') || ''
 const PUBLISHABLE_KEY = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}').default || ''
@@ -236,6 +237,7 @@ Deno.serve(async (req: Request) => {
       await sql`update public.marketplace_sync_job_chunks set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${running.id}::uuid and user_id=${auth.user.id}::uuid`
       await sql`update public.marketplace_sync_jobs set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${job.id}::uuid and user_id=${auth.user.id}::uuid`
       job.status = 'failed'; job.safe_error_code = code
+      await deliverOutboundEvent(sql, auth.user.id, 'sync.failed', { marketplace: 'trendyol', connectionId, code }).catch(() => {})
       return json(core.status >= 400 && core.status < 500 ? core.status : 502, { error: code, job: publicJob(job, { ...running, status: 'failed' }) }, origin)
     }
 
@@ -254,6 +256,7 @@ Deno.serve(async (req: Request) => {
       await sql`update public.marketplace_sync_job_chunks set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${running.id}::uuid and user_id=${auth.user.id}::uuid`
       await sql`update public.marketplace_sync_jobs set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${job.id}::uuid and user_id=${auth.user.id}::uuid`
       job.status = 'failed'; job.safe_error_code = code
+      await deliverOutboundEvent(sql, auth.user.id, 'sync.failed', { marketplace: 'trendyol', connectionId, code }).catch(() => {})
       return json(502, { error: code, job: publicJob(job, { ...running, status: 'failed' }) }, origin)
     }
 
@@ -287,6 +290,15 @@ Deno.serve(async (req: Request) => {
         await tx`update public.marketplace_connections set status='connected',last_sync_at=now(),last_sync_status='success',updated_at=now() where id=${connectionId}::uuid and user_id=${auth.user.id}::uuid`
       })
       job.status = 'success'; job.completed_chunks = completedCount; job.safe_error_code = null
+      await deliverOutboundEvent(sql, auth.user.id, 'sync.completed', {
+        marketplace: 'trendyol',
+        connectionId,
+        rangeStart: job.range_start,
+        rangeEnd: job.range_end,
+        importedTransactions,
+        completedChunks: completedCount,
+        totalChunks: Number(job.total_chunks)
+      }).catch(() => {})
       return json(200, { ok: true, chunk: { ...coreSummary, ...auxiliarySummary }, job: publicJob(job, { ...running, status: 'success' }) }, origin)
     }
 

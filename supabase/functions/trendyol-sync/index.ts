@@ -68,7 +68,7 @@ function allowedOrigin(o: string | null) {
     const u = new URL(o);
     return (
       u.protocol === "https:" &&
-      u.hostname.endsWith("-krgzabdullah22-8562s-projects.vercel.app")
+      Boolean(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX'))&&u.hostname.endsWith(String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')))
     );
   } catch {
     return false;

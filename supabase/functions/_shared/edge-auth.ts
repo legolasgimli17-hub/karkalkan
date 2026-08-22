@@ -2,8 +2,18 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 
 const PROJECT_URL=Deno.env.get('SUPABASE_URL')||''
 const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return ''}})()
+const APP_ORIGIN=(()=>{try{return new URL(Deno.env.get('KARKALKAN_APP_ORIGIN')||'https://karkalkan.vercel.app').origin}catch{return 'https://karkalkan.vercel.app'}})()
+const PREVIEW_SUFFIX=String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')||'').trim().toLowerCase()
 
-export function allowedOrigin(origin:string|null){if(!origin)return true;if(origin==='https://karkalkan.vercel.app'||origin===PROJECT_ORIGIN)return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
+export function allowedOrigin(origin:string|null){
+  if(!origin)return true
+  if(origin===APP_ORIGIN||origin===PROJECT_ORIGIN)return true
+  if(!PREVIEW_SUFFIX)return false
+  try{
+    const u=new URL(origin)
+    return u.protocol==='https:'&&u.port===''&&PREVIEW_SUFFIX.length>=12&&u.hostname.toLowerCase().endsWith(PREVIEW_SUFFIX)
+  }catch{return false}
+}
 export function responseHeaders(origin:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(origin&&allowedOrigin(origin)){h['Access-Control-Allow-Origin']=origin;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, POST, OPTIONS'}return h}
 export function json(status:number,body:unknown,origin:string|null){return new Response(JSON.stringify(body),{status,headers:responseHeaders(origin)})}
 

@@ -13,7 +13,11 @@ KârKalkan is a multi-marketplace seller profitability product that combines sal
 - Free profitability calculator
 - Authenticated seller dashboard
 - Store connection and server-side marketplace synchronization
+- Resumable Trendyol financial synchronization with persisted bounded chunks
 - Product-cost enrichment and profitability analysis
+- Smart CSV mapping and multi-currency/FX evidence import
+- Evidence-bound finance AI
+- Scoped read-only Public API v1 and signed outbound webhooks
 - CSV/XLSX bulk analysis and campaign scenarios
 
 ## One product, one production source
@@ -34,6 +38,7 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - `KNOWN_LIMITATIONS.md` — due-diligence disclosures and outstanding validation
 - `SUPABASE_INVENTORY.md` — deployed backend-function inventory and auth configuration
 - `THIRD_PARTY.md` — runtime dependency inventory and upgrade policy
+- [`docs/DEVELOPER_PLATFORM.md`](docs/DEVELOPER_PLATFORM.md) — API keys, Public API v1, webhook signatures and buyer validation
 - `.env.example` — safe placeholder names/shapes for server-side configuration
 
 ## Security and engineering governance
@@ -49,13 +54,13 @@ CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript
 
 ## Backend reproducibility
 
-All 31 Supabase Edge Function sources are checked into `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state. Amazon Türkiye includes the complete public-app OAuth handoff and Finances API v2024-06-19 worker; activation still depends on buyer-owned Amazon application credentials and approval. FLO supports bounded normalized finance-report import and a Vault-backed private-partner credential handoff; an automatic FLO worker is deliberately gated until FLO supplies the merchant-specific endpoint contract.
+Version-controlled Supabase Edge Function sources live in `supabase/functions/`. Per-function JWT verification settings are recorded in `supabase/config.toml` so the backend can be redeployed into buyer-controlled infrastructure without depending on undocumented dashboard state. Developer API keys are stored only as hashes; outbound webhook signing secrets are stored in Supabase Vault. Amazon Türkiye includes the public-app OAuth handoff and Finances API worker, but activation still depends on buyer-owned Amazon application credentials and approval. FLO supports bounded normalized finance-report import and a Vault-backed private-partner credential handoff; an automatic FLO worker remains gated until FLO supplies the merchant-specific endpoint contract.
 
 The decision center's **Money Leak Radar** is an evidence-weighted financial-confidence system, not a generic store-health score. Non-applicable evidence is excluded from its denominator, and each gap is tied to an affected TL basis and a concrete action without presenting unknown amounts as proven loss.
 
 ## Important status
 
-The product is pre-revenue unless later evidence is documented. Do not claim complete real-store Trendyol, Hepsiburada, n11 or Amazon production validation until the end-to-end tests described in `KNOWN_LIMITATIONS.md` have actually been completed.
+The product is pre-revenue unless later evidence is documented. Do not claim complete real-store Trendyol, Hepsiburada, n11 or Amazon production validation until the end-to-end tests described in `KNOWN_LIMITATIONS.md` have actually been completed. Implemented developer/API capabilities must likewise not be presented as third-party adoption until a buyer-owned external client and webhook endpoint are actually validated.
 
 ## Security
 

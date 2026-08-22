@@ -1,6 +1,6 @@
 # KârKalkan — Known Limitations & Due-Diligence Disclosure
 
-Last reviewed: 2026-08-19
+Last reviewed: 2026-08-22
 
 This file separates outstanding marketplace validation from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
 
@@ -58,17 +58,16 @@ Marketplace endpoints, financial semantics, authentication rules, rate limits an
 
 Source code, deployment and documentation make the product transferable, but do not guarantee a particular acquisition price, user growth or revenue outcome.
 
-## 9. Very large-store synchronization — documented capacity boundary
+## 9. Very large-store synchronization — provider-specific status
 
-The current Trendyol, Hepsiburada, n11 and Amazon workers deliberately stop at their page/invoice safety ceilings and return `409 SYNC_TOO_LARGE` rather than silently truncating financial data. This is acceptable for the current small/medium-store target, but it is not an automatic continuation system.
+Trendyol now uses a persisted resumable synchronization job. A 7- or 30-day request is divided into bounded three-day chunks; job/chunk status, lease, retry state and completion evidence are stored server-side. A chunk is not successful until both core finance and required Other Financials/cargo/order-map evidence complete. Terminal provider failures stop fail-closed rather than silently truncating data. The browser can resume a persisted job after interruption.
 
-Before onboarding stores whose selected sync window can exceed a worker ceiling, implement a resumable job design with:
+This does **not** mean every marketplace worker is resumable. Hepsiburada, n11 and Amazon still deliberately stop at their provider/page safety ceilings and return an explicit failure instead of silently truncating data. Their current overflow contract remains `409 SYNC_TOO_LARGE` (or the provider-specific equivalent). For these three providers, continuation cursor persistence and idempotent page writes are intentionally documented, not implemented yet. Before representing those providers as suitable for very large stores, extend the same persisted job/cursor/idempotency pattern used by Trendyol to each provider and validate it against an authorized merchant account. Raising page limits alone is not an acceptable substitute.
 
-- a tenant-owned sync-job row containing stage, date window, page/cursor, retry count and lease expiry;
-- idempotent page writes plus a unique provider-row/event fingerprint;
-- a short worker invocation that commits its continuation cursor after each page or bounded batch;
-- `pg_cron`, Supabase Queues or an equivalent scheduler to resume pending jobs;
-- terminal `success`, `partial`, `failed` and dead-letter states with externally monitored error codes;
-- reconciliation that publishes financial results only after all required chunks for the window complete.
+Production currently has no real Trendyol connection or large-store resumable run evidence. The architecture is implemented and deployed, but a buyer should run the real-store protocol before describing capacity as production-validated.
 
-This architecture is intentionally documented, not implemented yet. Raising `MAX_PAGES` alone is not an acceptable substitute because it increases timeout and retry risk without adding resumability.
+## 10. Developer API and outbound webhooks — implemented, external adoption unproven
+
+KârKalkan includes scoped, revocable `kk_live_` API keys, a read-only Public API v1 and HMAC-SHA256 outbound webhooks. API-key hashes are stored server-side; webhook signing secrets are kept in Supabase Vault. Automatic events currently cover Trendyol resumable sync completion/final failure and matched seven-day Trendyol reconciliation, plus an explicit test event. See `docs/DEVELOPER_PLATFORM.md`.
+
+No third-party client adoption or buyer-owned external webhook delivery has been documented yet. Do not present implementation as customer adoption, integration-partner approval or externally validated uptime. A buyer should create fresh keys/secrets after transfer and run an external signature-verification test.

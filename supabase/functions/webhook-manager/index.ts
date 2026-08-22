@@ -7,7 +7,7 @@ const PROJECT_ORIGIN=(()=>{try{return new URL(PROJECT_URL).origin}catch{return '
 const DB_URL=Deno.env.get('KARKALKAN_DB_POOLER_URL')||''
 const sql=createTransactionPool(DB_URL)
 
-function allowedOrigin(o:string|null){if(!o)return true;if(o==='https://karkalkan.vercel.app'||o===PROJECT_ORIGIN)return true;try{const u=new URL(o);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
+function allowedOrigin(o:string|null){if(!o)return true;if(o==='https://karkalkan.vercel.app'||o===PROJECT_ORIGIN)return true;try{const u=new URL(o);return u.protocol==='https:'&&Boolean(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX'))&&u.hostname.endsWith(String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')))}catch{return false}}
 function headers(o:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(o&&allowedOrigin(o)){h['Access-Control-Allow-Origin']=o;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, POST, OPTIONS'}return h}
 function json(s:number,b:unknown,o:string|null){return new Response(JSON.stringify(b),{status:s,headers:headers(o)})}
 function validUuid(v:string){return /^[0-9a-f-]{36}$/i.test(v)}

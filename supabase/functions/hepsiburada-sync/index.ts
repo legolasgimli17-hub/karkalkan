@@ -54,7 +54,7 @@ class SyncError extends Error{
 function allowedOrigin(origin:string|null){
   if(!origin)return true
   if(origin==='https://karkalkan.vercel.app'||origin===PROJECT_ORIGIN)return true
-  try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}
+  try{const u=new URL(origin);return u.protocol==='https:'&&Boolean(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX'))&&u.hostname.endsWith(String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')))}catch{return false}
 }
 function responseHeaders(origin:string|null){
   const headers:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'}
