@@ -1,0 +1,43 @@
+name: Update Capacity Test Once
+
+on:
+  push:
+    branches:
+      - agent/developer-platform
+
+permissions:
+  contents: write
+
+# One-shot branch maintenance workflow; it deletes itself after a verified exact replacement.
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: agent/developer-platform
+          fetch-depth: 0
+      - name: Update provider-specific capacity invariant
+        shell: python
+        run: |
+          from pathlib import Path
+          path=Path('tests/repo-integrity.test.mjs')
+          text=path.read_text()
+          old="""test('large-store continuation boundary is explicit and not disguised by a larger page limit',async()=>{const limits=await read('KNOWN_LIMITATIONS.md');assert.match(limits,/409 SYNC_TOO_LARGE/);assert.match(limits,/continuation cursor/i);assert.match(limits,/idempotent page writes/i);assert.match(limits,/intentionally documented, not implemented yet/i)});"""
+          new="""test('large-store continuation status stays provider-specific and fail-honest',async()=>{const limits=await read('KNOWN_LIMITATIONS.md'),resumable=await read('supabase/functions/trendyol-resumable-sync/index.ts'),hepsiburada=await read('supabase/functions/hepsiburada-sync/index.ts'),n11=await read('supabase/functions/n11-sync/index.ts'),amazon=await read('supabase/functions/amazon-sync/index.ts');assert.match(limits,/Trendyol now uses a persisted resumable synchronization job/i);assert.match(limits,/Hepsiburada, n11 and Amazon still deliberately stop at their provider\/page safety ceilings/i);assert.match(limits,/Production currently has no real Trendyol connection or large-store resumable run evidence/i);assert.match(resumable,/CHUNK_DAYS = 3/);for(const source of [hepsiburada,n11,amazon])assert.match(source,/SYNC_TOO_LARGE|PAGE_GUARD|TOO_LARGE/i)});"""
+          if text.count(old)!=1:
+              raise SystemExit('old capacity test anchor missing')
+          path.write_text(text.replace(old,new))
+          Path('.github/workflows/update-capacity-test-once.yml').unlink()
+      - name: Verify patch
+        run: |
+          grep -q 'large-store continuation status stays provider-specific' tests/repo-integrity.test.mjs
+          git diff --check
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/repo-integrity.test.mjs .github/workflows/update-capacity-test-once.yml
+          git commit -m "Update provider-specific capacity regression"
+          git push origin HEAD:agent/developer-platform
