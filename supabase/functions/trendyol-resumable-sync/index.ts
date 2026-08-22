@@ -237,6 +237,7 @@ Deno.serve(async (req: Request) => {
       await sql`update public.marketplace_sync_job_chunks set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${running.id}::uuid and user_id=${auth.user.id}::uuid`
       await sql`update public.marketplace_sync_jobs set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${job.id}::uuid and user_id=${auth.user.id}::uuid`
       job.status = 'failed'; job.safe_error_code = code
+      await deliverOutboundEvent(sql, auth.user.id, 'sync.failed', { marketplace: 'trendyol', connectionId, code }).catch(() => {})
       return json(core.status >= 400 && core.status < 500 ? core.status : 502, { error: code, job: publicJob(job, { ...running, status: 'failed' }) }, origin)
     }
 
@@ -255,6 +256,7 @@ Deno.serve(async (req: Request) => {
       await sql`update public.marketplace_sync_job_chunks set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${running.id}::uuid and user_id=${auth.user.id}::uuid`
       await sql`update public.marketplace_sync_jobs set status='failed',safe_error_code=${code},finished_at=now(),updated_at=now() where id=${job.id}::uuid and user_id=${auth.user.id}::uuid`
       job.status = 'failed'; job.safe_error_code = code
+      await deliverOutboundEvent(sql, auth.user.id, 'sync.failed', { marketplace: 'trendyol', connectionId, code }).catch(() => {})
       return json(502, { error: code, job: publicJob(job, { ...running, status: 'failed' }) }, origin)
     }
 
