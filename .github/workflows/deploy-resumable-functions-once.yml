@@ -1,0 +1,33 @@
+name: Deploy Resumable Functions Once
+
+on:
+  push:
+    branches:
+      - agent/supabase-deploy-resumable
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require configured Supabase token
+        shell: bash
+        run: test -n "$SUPABASE_ACCESS_TOKEN"
+      - name: Checkout merged main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Show source commit
+        run: git rev-parse HEAD
+      - name: Deploy Trendyol core
+        run: npx --yes supabase@latest functions deploy trendyol-sync --project-ref ilybqwjhkxfzociyvpeg
+      - name: Deploy Trendyol auxiliary
+        run: npx --yes supabase@latest functions deploy trendyol-otherfinancials-sync --project-ref ilybqwjhkxfzociyvpeg
+      - name: Deploy resumable orchestrator
+        run: npx --yes supabase@latest functions deploy trendyol-resumable-sync --project-ref ilybqwjhkxfzociyvpeg
