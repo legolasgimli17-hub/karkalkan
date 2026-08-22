@@ -41,6 +41,9 @@ verify_jwt = true
 [functions.trendyol-sync]
 verify_jwt = true
 
+[functions.trendyol-resumable-sync]
+verify_jwt = true
+
 [functions.hepsiburada-sync]
 verify_jwt = true
 
