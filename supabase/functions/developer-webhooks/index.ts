@@ -56,14 +56,14 @@ Deno.serve(async(req:Request)=>{
 
   if(action!=='create')return json(400,{error:'INVALID_ACTION'},origin)
   const endpoint=safeWebhookUrl(body?.endpoint_url),eventTypes=events(body?.event_types)
-  if(!endpoint)return json(400,{error:'INVALID_WEBHOOK_URL',requirement:'Public HTTPS URL, port 443, no localhost/IP/internal hostname'})
+  if(!endpoint)return json(400,{error:'INVALID_WEBHOOK_URL',requirement:'Public HTTPS URL, port 443, no localhost/IP/internal hostname'},origin)
   if(!eventTypes.length)return json(400,{error:'INVALID_EVENT_TYPES',allowed:DEVELOPER_WEBHOOK_EVENTS},origin)
 
   const count=await sql`select count(*)::int as count from public.developer_webhooks where user_id=${auth.user.id}::uuid`
   if(Number(count[0]?.count||0)>=MAX_WEBHOOKS)return json(409,{error:'WEBHOOK_LIMIT',limit:MAX_WEBHOOKS},origin)
 
   const id=crypto.randomUUID(),secret=makeSecret(),vaultName=`kk.developer.webhook.${auth.user.id}.${id}`
-  let vaultId:string
+  let vaultId=''
   try{
     const vaultRows=await sql`select vault.create_secret(${secret},${vaultName},${'KârKalkan outbound webhook signing secret'},null::uuid) as id`
     vaultId=String(vaultRows[0]?.id||'')
@@ -73,7 +73,7 @@ Deno.serve(async(req:Request)=>{
     return json(201,{webhook:{id:row.id,endpointUrl:row.endpoint_url,eventTypes:row.event_types,status:row.status,createdAt:row.created_at},signingSecret:secret,signature:'HMAC-SHA256 over `${X-Karkalkan-Timestamp}.${rawBody}`',warning:'İmzalama anahtarı yalnızca şimdi gösterilir.'},origin)
   }catch(error){
     if(vaultId&&isUuid(vaultId))await sql`delete from vault.secrets where id=${vaultId}::uuid`.catch(()=>{})
-    const code=error instanceof Error&&String(error.message).includes('duplicate')?'WEBHOOK_EXISTS':'WEBHOOK_CREATE_FAILED'
+    const code=error instanceof Error&&String(error.message).toLowerCase().includes('duplicate')?'WEBHOOK_EXISTS':'WEBHOOK_CREATE_FAILED'
     return json(code==='WEBHOOK_EXISTS'?409:500,{error:code},origin)
   }
 })
