@@ -8,7 +8,7 @@ const url=Deno.env.get('SUPABASE_URL')||''
 const sql=createTransactionPool(Deno.env.get('KARKALKAN_DB_POOLER_URL')||'',{max_lifetime:60})
 const projectOrigin=(()=>{try{return new URL(url).origin}catch{return ''}})()
 const allowedOrigins=new Set(['https://karkalkan.vercel.app',projectOrigin])
-function isAllowedOrigin(origin:string|null){if(!origin)return true;if(allowedOrigins.has(origin))return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
+function isAllowedOrigin(origin:string|null){if(!origin)return true;if(allowedOrigins.has(origin))return true;try{const u=new URL(origin);return u.protocol==='https:'&&Boolean(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX'))&&u.hostname.endsWith(String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')))}catch{return false}}
 function cors(origin:string|null){const headers:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Vary':'Origin'};if(origin&&isAllowedOrigin(origin)){headers['Access-Control-Allow-Origin']=origin;headers['Access-Control-Allow-Headers']='authorization, apikey, content-type';headers['Access-Control-Allow-Methods']='GET, POST, DELETE, OPTIONS'}return headers}
 function json(body:unknown,status:number,origin:string|null){return new Response(JSON.stringify(body),{status,headers:cors(origin)})}
 function cleanText(value:unknown,max:number){const s=String(value??'').trim();return s.length<=max?s:''}

@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.57.4'
 const url=Deno.env.get('SUPABASE_URL')||''
 const pub=JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')||'{}').default
 const projectOrigin=(()=>{try{return new URL(url).origin}catch{return ''}})()
-function allowedOrigin(origin:string|null){if(!origin)return true;if(origin==='https://karkalkan.vercel.app'||origin===projectOrigin)return true;try{const u=new URL(origin);return u.protocol==='https:'&&u.hostname.endsWith('-krgzabdullah22-8562s-projects.vercel.app')}catch{return false}}
+function allowedOrigin(origin:string|null){if(!origin)return true;if(origin==='https://karkalkan.vercel.app'||origin===projectOrigin)return true;try{const u=new URL(origin);return u.protocol==='https:'&&Boolean(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX'))&&u.hostname.endsWith(String(Deno.env.get('KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX')))}catch{return false}}
 function headers(origin:string|null){const h:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};if(origin&&allowedOrigin(origin)){h['Access-Control-Allow-Origin']=origin;h['Access-Control-Allow-Headers']='authorization, apikey, content-type';h['Access-Control-Allow-Methods']='GET, OPTIONS'}return h}
 const json=(status:number,body:unknown,origin:string|null)=>new Response(JSON.stringify(body),{status,headers:headers(origin)})
 const validUuid=(v:string)=>/^[0-9a-f-]{36}$/i.test(v)
