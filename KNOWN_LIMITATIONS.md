@@ -1,6 +1,6 @@
 # KârKalkan — Known Limitations & Due-Diligence Disclosure
 
-Last reviewed: 2026-08-19
+Last reviewed: 2026-08-22
 
 This file separates outstanding marketplace validation from ordinary business, maintenance and infrastructure disclosures. The sections after item 1 are not unresolved application defects.
 
@@ -62,7 +62,7 @@ Source code, deployment and documentation make the product transferable, but do 
 
 Trendyol now uses a persisted resumable synchronization job. A 7- or 30-day request is divided into bounded three-day chunks; job/chunk status, lease, retry state and completion evidence are stored server-side. A chunk is not successful until both core finance and required Other Financials/cargo/order-map evidence complete. Terminal provider failures stop fail-closed rather than silently truncating data. The browser can resume a persisted job after interruption.
 
-This does **not** mean every marketplace worker is resumable. Hepsiburada, n11 and Amazon still deliberately stop at their provider/page safety ceilings and return an explicit failure instead of silently truncating data. Before representing those providers as suitable for very large stores, extend the same persisted job/cursor/idempotency pattern to each provider and validate it against an authorized merchant account. Raising page limits alone is not an acceptable substitute.
+This does **not** mean every marketplace worker is resumable. Hepsiburada, n11 and Amazon still deliberately stop at their provider/page safety ceilings and return an explicit failure instead of silently truncating data. Their current overflow contract remains `409 SYNC_TOO_LARGE` (or the provider-specific equivalent). For these three providers, continuation cursor persistence and idempotent page writes are intentionally documented, not implemented yet. Before representing those providers as suitable for very large stores, extend the same persisted job/cursor/idempotency pattern used by Trendyol to each provider and validate it against an authorized merchant account. Raising page limits alone is not an acceptable substitute.
 
 Production currently has no real Trendyol connection or large-store resumable run evidence. The architecture is implemented and deployed, but a buyer should run the real-store protocol before describing capacity as production-validated.
 
