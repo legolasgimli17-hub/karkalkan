@@ -1,8 +1,5 @@
 # KârKalkan
 
-[![Verify](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/verify.yml/badge.svg)](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/verify.yml)
-[![CodeQL](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/codeql.yml/badge.svg)](https://github.com/legolasgimli17-hub/karkalkan/actions/workflows/codeql.yml)
-
 KârKalkan is a multi-marketplace seller profitability product that combines sales/financial data with seller-provided product costs to help answer a simple question: **after deductions and costs, what is left?**
 
 **[Live production](https://karkalkan.vercel.app)** · **[Seller workspace](https://karkalkan.vercel.app/uygulama)**
@@ -38,8 +35,11 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - `KNOWN_LIMITATIONS.md` — due-diligence disclosures and outstanding validation
 - `SUPABASE_INVENTORY.md` — deployed backend-function inventory and auth configuration
 - `THIRD_PARTY.md` — runtime dependency inventory and upgrade policy
+- [`docs/BUYER_HANDOFF.md`](docs/BUYER_HANDOFF.md) — buyer-owned infrastructure and secret rotation procedure
+- [`docs/SALE_TRANSFER_CHECKLIST.md`](docs/SALE_TRANSFER_CHECKLIST.md) — final pre-sale privacy/security handoff checklist
 - [`docs/DEVELOPER_PLATFORM.md`](docs/DEVELOPER_PLATFORM.md) — API keys, Public API v1, webhook signatures and buyer validation
 - `.env.example` — safe placeholder names/shapes for server-side configuration
+- `scripts/build-buyer-bundle.py` — creates a history-free source ZIP without `.git`, local provider metadata or real environment files
 
 ## Security and engineering governance
 
@@ -64,4 +64,4 @@ The product is pre-revenue unless later evidence is documented. Do not claim com
 
 ## Security
 
-Never commit API secrets, seller credentials, personal access tokens or real `.env` files. During a transfer, the buyer should create/rotate secrets in buyer-controlled infrastructure accounts.
+Never commit API secrets, seller credentials, personal access tokens or real `.env` files. During a transfer, the buyer should create/rotate secrets in buyer-controlled infrastructure accounts. If seller identity privacy is required, hand over the history-free buyer bundle or a buyer-owned fresh repository rather than the seller's `.git` history.
