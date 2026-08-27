@@ -9,6 +9,20 @@
 - **Server-side integration layer** — Supabase functions/database logic for marketplace synchronization and financial data processing.
 - **Health endpoint** — basic deployment health verification.
 
+## Canonical runtime routes
+
+| Public route | Runtime target | Purpose |
+| --- | --- | --- |
+| `/` | `index.html` | Public product workspace, synthetic demo and same-page calculator |
+| `/uygulama` | `v4.html` | Authenticated seller workspace |
+| `/hesap` | `hesap.html` | Account management |
+| `/hazirlik` | `hazirlik.html` | Launch/readiness evidence surface |
+| `/durum` | `durum.html` | Status surface |
+| `/sss` | `sss.html` | FAQ |
+| `/api/health` | `health.json` | Static deployment health response |
+
+`/hesapla`, `/hesapla.html`, `/demo` and `/demo.html` are compatibility redirects to the unified public workspace. They are not separate active applications.
+
 ## Hosting and services
 
 ### Vercel
@@ -21,9 +35,39 @@ The production project should be named **`karkalkan`** or another buyer-controll
 
 Provides authentication, Postgres data storage, migrations, server-side functions and secret-management capabilities used by the marketplace integration. The buyer can recreate the backend in a buyer-owned Supabase project from the version-controlled migrations, Edge Function sources and `supabase/config.toml` auth settings.
 
+The backend is **not** a second root-level `api/` application. Production server code is under `supabase/functions/`; database history and RLS/privilege changes are under `supabase/migrations/`.
+
 ### GitHub
 
 Canonical source repository and change history during development. `main` is the production source branch. New work should be performed on feature branches and validated through preview deployments before merge. For an identity-private acquisition, the buyer may instead create a fresh buyer-owned repository from the history-free source bundle rather than inheriting seller Git metadata.
+
+## Frontend ownership map
+
+### Public product layer
+
+`index.html` is the canonical public application shell. It loads `workspace-v2.css`, `workspace-demo.js`, `product-2026.css` and `product-2026.js`. This layer owns the product story, synthetic demo, public finance visualizations and current same-page calculator.
+
+The three long-form HTML pages (`trendyol-iade-dahil-kar-hesaplama.html`, `kampanya-basabas-hesaplama.html`, `pazaryeri-toplu-kar-analizi.html`) are SEO/education pages. They should link back to current public anchors rather than old standalone calculator anchors.
+
+### Authenticated seller layer
+
+The historical authenticated core remains `v4.html` + `v4.js` + `v4-security.js` + `v4-enhance.js` + `v4-alerts.js` and their styles. These files are **active production code** despite the historical `v4` prefix: `vercel.json` rewrites `/uygulama` directly to `v4.html`.
+
+The newer seller experience is layered over that stable core:
+
+- `vnext.js` owns evidence confidence, daily cash visualization, money-leak radar, live order signals, operating expenses and portfolio refreshes.
+- `vnext-ops.js` no longer exists; its behavior is consolidated into `vnext.js`.
+- `v4-alerts.js` loads one vNext behavior script and the required styles.
+- `refreshConnectionData` is wrapped once by the consolidated vNext layer instead of once per vNext feature file.
+- `sale-ready.*`, `smart-csv.*`, `finance-ai.*`, `bank-reconciliation.*`, `weekly-finance.*` and related modules extend the authenticated workspace without replacing its core auth/store lifecycle.
+
+Deleting or treating `v4-*` as abandoned code would break the canonical authenticated application.
+
+### Legacy standalone calculator boundary
+
+`hesapla.html`, `app-core.js`, `app-bulk.js` and `app-data.js` belong to the older standalone calculator generation. They are not the canonical production entrypoint because both `/hesapla` and `/hesapla.html` redirect to the unified public workspace at `/#hesaplayici`.
+
+No new features should be added to this legacy set. It should be removed only in a dedicated cleanup change after repository references/tests verify that no remaining page or test depends on it. Keeping this boundary explicit is safer than deleting files based only on version-looking names.
 
 ## Data flow
 
@@ -53,17 +97,6 @@ Public demo flow does not require marketplace credentials and uses example data.
 - operating-expense date overlap allocation.
 
 `dashboard-summary`, `risk-alerts`, `decision-center` and `portfolio-summary` import this module. CI imports the same file directly, so production formulas and tests do not maintain separate copies of the core arithmetic.
-
-## Authenticated dashboard layering
-
-The historical authenticated core remains `v4.js` + `v4-enhance.js` + `v4-alerts.js`. The newer seller experience is now one behavior layer:
-
-- `vnext.js` owns evidence confidence, daily cash visualization, money-leak radar, live order signals, operating expenses and portfolio refreshes.
-- `vnext-ops.js` no longer exists; its behavior is consolidated into `vnext.js`.
-- `v4-alerts.js` loads one vNext behavior script and the required styles.
-- `refreshConnectionData` is wrapped once by the consolidated vNext layer instead of once per vNext feature file.
-
-This keeps the historical core stable while reducing the number of interdependent browser-script wrappers.
 
 ## Test fixture
 
