@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const root=process.cwd();
@@ -66,6 +66,6 @@ test('Trendyol sync preserves audit visibility for unclassified adjustments',asy
 
 test('seller dashboard uses one consolidated vNext behavior layer',async()=>{const loader=await read('v4-alerts.js'),next=await read('vnext.js'),css=await read('vnext.css'),opsCss=await read('vnext-ops.css');assert.match(loader,/\/vnext\.css/);assert.match(loader,/\/vnext\.js/);assert.match(loader,/\/vnext-ops\.css/);assert.match(loader,/\/product-2026\.css/);assert.doesNotMatch(loader,/vnext-ops\.js/);assert.match(next,/Önce sonucu görün\. Kanıtı kontrol edin\. Aksiyonu uygulayın\./);assert.match(next,/Rakip izleme/);assert.match(next,/İşletme giderleri/);assert.match(next,/Mağaza portföyü/);assert.match(next,/kkRefreshAuxiliary/);assert.match(css,/--kk-copper:#f2a65a/);assert.match(css,/--kk-ice:#79c7ff/);assert.match(opsCss,/\.kk-ops-grid/);await assert.rejects(access(join(root,'vnext-ops.js')))});
 
-test('public browser code does not contain privileged Supabase secrets',async()=>{const browserFiles=['app-core.js','app-data.js','app-bulk.js','demo.js','v4.js','v4-security.js','v4-enhance.js','v4-alerts.js','vnext.js','sale-ready.js','bank-reconciliation.js'],forbidden=[/SUPABASE_SERVICE_ROLE_KEY/,/service_role/i,/SUPABASE_DB_URL/,/api_secret\s*[:=]\s*['"][^'"]+/i];for(const file of browserFiles){const source=await read(file);for(const pattern of forbidden)assert.doesNotMatch(source,pattern,`${file} contains a privileged secret marker`)}});
+test('public browser code does not contain privileged Supabase secrets',async()=>{const entries=await readdir(root,{withFileTypes:true}),browserFiles=entries.filter(entry=>entry.isFile()&&entry.name.endsWith('.js')).map(entry=>entry.name).sort(),forbidden=[/SUPABASE_SERVICE_ROLE_KEY/,/service_role/i,/SUPABASE_DB_URL/,/api_secret\s*[:=]\s*['"][^'"]+/i];assert.ok(browserFiles.length>=10,'expected browser JavaScript inventory');for(const file of browserFiles){const source=await read(file);for(const pattern of forbidden)assert.doesNotMatch(source,pattern,`${file} contains a privileged secret marker`)}});
 
 test('canonical seller route hides historical implementation filename',async()=>{const vercel=await read('vercel.json');assert.match(vercel,/"source"\s*:\s*"\/uygulama"/);assert.match(vercel,/"destination"\s*:\s*"\/v4\.html"/);assert.match(vercel,/"source"\s*:\s*"\/v4\.html"/);assert.match(vercel,/"destination"\s*:\s*"\/uygulama"/)});
