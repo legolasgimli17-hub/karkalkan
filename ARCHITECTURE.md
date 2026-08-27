@@ -47,7 +47,7 @@ Canonical source repository and change history during development. `main` is the
 
 `index.html` is the canonical public application shell. It loads `workspace-v2.css`, `workspace-demo.js`, `product-2026.css` and `product-2026.js`. This layer owns the product story, synthetic demo, public finance visualizations and current same-page calculator.
 
-The three long-form HTML pages (`trendyol-iade-dahil-kar-hesaplama.html`, `kampanya-basabas-hesaplama.html`, `pazaryeri-toplu-kar-analizi.html`) are SEO/education pages. They should link back to current public anchors rather than old standalone calculator anchors.
+The three long-form HTML pages (`trendyol-iade-dahil-kar-hesaplama.html`, `kampanya-basabas-hesaplama.html`, `pazaryeri-toplu-kar-analizi.html`) are SEO/education pages. They link to current public/authenticated surfaces rather than an older standalone calculator.
 
 ### Authenticated seller layer
 
@@ -63,11 +63,11 @@ The newer seller experience is layered over that stable core:
 
 Deleting or treating `v4-*` as abandoned code would break the canonical authenticated application.
 
-### Legacy standalone calculator boundary
+### Removed duplicate calculator generation
 
-`hesapla.html`, `app-core.js`, `app-bulk.js` and `app-data.js` belong to the older standalone calculator generation. They are not the canonical production entrypoint because both `/hesapla` and `/hesapla.html` redirect to the unified public workspace at `/#hesaplayici`.
+The former standalone calculator used `hesapla.html` with `app-core.js`, `app-data.js` and `app-bulk.js`. Both public routes that exposed that shell (`/hesapla` and `/hesapla.html`) had already been redirected by `vercel.json` to the unified public calculator at `/#hesaplayici`. After confirming that relationship, the duplicate HTML/JS implementation was removed from the current source tree while the compatibility redirects were retained for old links.
 
-No new features should be added to this legacy set. It should be removed only in a dedicated cleanup change after repository references/tests verify that no remaining page or test depends on it. Keeping this boundary explicit is safer than deleting files based only on version-looking names.
+This leaves one public calculator implementation instead of two parallel browser engines.
 
 ## Data flow
 
