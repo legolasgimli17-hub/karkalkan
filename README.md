@@ -99,7 +99,7 @@ For deeper runtime/data flow, read `ARCHITECTURE.md`. For a complete function in
 - [`docs/CONTROL_PLANE_SECURITY.md`](docs/CONTROL_PLANE_SECURITY.md) — owner-account MFA, recovery and provider activation gates
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — change, testing and secret-handling rules
 
-CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
+CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. The privileged-secret regression test dynamically inventories the current root browser JavaScript files, so adding or removing a browser module does not silently remove that file from the scan. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
 
 ## Backend reproducibility
 
