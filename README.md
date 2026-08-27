@@ -15,7 +15,7 @@ KârKalkan is a multi-marketplace seller profitability product that combines sal
 - Smart CSV mapping and multi-currency/FX evidence import
 - Evidence-bound finance AI
 - Scoped read-only Public API v1 and signed outbound webhooks
-- CSV/XLSX bulk analysis and campaign scenarios
+- CSV-based normalized finance import and decision support
 
 ## One product, one production source
 
@@ -26,6 +26,55 @@ Production source branch: `main`
 Canonical store-panel route: `/uygulama`
 
 Development workflow: `feature branch -> Vercel preview -> verification -> merge to main -> production`
+
+## 10-minute repository map
+
+A buyer should be able to understand the runtime without guessing from filenames.
+
+### Public product / demo surface
+
+| Path | Role | Production status |
+| --- | --- | --- |
+| `index.html` | Public KârKalkan workspace, product story, synthetic demo and same-page calculator | **Active** — `/` |
+| `workspace-v2.css` | Main public workspace layout | **Active** |
+| `workspace-demo.js` | Synthetic public finance/demo interactions only | **Active** |
+| `product-2026.js` / `product-2026.css` | Public product interactions and presentation layer | **Active** |
+| `trendyol-iade-dahil-kar-hesaplama.html` | SEO/education landing page | **Active** |
+| `kampanya-basabas-hesaplama.html` | SEO/education landing page | **Active** |
+| `pazaryeri-toplu-kar-analizi.html` | SEO/education landing page | **Active** |
+
+### Authenticated seller workspace
+
+| Path | Role | Production status |
+| --- | --- | --- |
+| `v4.html` | Authenticated workspace HTML shell | **Active** — `/uygulama` rewrites here |
+| `v4.js` | Core auth, store connection, sync, costs and dashboard behavior | **Active** |
+| `v4-security.js` | Browser-side auth/password/security guards | **Active** |
+| `v4-enhance.js` | Workspace enhancement layer | **Active** |
+| `v4-alerts.js` | Alert/decision integration and vNext loader | **Active** |
+| `v4.css`, `v4-enhance.css`, `v4-alerts.css` | Authenticated workspace styling | **Active** |
+| `vnext.js`, `vnext.css`, `vnext-visual.*` | Newer analytics/decision/presentation layer loaded on top of the stable authenticated core | **Active** |
+| `sale-ready.*`, `smart-csv.*`, `finance-ai.*`, `bank-reconciliation.*`, `weekly-finance.*` | Bounded feature modules layered onto the authenticated workspace | **Active** |
+
+**Important:** the `v4-*` prefix is historical naming only. It does **not** mean these files are an abandoned prototype. Removing them would break the canonical authenticated application.
+
+### Removed legacy standalone calculator
+
+The older standalone calculator shell and its private browser modules — `hesapla.html`, `app-core.js`, `app-bulk.js` and `app-data.js` — were removed after confirming that their public routes were already compatibility redirects to the current same-page calculator at `/#hesaplayici`. `vercel.json` intentionally keeps `/hesapla` and `/hesapla.html` redirects so old links continue to land on the current product without keeping a second calculator implementation in the repository.
+
+### Backend / data layer
+
+There is no separate production application hidden under a root `api/` directory. The actual server-side application lives under:
+
+- `supabase/functions/` — authenticated/public Edge Functions and shared runtime code
+- `supabase/functions/_shared/` — reusable finance, billing, request-security, observability and integration primitives
+- `supabase/migrations/` — reproducible Postgres schema/RLS/privilege migrations
+- `supabase/config.toml` — per-function JWT verification policy
+- `vercel.json` — frontend routing and browser security headers
+
+The public `/api/health` URL is only a Vercel rewrite to `health.json`; it is not a second backend framework.
+
+For deeper runtime/data flow, read `ARCHITECTURE.md`. For a complete function inventory, read `SUPABASE_INVENTORY.md`.
 
 ## Acquisition / handover documentation
 
@@ -50,7 +99,7 @@ Development workflow: `feature branch -> Vercel preview -> verification -> merge
 - [`docs/CONTROL_PLANE_SECURITY.md`](docs/CONTROL_PLANE_SECURITY.md) — owner-account MFA, recovery and provider activation gates
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — change, testing and secret-handling rules
 
-CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
+CI runs the full test suite, JavaScript checks, bundled Edge Function TypeScript validation and CodeQL. The privileged-secret regression test dynamically inventories the current root browser JavaScript files, so adding or removing a browser module does not silently remove that file from the scan. GitHub Actions are pinned to immutable revisions; dependency proposals remain review-gated.
 
 ## Backend reproducibility
 

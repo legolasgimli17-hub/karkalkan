@@ -30,17 +30,12 @@ jobs:
         run: node --test tests/*.test.mjs
 
       - name: Browser and shared JavaScript syntax
+        shell: bash
         run: |
-          node --check app-core.js
-          node --check app-data.js
-          node --check app-bulk.js
-          node --check demo.js
-          node --check v4.js
-          node --check v4-security.js
-          node --check v4-enhance.js
-          node --check v4-alerts.js
-          node --check vnext.js
-          node --check vnext-visual.js
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -maxdepth 1 -type f -name '*.js' -print0 | sort -z)
           node --check supabase/functions/_shared/finance.js
 
       - name: Edge Function TypeScript syntax and imports
