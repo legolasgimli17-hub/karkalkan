@@ -1,0 +1,29 @@
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Provider/local project metadata
+.vercel/
+.supabase/
+
+# Dependencies and generated artifacts
+node_modules/
+dist/
+buyer-bundle/
+coverage/
+
+# Local logs and editor/OS artifacts
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local key/certificate material
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
