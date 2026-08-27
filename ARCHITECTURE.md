@@ -15,15 +15,15 @@
 
 Hosts the public web application and `/api/health`. `vercel.json` defines clean routes and security headers.
 
-The canonical Vercel project is **`karkalkan`** (`prj_Sh2w9BUjZFHh01GI6j5bo5NNORWN`). It is the only Vercel project that should remain connected to this GitHub repository. Duplicate or test projects must not be connected to the same branch because they create redundant builds and can consume Hobby deployment quotas without adding a separate production surface.
+The production project should be named **`karkalkan`** or another buyer-controlled equivalent. Buyer deployments must not depend on a seller-specific Vercel project/team identifier. Duplicate or test projects should not remain connected to the same production branch because they create redundant builds and can consume deployment quotas without adding a separate production surface.
 
 ### Supabase
 
-Provides authentication, Postgres data storage, migrations, server-side functions and secret-management capabilities used by the marketplace integration.
+Provides authentication, Postgres data storage, migrations, server-side functions and secret-management capabilities used by the marketplace integration. The buyer can recreate the backend in a buyer-owned Supabase project from the version-controlled migrations, Edge Function sources and `supabase/config.toml` auth settings.
 
 ### GitHub
 
-Canonical source repository and change history. `main` is the production source branch. New work should be performed on feature branches and validated through preview deployments before merge.
+Canonical source repository and change history during development. `main` is the production source branch. New work should be performed on feature branches and validated through preview deployments before merge. For an identity-private acquisition, the buyer may instead create a fresh buyer-owned repository from the history-free source bundle rather than inheriting seller Git metadata.
 
 ## Data flow
 
@@ -76,6 +76,7 @@ This keeps the historical core stable while reducing the number of interdependen
 - Preserve user/store isolation and RLS policies.
 - Rotate credentials during acquisition handover.
 - Keep CSP and other security headers in `vercel.json` unless a reviewed change requires modification.
+- Keep buyer handoff source independent of seller account/team/project identifiers.
 
 ## Version policy
 

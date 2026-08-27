@@ -134,9 +134,11 @@ The exact owner/provider handoff and the required evidence are recorded in `docs
 
 ### Origin / CORS note for a buyer
 
-The checked-in marketplace functions trust the canonical production origin `https://karkalkan.vercel.app` and the current Vercel preview hostname pattern. If the buyer changes the public domain or Vercel team, update the `allowedOrigin` rules in the relevant Edge Functions before using the new origin. Keeping the transferred canonical production domain avoids changing the production-origin entry, but buyer preview URLs may still require updating the preview-host rule.
+Edge Functions derive the canonical application origin from `KARKALKAN_APP_ORIGIN` (defaulting to `https://karkalkan.vercel.app`). Preview access is disabled by default and is enabled only when the buyer sets `KARKALKAN_VERCEL_PREVIEW_HOST_SUFFIX` to a buyer-controlled HTTPS hostname suffix. No seller-specific Vercel team hostname should be hard-coded in source.
 
-This is configuration, not a reason to transfer the seller's personal Vercel account.
+After transfer/redeploy, set these values to the buyer-owned production and preview origins before calling production Edge Functions from a new Vercel team/domain. Generated Vercel deployment aliases are platform metadata and should not be used as public application URLs.
+
+This configuration avoids transferring a seller's personal Vercel account.
 
 ## Smoke test
 
