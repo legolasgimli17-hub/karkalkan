@@ -7,7 +7,7 @@ This checklist is for the final handoff of the software asset. It is deliberatel
 - [ ] Public source tree contains no seller name, personal email, personal Vercel team slug or seller-specific CODEOWNERS entry.
 - [ ] README and buyer documents use buyer-owned placeholders rather than seller account identifiers.
 - [ ] `.gitignore` excludes `.env*` (except `.env.example`), `.vercel/`, `.supabase/`, local key/certificate material and generated bundles.
-- [ ] If seller identity privacy is required, deliver `dist/karkalkan-buyer-source.zip` produced by `scripts/build-buyer-bundle.py` or import that bundle into a fresh buyer-owned repository.
+- [ ] If seller identity privacy is required, deliver the **history-free** `dist/karkalkan-buyer-source.zip` produced by `scripts/build-buyer-bundle.py` or import that bundle into a fresh buyer-owned repository.
 - [ ] Do **not** include `.git` in the buyer source ZIP. Git history may contain author names/emails even when the source tree is clean.
 - [ ] Do not use generated Vercel preview/deployment URLs in sale screenshots or listings; they can contain the current team slug.
 
