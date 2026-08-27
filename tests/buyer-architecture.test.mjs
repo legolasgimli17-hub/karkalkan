@@ -11,19 +11,28 @@ test('canonical routes distinguish public and authenticated runtime shells',asyn
   assert.match(vercel,/"source": "\/hesapla\.html"[\s\S]*?"destination": "\/#hesaplayici"/);
 });
 
-test('buyer documentation makes active v4 and legacy calculator boundaries explicit',async()=>{
+test('buyer documentation makes active v4 and removed calculator boundaries explicit',async()=>{
   const [readme,architecture]=await Promise.all([read('README.md'),read('ARCHITECTURE.md')]);
   for(const source of [readme,architecture]){
     assert.match(source,/v4\.html/);
     assert.match(source,/\/uygulama/);
     assert.match(source,/supabase\/functions\//);
     assert.match(source,/app-core\.js/);
-    assert.match(source,/legacy|older standalone|eski/i);
+    assert.match(source,/legacy|older standalone|former standalone|removed duplicate/i);
   }
   assert.match(readme,/10-minute repository map/i);
   assert.match(readme,/Removing them would break the canonical authenticated application/i);
   assert.match(architecture,/active production code/i);
   assert.match(architecture,/backend is \*\*not\*\* a second root-level `api\/` application/i);
+});
+
+test('duplicate standalone calculator implementation is absent while redirects remain',async()=>{
+  for(const path of ['hesapla.html','app-core.js','app-data.js','app-bulk.js']){
+    await assert.rejects(read(path),error=>error?.code==='ENOENT',`${path} should not remain in the current source tree`);
+  }
+  const vercel=await read('vercel.json');
+  assert.match(vercel,/"source": "\/hesapla"[\s\S]*?"destination": "\/#hesaplayici"/);
+  assert.match(vercel,/"source": "\/hesapla\.html"[\s\S]*?"destination": "\/#hesaplayici"/);
 });
 
 test('SEO guides no longer expose obsolete version branding or dead calculator anchors',async()=>{
