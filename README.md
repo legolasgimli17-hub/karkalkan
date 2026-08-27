@@ -15,7 +15,7 @@ KârKalkan is a multi-marketplace seller profitability product that combines sal
 - Smart CSV mapping and multi-currency/FX evidence import
 - Evidence-bound finance AI
 - Scoped read-only Public API v1 and signed outbound webhooks
-- CSV/XLSX bulk analysis and campaign scenarios
+- CSV-based normalized finance import and decision support
 
 ## One product, one production source
 
@@ -58,9 +58,9 @@ A buyer should be able to understand the runtime without guessing from filenames
 
 **Important:** the `v4-*` prefix is historical naming only. It does **not** mean these files are an abandoned prototype. Removing them would break the canonical authenticated application.
 
-### Legacy standalone calculator sources
+### Removed legacy standalone calculator
 
-`hesapla.html`, `app-core.js`, `app-bulk.js` and `app-data.js` belong to the older standalone calculator implementation. They are **not the canonical production entrypoint**: `vercel.json` redirects `/hesapla` and `/hesapla.html` to the current same-page calculator at `/#hesaplayici`. New product work must not be added to the legacy set. A dedicated cleanup change may remove them once reference/tests confirm no remaining dependency.
+The older standalone calculator shell and its private browser modules — `hesapla.html`, `app-core.js`, `app-bulk.js` and `app-data.js` — were removed after confirming that their public routes were already compatibility redirects to the current same-page calculator at `/#hesaplayici`. `vercel.json` intentionally keeps `/hesapla` and `/hesapla.html` redirects so old links continue to land on the current product without keeping a second calculator implementation in the repository.
 
 ### Backend / data layer
 
