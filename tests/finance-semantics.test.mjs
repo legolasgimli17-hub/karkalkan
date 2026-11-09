@@ -47,6 +47,23 @@ test('incomplete product-cost coverage cannot produce operating contribution',()
   assert.equal(typeof contributionAfterKnownCosts({knownCashAfterFeesAndStoppage:50000,knownCogs:complete.knownCogs,operatingExpenses:9000,costCoverage:complete.coverage,hasSales:true}),'number');
 });
 
+test('a small uncovered sales amount must not be presented as complete product cost coverage',()=>{
+  const coverage=salesCostCoverage([
+    {gross_sales:999500,known_cogs:600000},
+    {gross_sales:500,known_cogs:null}
+  ]);
+  assert.equal(coverage.coverage,0.9995);
+  assert.equal(coverage.complete,false);
+  assert.equal(contributionAfterKnownCosts({
+    knownCashAfterFeesAndStoppage:700000,knownCogs:coverage.knownCogs,
+    operatingExpenses:10000,costCoverage:coverage.coverage,hasSales:true
+  }),null);
+  assert.equal(contributionAfterKnownCosts({
+    knownCashAfterFeesAndStoppage:700000,knownCogs:600000,
+    operatingExpenses:10000,costCoverage:1,hasSales:true
+  }),90000);
+});
+
 test('operating-expense allocation is proportional to overlapping calendar days',()=>{
   const share=overlapShare('2026-07-18','2026-08-16','2026-08-01','2026-08-31');
   assert.equal(Math.round(share*3100),1600);
