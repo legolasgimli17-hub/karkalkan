@@ -290,7 +290,7 @@ Deno.serve(async (req: Request) => {
   const returnEvidenceApplicable = claimMatchedItems + returnProxyItems > 0
   const salesEvidenceCoverage = ratio(exactSalesGross, rawGross)
   const returnEvidenceCoverage = returnEvidenceApplicable ? ratio(claimMatchedItems, claimMatchedItems + returnProxyItems) : null
-  const dataConfidence = productCount === 0 ? 'no_product_data' : salesCostCoverage === 0 ? 'platform_only' : salesCostCoverage >= .999 ? 'cost_enriched' : 'partial_cost_coverage'
+  const dataConfidence = productCount === 0 ? 'no_product_data' : salesCostCoverage === 0 ? 'platform_only' : salesCostCoverage === 1 ? 'cost_enriched' : 'partial_cost_coverage'
 
   const dailyOut = daily.map((row: any) => {
     const dayCash = cashSnapshotFromRow(row)
