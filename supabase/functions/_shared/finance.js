@@ -128,7 +128,7 @@ export function salesCostCoverage(rows = []) {
     coveredGrossSales: money(coveredGross),
     knownCogs: money(knownCogs),
     coverage,
-    complete: gross > 0 && coverage >= 0.999
+    complete: gross > 0 && coverage === 1
   };
 }
 
@@ -139,7 +139,7 @@ export function contributionAfterKnownCosts({
   costCoverage = 0,
   hasSales = true
 } = {}) {
-  if (!hasSales || numberValue(costCoverage) < 0.999) return null;
+  if (!hasSales || numberValue(costCoverage) < 1) return null;
   return money(
     numberValue(knownCashAfterFeesAndStoppage) -
     numberValue(knownCogs) -
