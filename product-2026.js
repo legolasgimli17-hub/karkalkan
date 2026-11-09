@@ -11,15 +11,33 @@
   });
 
   function parseNumber(value) {
-    const raw = String(value ?? '').trim().replace(/\s/g, '').replace(/₺|TL|TRY/gi, '');
-    if (!raw) return NaN;
+    // Validate the entire value; stripping arbitrary letters silently changes money.
+    let raw = String(value ?? '').trim().replace(/[\s\u00a0\u202f]/g, '');
+    raw = raw.replace(/^(?:₺|TL|TRY)/i, '').replace(/(?:₺|TL|TRY)$/i, '');
+    if (!/^[+-]?\d[\d.,]*$/.test(raw)) return NaN;
+
     const comma = raw.lastIndexOf(',');
     const dot = raw.lastIndexOf('.');
     let normalized = raw;
-    if (comma > -1 && dot > -1) normalized = comma > dot ? raw.replace(/\./g, '').replace(',', '.') : raw.replace(/,/g, '');
-    else if (comma > -1) normalized = raw.replace(/\./g, '').replace(',', '.');
-    else if (dot > -1 && raw.split('.').length === 2 && raw.split('.')[1].length === 3) normalized = raw.replace('.', '');
-    const number = Number(normalized.replace(/[^0-9+\-.]/g, ''));
+    if (comma !== -1 && dot !== -1) {
+      if (comma > dot) {
+        // 1.234,56 (Turkish grouped decimal)
+        if (!/^[+-]?\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(raw)) return NaN;
+        normalized = raw.replace(/\./g, '').replace(',', '.');
+      } else {
+        // 1,234.56 (international grouped decimal)
+        if (!/^[+-]?\d{1,3}(?:,\d{3})+\.\d{1,2}$/.test(raw)) return NaN;
+        normalized = raw.replace(/,/g, '');
+      }
+    } else if (comma !== -1) {
+      if (!/^[+-]?\d+(?:,\d{1,2})?$/.test(raw)) return NaN;
+      normalized = raw.replace(',', '.');
+    } else if (dot !== -1) {
+      // Prefer Turkish grouping for 1.234; otherwise accept up to 2 decimals.
+      if (/^[+-]?\d{1,3}(?:\.\d{3})+$/.test(raw)) normalized = raw.replace(/\./g, '');
+      else if (!/^[+-]?\d+(?:\.\d{1,2})?$/.test(raw)) return NaN;
+    }
+    const number = Number(normalized);
     return Number.isFinite(number) ? number : NaN;
   }
 
@@ -63,7 +81,7 @@
         setText('quickMargin', '—');
         setText('quickBreakEven', '—');
         if (status) {
-          status.textContent = 'Geçerli ve pozitif değerler girin';
+          status.textContent = 'Sayıları kontrol edin (örnek: 1.234,56)';
           status.className = 'bad';
         }
         if (marker) marker.style.left = '0%';
