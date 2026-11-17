@@ -4,11 +4,13 @@ const SUPABASE_URL = 'https://ilybqwjhkxfzociyvpeg.supabase.co';
 const PUBLISHABLE_KEY = 'sb_publishable_tix7qkJot2-3Hvik5kZvFg_SCYaZuzV';
 const SESSION_KEY = 'karkalkan.v4.session';
 const ACTIVE_CONNECTION_KEY = 'karkalkan.v4.activeConnection';
+const AUTH_TIMEOUT_MS = 15000;
 
 const $ = (id) => document.getElementById(id);
 const els = {
   authPanel: $('authPanel'), authForm: $('authForm'), authEmail: $('authEmail'), authPassword: $('authPassword'),
-  signInBtn: $('signInBtn'), signUpBtn: $('signUpBtn'), authMessage: $('authMessage'), appPanel: $('appPanel'), userEmail: $('userEmail'),
+  signInBtn: $('signInBtn'), signUpBtn: $('signUpBtn'), rememberSession: $('rememberSession'), authMessage: $('authMessage'), appPanel: $('appPanel'), userEmail: $('userEmail'),
+  workspaceNotice: $('workspaceNotice'), workspaceStatusText: $('workspaceStatusText'), retryWorkspaceBtn: $('retryWorkspaceBtn'),
   refreshAllBtn: $('refreshAllBtn'), signOutBtn: $('signOutBtn'), marketplaceSelect: $('marketplaceSelect'), connectionName: $('connectionName'), sellerId: $('sellerId'),
   createConnectionBtn: $('createConnectionBtn'), connectionMessage: $('connectionMessage'), connectionSelect: $('connectionSelect'), connectionMeta: $('connectionMeta'),
   credentialState: $('credentialState'), apiKey: $('apiKey'), apiSecret: $('apiSecret'), saveCredentialsBtn: $('saveCredentialsBtn'), oauthConnectBtn: $('oauthConnectBtn'), credentialMessage: $('credentialMessage'),
@@ -54,7 +56,7 @@ function validEmail(value) {
 
 function parseStoredSession() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (!data || typeof data !== 'object') return null;
@@ -77,7 +79,16 @@ function saveSession(data) {
     user: { id: String(data.user?.id || ''), email: String(data.user?.email || '') }
   };
   if (!session.access_token || !session.refresh_token || !session.user.email) throw new Error('Geçersiz oturum yanıtı.');
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  // Persist only when the person explicitly opts in, or when refreshing an
+  // already remembered session. Sign-out clears both storage locations.
+  const remember = Boolean(els.rememberSession?.checked) || Boolean(localStorage.getItem(SESSION_KEY));
+  if (remember) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    sessionStorage.removeItem(SESSION_KEY);
+  } else {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.removeItem(SESSION_KEY);
+  }
 }
 
 function clearSession() {
@@ -85,6 +96,7 @@ function clearSession() {
   connections = [];
   activeConnectionId = '';
   sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(ACTIVE_CONNECTION_KEY);
 }
 
@@ -95,12 +107,22 @@ async function readJson(response) {
 }
 
 async function authRequest(path, options = {}) {
-  const response = await fetch(`${SUPABASE_URL}${path}`, {
-    method: options.method || 'POST',
-    headers: { apikey: PUBLISHABLE_KEY, 'Content-Type': 'application/json', ...(options.headers || {}) },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: 'no-store'
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(`${SUPABASE_URL}${path}`, {
+      method: options.method || 'POST',
+      headers: { apikey: PUBLISHABLE_KEY, 'Content-Type': 'application/json', ...(options.headers || {}) },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      cache: 'no-store',
+      signal: controller.signal
+    });
+  } catch (error) {
+    throw new Error(error?.name === 'AbortError' ? 'AUTH_TIMEOUT' : 'NETWORK_UNAVAILABLE');
+  } finally {
+    clearTimeout(timeout);
+  }
   const data = await readJson(response);
   if (!response.ok) {
     const err = new Error(data?.msg || data?.message || data?.error_description || data?.error || `HTTP_${response.status}`);
@@ -119,8 +141,12 @@ async function refreshSession() {
       saveSession(data);
       return session;
     } catch (error) {
-      clearSession();
-      renderSignedOut();
+      // A paused database, network outage or temporary 5xx is NOT evidence that
+      // this user has signed out. Only a definite invalid refresh token is.
+      if ([400, 401, 403].includes(Number(error?.status))) {
+        clearSession();
+        renderSignedOut();
+      }
       throw error;
     } finally {
       refreshPromise = null;
@@ -254,10 +280,40 @@ function humanError(error) {
     'SERVER_CONFIG': 'Sunucu yapılandırması eksik.',
     'SERVER_MISCONFIGURED': 'Sunucu yapılandırması eksik.'
   };
+  if (code === 'NETWORK_UNAVAILABLE' || /Failed to fetch|NetworkError|Load failed/i.test(code)) {
+    return 'Sunucuya bağlanılamadı. İnternetini kontrol et; sorun devam ediyorsa servis geçici olarak erişilemiyor olabilir.';
+  }
+  if (code === 'AUTH_TIMEOUT') return 'Giriş servisi yanıt vermedi. Biraz sonra yeniden dene.';
+  if ([500, 502, 503, 504].includes(Number(error?.status)) || /^HTTP_50[0-4]$/.test(code)) {
+    return 'Servis geçici olarak kullanılamıyor. Oturumun korunuyor; yeniden deneyebilirsin.';
+  }
   return map[code] || code.replaceAll('_', ' ').toLocaleLowerCase('tr-TR');
 }
 
+function showWorkspaceWarning(error) {
+  if (!els.workspaceNotice || !els.workspaceStatusText) return;
+  els.workspaceStatusText.textContent = `Girişin açık, ancak mağaza verileri yüklenemedi. ${humanError(error)}`;
+  els.workspaceNotice.classList.remove('hide');
+}
+
+async function loadWorkspace() {
+  try {
+    await loadConnections();
+    els.workspaceNotice?.classList.add('hide');
+    return true;
+  } catch (error) {
+    if (!session) {
+      renderSignedOut();
+      setNotice(els.authMessage, `Oturum yeniden açılmalı: ${humanError(error)}`, 'bad');
+    } else {
+      showWorkspaceWarning(error);
+    }
+    return false;
+  }
+}
+
 function renderSignedOut() {
+  els.workspaceNotice?.classList.add('hide');
   els.authPanel.classList.remove('hide');
   els.appPanel.classList.add('hide');
   els.userEmail.textContent = '—';
@@ -479,10 +535,12 @@ els.authForm.addEventListener('submit', async (event) => {
   setNotice(els.authMessage);
   try {
     const data = await authRequest('/auth/v1/token?grant_type=password', { body: { email, password } });
+    // A newly chosen login preference overrides any older remembered session.
+    localStorage.removeItem(SESSION_KEY);
     saveSession(data);
     els.authPassword.value = '';
     renderSignedIn();
-    await loadConnections();
+    await loadWorkspace();
   } catch (error) {
     setNotice(els.authMessage, humanError(error), 'bad');
   } finally {
@@ -503,9 +561,10 @@ els.signUpBtn.addEventListener('click', async () => {
     const data = await authRequest('/auth/v1/signup', { body: { email, password } });
     els.authPassword.value = '';
     if (data?.access_token && data?.refresh_token && data?.user) {
+      localStorage.removeItem(SESSION_KEY);
       saveSession(data);
       renderSignedIn();
-      await loadConnections();
+      await loadWorkspace();
     } else {
       setNotice(els.authMessage, 'Hesap oluşturuldu. Email doğrulama mesajındaki bağlantıya tıkla, sonra giriş yap.', 'good');
     }
@@ -650,9 +709,14 @@ els.saveCostBtn.addEventListener('click', async () => {
 els.rangeDays.addEventListener('change', () => { if (activeConnectionId) refreshConnectionData().catch(() => {}); });
 els.refreshAllBtn.addEventListener('click', async () => {
   setBusy(els.refreshAllBtn, true, 'Yenileniyor…');
-  try { await loadConnections(); }
-  catch (error) { setNotice(els.syncMessage, humanError(error), 'bad'); }
+  try { await loadWorkspace(); }
   finally { setBusy(els.refreshAllBtn, false); }
+});
+
+els.retryWorkspaceBtn?.addEventListener('click', async () => {
+  setBusy(els.retryWorkspaceBtn, true, 'Yeniden deneniyor…');
+  try { await loadWorkspace(); }
+  finally { setBusy(els.retryWorkspaceBtn, false); }
 });
 
 async function completeAmazonLoginHandoff(params) {
@@ -690,7 +754,7 @@ async function completeAmazonLoginHandoff(params) {
   renderSignedIn();
   try {
     await ensureAccessToken();
-    await loadConnections();
+    if (!session || !(await loadWorkspace())) return;
     const callbackParams = new URLSearchParams(location.search);
     if (await completeAmazonLoginHandoff(callbackParams)) return;
     const amazonResult = callbackParams.get('amazon');
@@ -707,8 +771,12 @@ async function completeAmazonLoginHandoff(params) {
       history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
     }
   } catch (error) {
-    clearSession();
-    renderSignedOut();
-    setNotice(els.authMessage, `Oturum yeniden açılmalı: ${humanError(error)}`, 'bad');
+    // Do not destroy a valid session when only the API or network is down.
+    if (!session) {
+      renderSignedOut();
+      setNotice(els.authMessage, `Oturum yeniden açılmalı: ${humanError(error)}`, 'bad');
+    } else {
+      showWorkspaceWarning(error);
+    }
   }
 })();
